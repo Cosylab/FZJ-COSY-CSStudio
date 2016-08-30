@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.csstudio.fzj.cosy.css.product.feature"
+      label="CSS Main Feature"
+      version="1.0.0.qualifier"
+      provider-name="Cosylab"
+      plugin="org.csstudio.fzj.cosy.css.product.branding">
+
+   <description>
+      Control System Studio Product Main Feature gathers the base RCP features and all CSS applications features.
+   </description>
+
+   <license url="https://www.eclipse.org/legal/epl-v10.html">
+      Eclipse Public License
+   </license>
+
+   <url>
+      <discovery label="Update Site" url="http://www.eclipse.org/modeling/updates/"/>
+   </url>
+
+   <plugin
+         id="org.csstudio.fzj.cosy.css.product"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.csstudio.fzj.cosy.css.product.branding"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+</feature>

@@ -1,0 +1,7 @@
+instructions.configure=\
+  org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../../../../../../rootfiles/css,target:${installFolder});\
+  org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/eclipsec.exe);\
+  org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/plugins/org.w3c.dom.smil_1.0.0.v200806040011);
+
+instructions.install=\
+  setProgramProperty(propName:osgi.instance.area.default,propValue:@user.home/CSS-Workspaces/Default);

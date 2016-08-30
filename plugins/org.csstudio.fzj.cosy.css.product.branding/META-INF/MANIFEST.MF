@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Control System Studio
+Bundle-SymbolicName: org.csstudio.fzj.cosy.css.product.branding
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Cosylab
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8

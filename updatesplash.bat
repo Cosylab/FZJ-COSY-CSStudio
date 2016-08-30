@@ -1,0 +1,1 @@
+java -jar ImageLabeler-2.0.jar %1 462 53 plugins/org.csstudio.fzj.cosy.css.product/splash-template.bmp plugins/org.csstudio.fzj.cosy.css.product/splash.bmp BLACK

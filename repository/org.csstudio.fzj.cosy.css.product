@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="CSS" uid="org.csstudio.fzj.cosy.css" id="org.csstudio.fzj.cosy.css.product.product" application="org.csstudio.fzj.cosy.application" version="1.0.0.qualifier" useFeatures="true" includeLaunchers="true">
+
+   <aboutInfo>
+      <image path="icons/about.png"/>
+      <text>
+         Control System Studio is an Eclipse-based collection of tools to monitor and operate large scale control systems, such as the ones in the accelerator community. It&apos;s a product of the collaboration between different laboratories and universities.
+
+The FZJ-COSY distribution is based on the 4.3.x version of the community CS-Studio.
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-pluginCustomization
+plugin_customization.ini
+--launcher.defaultAction
+openFile
+      </programArgs>
+      <vmArgs>-Xmx1024m
+-Xms512m
+-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.SimpleLog
+-Dorg.apache.commons.logging.simplelog.defaultlog=fatal
+-Dorg.osgi.framework.bundle.parent=ext
+-Dosgi.framework.extensions=org.eclipse.fx.osgi
+      </vmArgs>
+   </launcherArgs>
+
+   <windowImages i16="icons/css16.png" i32="icons/css32.png" i48="icons/css48.png" i64="icons/css64.png" i128="icons/css128.png" i256="icons/css256.png"/>
+
+   <splash
+      location="org.csstudio.fzj.cosy.css.product"
+      startupProgressRect="0,285,480,15"
+      startupMessageRect="150,265,320,20"
+      startupForegroundColor="000000" />
+   <launcher name="css">
+      <linux icon="icons/css48.xpm"/>
+      <solaris/>
+      <win useIco="false">
+         <bmp
+            winSmallHigh="icons/css16.bmp"
+            winSmallLow="icons/css16_8.bmp"
+            winMediumHigh="icons/css32.bmp"
+            winMediumLow="icons/css32_8.bmp"
+            winLargeHigh="icons/css48.bmp"
+            winLargeLow="icons/css48_8.bmp"
+            winExtraLargeHigh="icons/css256.bmp"/>
+      </win>
+   </launcher>
+
+   <intro introId="org.eclipse.ui.intro.universal"/>
+
+   <vm>
+   </vm>
+
+   <plugins>
+   </plugins>
+
+   <features>
+      <feature id="org.csstudio.fzj.cosy.css.product.feature" installMode="root"/>
+      <feature id="org.csstudio.fzj.cosy.eclipse.feature"/>
+      <feature id="org.eclipse.fx.target.rcp.feature"/>
+      <feature id="org.csstudio.fzj.cosy.core.feature"/>
+      <feature id="org.csstudio.fzj.cosy.epics.feature"/>
+      <feature id="org.csstudio.fzj.cosy.appbase.feature"/>
+      <feature id="org.csstudio.fzj.cosy.opibuilder.feature"/>
+      <feature id="org.csstudio.fzj.cosy.databrowser.feature"/>
+      <feature id="org.csstudio.trends.databrowser2.opiwidget.feature"/>
+      <feature id="org.csstudio.saverestore.feature"/>
+      <feature id="org.csstudio.saverestore.git.feature"/>
+      <feature id="org.eclipse.jgit"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.p2.reconciler.dropins" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+   <preferencesInfo>
+      <targetfile overwrite="false"/>
+   </preferencesInfo>
+
+   <cssInfo>
+   </cssInfo>
+
+</product>

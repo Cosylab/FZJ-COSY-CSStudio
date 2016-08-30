@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Product
+Bundle-SymbolicName: org.csstudio.fzj.cosy.css.product;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Cosylab
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui,
+ org.csstudio.startup,
+ org.csstudio.utility.product,
+ org.eclipse.e4.ui.model.workbench,
+ org.csstudio.security
+Bundle-ActivationPolicy: lazy
