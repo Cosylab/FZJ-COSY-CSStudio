@@ -20,7 +20,7 @@
     <module>org.csstudio.fzj.cosy.eclipse.feature</module>
     <module>org.csstudio.fzj.cosy.epics.feature</module>
     <module>org.csstudio.fzj.cosy.opibuilder.feature</module>
-    
+    <module>org.csstudio.fzj.cosy.product.configuration.feature</module>
     
   </modules>
 </project>
