@@ -48,7 +48,7 @@
                 <mkdir dir="${project.build.directory}/rootfiles"/>
                 <mkdir dir="${project.build.directory}/rootfiles/css"/>
                 <copy verbose="false" todir="${project.build.directory}/rootfiles/css">
-                  <fileset dir="${project.build.directory}/../../plugins/org.csstudio.fzj.cosy.product">
+                  <fileset dir="${project.build.directory}/../../plugins/org.csstudio.fzj.cosy.css.product">
                     <include name="plugin_customization.ini"/>
                   </fileset>
                 </copy>
