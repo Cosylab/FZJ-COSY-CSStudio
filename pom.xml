@@ -11,7 +11,7 @@
     <properties>
         <assembly-version>2.4</assembly-version>
         <replacer-version>1.4.1</replacer-version>
-        <tycho.version>0.23.1</tycho.version>
+        <tycho.version>0.22.0</tycho.version>
         <tycho-extras.version>0.23.1</tycho-extras.version>
         <tycho-groupid>org.eclipse.tycho</tycho-groupid>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
