@@ -46,7 +46,8 @@ public class WorkbenchUtil {
     private static final String[] IGNORE_VIEWS = new String[] { "org.eclipse.ui.views.BookmarkView",
             "org.eclipse.ui.views.TaskList", "org.eclipse.ui.views.ProblemView", "org.eclipse.ui.views.AllMarkersView",
             "org.eclipse.search.SearchResultView", "org.eclipse.ui.navigator.ProjectExplorer",
-            "org.eclipse.team.sync.views.SynchronizeView", "org.eclipse.team.ui.GenericHistoryView" };
+            //"org.eclipse.team.sync.views.SynchronizeView", "org.eclipse.team.ui.GenericHistoryView"
+            };
 
     private static final String[] VERBOSE_PACKAGES = new String[] { "com.sun.jersey.core.spi.component",
             "com.sun.jersey.core.spi.component.ProviderServices", "com.sun.jersey.spi.service.ServiceFinder" };

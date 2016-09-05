@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.csstudio.fzj.cosy.svn.feature"
+      label="CSS SVN Component"
+      version="1.0.0.qualifier"
+      provider-name="Cosylab">
+
+   <description url="http://controlsystemstudio.github.io/">
+      CS-Studio Product Configuration.
+   </description>
+
+   <copyright url="http://controlsystemstudio.github.io/">
+      Use is subject to license.
+   </copyright>
+
+   <license url="http://www.eclipse.org/legal/epl-v10.html">
+      Eclipse Public License.
+   </license>
+
+   <includes
+         id="org.tmatesoft.svnkit"
+         version="0.0.0"/>
+
+   <includes
+         id="org.tigris.subversion.clientadapter.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="org.tigris.subversion.clientadapter.svnkit.feature"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.tigris.subversion.subclipse.core"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.tigris.subversion.subclipse.ui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.tigris.subversion.subclipse.doc"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

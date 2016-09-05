@@ -12,7 +12,7 @@
   <packaging>pom</packaging>
   <version>1.0</version>
   <modules>
-    <module>org.csstudio.fzj.cosy.appbase.feature</module>
+    <module>org.csstudio.fzj.cosy.application.core.feature</module>
     <module>org.csstudio.fzj.cosy.batik.feature</module>
     <module>org.csstudio.fzj.cosy.core.feature</module>
     <module>org.csstudio.fzj.cosy.css.product.feature</module>
@@ -21,6 +21,6 @@
     <module>org.csstudio.fzj.cosy.epics.feature</module>
     <module>org.csstudio.fzj.cosy.opibuilder.feature</module>
     <module>org.csstudio.fzj.cosy.product.configuration.feature</module>
-    
+    <module>org.csstudio.fzj.cosy.svn.feature</module>
   </modules>
 </project>

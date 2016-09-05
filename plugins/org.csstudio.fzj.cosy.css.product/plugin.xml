@@ -128,20 +128,5 @@
             isEqualityPattern="true"
             pattern="org.eclipse.ui.ide/org.eclipse.ui.navigator.ProjectExplorer">
       </activityPatternBinding>
-      <activityPatternBinding
-            activityId="org.csstudio.fzj.cosy.activity"
-            isEqualityPattern="true"
-            pattern="org.eclipse.team.ui/org.eclipse.team.sync.views.SynchronizeView">
-      </activityPatternBinding>
-      <activityPatternBinding
-            activityId="org.csstudio.fzj.cosy.activity"
-            isEqualityPattern="true"
-            pattern="org.eclipse.team.ui/org.eclipse.team.ui.GenericHistoryView">
-      </activityPatternBinding>
-      <activityPatternBinding
-            activityId="org.csstudio.fzj.cosy.activity"
-            isEqualityPattern="true"
-            pattern="org.eclipse.team.ui/org.eclipse.team.ui.TeamSynchronizingPerspective">
-      </activityPatternBinding>
    </extension>
 </plugin>

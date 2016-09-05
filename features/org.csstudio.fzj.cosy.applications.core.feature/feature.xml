@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.csstudio.fzj.cosy.appbase.feature"
-      label="Application Base CSStudio Feature"
+      id="org.csstudio.fzj.cosy.application.core.feature"
+      label="Application Core CSStudio Feature"
       version="1.0.0.qualifier"
       provider-name="Cosylab">
 

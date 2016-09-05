@@ -66,7 +66,7 @@ openFile
       <feature id="org.eclipse.fx.target.rcp.feature"/>
       <feature id="org.csstudio.fzj.cosy.core.feature"/>
       <feature id="org.csstudio.fzj.cosy.epics.feature"/>
-      <feature id="org.csstudio.fzj.cosy.appbase.feature"/>
+      <feature id="org.csstudio.fzj.cosy.application.core.feature"/>
       <feature id="org.csstudio.fzj.cosy.opibuilder.feature"/>
       <feature id="org.csstudio.fzj.cosy.databrowser.feature"/>
       <feature id="org.csstudio.trends.databrowser2.opiwidget.feature"/>
@@ -74,6 +74,7 @@ openFile
       <feature id="org.csstudio.saverestore.git.feature"/>
       <feature id="org.eclipse.jgit"/>
       <feature id="org.csstudio.fzj.cosy.product.configuration.feature"/>
+      <feature id="org.csstudio.fzj.cosy.svn.feature"/>
    </features>
 
    <configurations>
