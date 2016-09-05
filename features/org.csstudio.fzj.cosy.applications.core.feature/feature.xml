@@ -17,9 +17,9 @@
       [Enter License Description here.]
    </license>
 
-   <includes
-         id="org.csstudio.email.feature"
-         version="0.0.0"/>
+   <requires>
+      <import feature="org.csstudio.email.feature" version="1.0.0.qualifier"/>
+   </requires>
 
    <plugin
          id="org.csstudio.apputil"

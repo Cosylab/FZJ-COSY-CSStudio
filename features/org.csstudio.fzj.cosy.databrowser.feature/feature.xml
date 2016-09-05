@@ -18,6 +18,11 @@
       [Enter License Description here.]
    </license>
 
+   <requires>
+      <import feature="org.csstudio.fzj.cosy.epics.feature" version="1.0.0.qualifier"/>
+      <import feature="org.csstudio.fzj.cosy.application.core.feature" version="1.0.0.qualifier"/>
+   </requires>
+
    <plugin
          id="org.csstudio.trends.databrowser2"
          download-size="0"
