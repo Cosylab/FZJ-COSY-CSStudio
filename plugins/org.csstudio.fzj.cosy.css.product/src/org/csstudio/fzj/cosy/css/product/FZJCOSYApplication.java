@@ -37,6 +37,8 @@ public class FZJCOSYApplication extends Application {
         Object o = super.promptForWorkspace(display, context);
         if (shell != null) {
             shell.setVisible(true);
+            shell.forceActive();
+            shell.forceFocus();
         }
         return o;
     }
