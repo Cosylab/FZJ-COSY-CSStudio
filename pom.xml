@@ -49,8 +49,8 @@
                 <efx-site>${eclipse.mirror.url}/efxclipse/runtime-released/2.1.0/site</efx-site>
                 <eclipse-site>${eclipse.mirror.url}/releases/mars</eclipse-site>
                 <eclipse-update-site>${eclipse.mirror.url}/eclipse/updates/4.5</eclipse-update-site>
+                <svn-site>http://subclipse.tigris.org/update_1.12.x</svn-site>
                 <platform-version>[4.4,4.5)</platform-version>
-                <swtbot-site>${eclipse.central.url}/technology/swtbot/mars/dev-build/update-site</swtbot-site>
             </properties>
         </profile>
         <profile>
@@ -89,6 +89,11 @@
         <repository>
             <id>orbit</id>
             <url>${orbit-site}</url>
+            <layout>p2</layout>
+        </repository>
+        <repository>
+            <id>svn</id>
+            <url>${svn-site}</url>
             <layout>p2</layout>
         </repository>
         <repository>
