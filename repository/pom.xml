@@ -13,7 +13,7 @@
 
   <artifactId>fzj-cosy-repository</artifactId>
   <packaging>eclipse-repository</packaging>
-
+  
   <build>
     <plugins>
       <plugin>
