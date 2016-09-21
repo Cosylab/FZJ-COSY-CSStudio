@@ -12,7 +12,7 @@
   <packaging>pom</packaging>
   <version>1.0</version>
   <modules>
-	<module>com.cosylab.fzj.cosy.oc.feature</module>
+    <module>com.cosylab.fzj.cosy.oc.feature</module>
     <module>org.csstudio.fzj.cosy.applications.core.feature</module>
     <module>org.csstudio.fzj.cosy.batik.feature</module>
     <module>org.csstudio.fzj.cosy.core.feature</module>

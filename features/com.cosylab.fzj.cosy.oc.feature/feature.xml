@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.cosylab.fzj.cosy.oc.feature"
+      label="Orbit Correction"
+      version="1.0.0.qualifier"
+      provider-name="COSYLAB"
+      plugin="com.cosylab.fzj.cosy.oc">
+
+   <description>
+      [Enter Feature Description here.]
+   </description>
+
+   <copyright>
+      [Enter Copyright Description here.]
+   </copyright>
+
+   <license>
+      [Enter License Description here.]
+   </license>
+
+   <plugin
+         id="com.cosylab.fzj.cosy.oc"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="com.cosylab.fzj.cosy.oc.ui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

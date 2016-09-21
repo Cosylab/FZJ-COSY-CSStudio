@@ -14,7 +14,7 @@
   <modules>
     <module>org.csstudio.fzj.cosy.css.product</module>
     <module>org.csstudio.fzj.cosy.css.product.branding</module>
-	<module>com.cosylab.fzj.cosy.oc</module>
-	<module>com.cosylab.fzj.cosy.oc.ui</module>
+    <module>com.cosylab.fzj.cosy.oc</module>
+    <module>com.cosylab.fzj.cosy.oc.ui</module>
   </modules>
 </project>
