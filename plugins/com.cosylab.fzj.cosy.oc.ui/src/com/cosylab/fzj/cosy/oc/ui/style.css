@@ -1,0 +1,221 @@
+.root {
+	-fx-background-color: #ffffff;
+}
+
+.bordered-titled-title {
+  -fx-background-color: #ffffff;
+  -fx-translate-x: 10;
+  -fx-translate-y: -10;
+}
+
+.bordered-titled-border {
+  -fx-content-display: top;
+  -fx-border-insets: 0 0 0 1;
+  -fx-background-color: #ffffff;
+  -fx-border-color: #000000;
+  -fx-border-width: 1px;
+}
+
+.bordered-titled-content {
+	-fx-padding: 20 10 10 10;	
+}
+
+.big-button {
+	
+}
+
+.axis-tick-mark, 
+.axis-minor-tick-mark, 
+.chart-vertical-grid-lines, 
+.chart-horizontal-grid-lines, 
+.chart-vertical-zero-line {
+    -fx-stroke: transparent;
+}
+
+.chart-plot-background {
+    -fx-border-color: #000000;
+    -fx-border-style: solid; 
+    -fx-border-width: 2px; 
+    -fx-border-insets: 0 0 0 1;
+}
+
+.chart-title {
+   -fx-font-weight: bold;
+   -fx-alignment: top-left;
+   -fx-padding: 0 0 0 50;
+}
+
+.axis-label {
+    -fx-font-weight: bold;
+}
+
+.orbit-chart .default-color0.chart-series-line { 
+	-fx-stroke: #0000ff;
+}
+
+.orbit-chart .default-color0.chart-line-symbol {
+	-fx-background-color: #0000ff;
+}
+
+.orbit-chart .default-color1.chart-series-line { 
+	-fx-stroke: #ff0000;
+}
+
+.orbit-chart .default-color1.chart-line-symbol {
+	-fx-background-color: #ff0000;
+}
+
+.orbit-chart .default-color2.chart-series-line { 
+	-fx-stroke: #00ff00;
+}
+
+.orbit-chart .default-color2.chart-line-symbol {
+	-fx-background-color: #00ff00;
+}
+
+.orbit-chart .default-color3.chart-series-line { 
+	-fx-stroke: #cc9900;
+}
+
+.orbit-chart .default-color3.chart-line-symbol {
+	-fx-background-color: #cc9900;
+}
+
+.corrections-chart .chart-line-symbol {
+	-fx-scale-shape: false;
+	-fx-scale-x: 1.5;
+	-fx-scale-x: 1.5;
+}
+
+.corrections-chart .default-color0.chart-line-symbol {
+	-fx-background-color: #0000ff, #ffffff;
+	-fx-background-radius: 0;
+}
+
+.corrections-chart .default-color1.chart-line-symbol {
+	-fx-background-color: #ff0000, #ffffff;
+	-fx-background-radius: 0;
+}
+
+.lattice-chart .chart-line-symbol {
+  -fx-scale-shape: false;
+  -fx-scale-x: 2.0;
+  -fx-scale-y: 2.0;
+}
+
+.lattice-chart .default-color0.chart-series-line { 
+	-fx-stroke: transparent;
+}
+
+.lattice-chart .default-color1.chart-series-line {
+	-fx-stroke: transparent;
+}
+
+.lattice-chart .default-color2.chart-series-line { 
+	-fx-stroke: transparent;
+}
+
+.lattice-chart .default-color0.chart-line-symbol { 
+    -fx-background-color: #696969;     
+   	-fx-shape: "M0,0 l3.5,0 0,15 -3.5,0, 0,-15";
+}
+
+.lattice-chart .default-color1.chart-line-symbol { 
+    -fx-background-color: #0000ff;
+    -fx-shape: "M-1.75,0a1.75,2.75 0 1,0 7,0a1.75,2.75 0 1,0 -7,0";
+}
+
+.lattice-chart .default-color2.chart-line-symbol { 
+    -fx-background-color: #ff0000; 
+    -fx-shape: "M-1.75,0a1.75,2.75 0 1,0 7,0a1.75,2.75 0 1,0 -7,0";
+}
+
+.horizontal-check-box {
+	-fx-text-fill: #0000ff;
+	-fx-font-weight: bold;	
+}
+
+.horizontal-check-box .box {
+	-fx-outer-border: #0000ff;
+	-fx-body-color: transparent;
+}
+
+.horizontal-check-box:selected .mark {
+    -fx-background-color: #0000ff;
+}
+
+.horizontal-check-box:focused .box {
+	-fx-background-color: #0000ff, #0000ff, -fx-inner-border, -fx-body-color;
+}
+
+.vertical-check-box {
+	-fx-text-fill: #ff0000;
+	-fx-font-weight: bold;	
+}
+
+.vertical-check-box .box {
+	-fx-outer-border: #ff0000;
+	-fx-body-color: transparent;
+}
+
+.vertical-check-box:selected .mark {
+    -fx-background-color: #ff0000;
+}
+
+.vertical-check-box:focused .box {
+	-fx-background-color: #ff0000, #ff0000, -fx-inner-border, -fx-body-color;
+}
+
+.golden-horizontal-check-box {
+	-fx-text-fill: #009900;
+	-fx-font-weight: bold;	
+}
+
+.golden-horizontal-check-box .box {
+	-fx-outer-border: #009900;
+	-fx-body-color: transparent;
+}
+
+.golden-horizontal-check-box:selected .mark {
+    -fx-background-color: #009900;
+}
+
+.golden-horizontal-check-box:focused .box {
+	-fx-background-color: #009900, #009900, -fx-inner-border, -fx-body-color;
+}
+
+.golden-vertical-check-box {
+	-fx-text-fill: #cc9900;
+	-fx-font-weight: bold;	
+}
+
+.golden-vertical-check-box .box {
+	-fx-outer-border: #cc9900;
+	-fx-body-color: transparent;
+}
+
+.golden-vertical-check-box:selected .mark {
+    -fx-background-color: #cc9900;
+}
+
+.golden-vertical-check-box:focused .box {
+	-fx-background-color: #cc9900, #cc9900, -fx-inner-border, -fx-body-color;
+}
+
+.bpm-check-box {
+	-fx-text-fill: #696969;
+	-fx-font-weight: bold;	
+}
+
+.bpm-check-box .box {
+	-fx-outer-border: #696969;
+	-fx-body-color: transparent;
+}
+
+.bpm-check-box:selected .mark {
+    -fx-background-color: #696969;
+}
+
+.bpm-check-box:focused .box {
+	-fx-background-color: #696969, #696969, -fx-inner-border, -fx-body-color;
+}

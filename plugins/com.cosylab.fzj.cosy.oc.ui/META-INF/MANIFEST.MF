@@ -6,4 +6,9 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: COSYLAB
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.ui,
- org.eclipse.core.runtime
+ org.eclipse.core.runtime,
+ org.eclipse.fx.ui.workbench3,
+ com.cosylab.fzj.cosy.oc,
+ org.diirt.datasource,
+ org.diirt.vtype
+Import-Package: javafx.scene.chart

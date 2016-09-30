@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="com.cosylab.fzj.cosy.oc.ui.Perspective"
+            id="com.cosylab.fzj.cosy.oc.ui.perspective"
+            name="Orbit Correction">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="com.cosylab.fzj.cosy.oc.ui.perspective">
+         <view
+               closeable="true"
+               id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
+               minimized="false"
+               moveable="true"
+               relationship="top"
+               showTitle="true"
+               standalone="false"
+               visible="true">
+         </view>
+         <viewShortcut
+               id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection">
+         </viewShortcut>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            class="com.cosylab.fzj.cosy.oc.ui.OrbitCorrectionView"
+            id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
+            name="Orbit Correction"
+            restorable="true">
+      </view>
+   </extension>
+
+</plugin>
