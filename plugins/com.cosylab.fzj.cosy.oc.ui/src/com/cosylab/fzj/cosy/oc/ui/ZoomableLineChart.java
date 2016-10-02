@@ -1,7 +1,11 @@
 package com.cosylab.fzj.cosy.oc.ui;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -13,55 +17,85 @@ import javafx.scene.shape.Rectangle;
  * <code>ZoomableLineChart</code> is a decoration for the {@link LineChart}, which provides zooming capabilities. When
  * user drags the mouse cursor across the surface of the chart (from left to right) a green rectangle is drawn to mark
  * the zoomed in area. On mouse release action the axes ranges are adjusted to match the zoom rectangle. The zoom
- * rectangle should be at least 5 pixels high and 5 pixels wide. If the mouse is dragged from the right to left and the
- * drag range is more than 20 pixels, the zoom is reset to default (zoom out happens). On zoom out the axes are set to
- * auto range mode.
+ * rectangle should be at least 5 pixels high and 5 pixels wide. Zoom out happens on double click. 
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
  *
  */
 public class ZoomableLineChart extends StackPane {
 
-    private static final int ZOOM_OUT_THRESHOLD = 20;
     private static final int MIN_ZOOM_THRESHOLD = 5;
 
     private final LineChart<Number, Number> chart;
     private final NumberAxis xAxis;
     private final NumberAxis yAxis;
     private final Rectangle zoomRect;
+    private final boolean useXAutoRangeForDefaultZoom;
+    private final double defaultXMin;
+    private final double defaultXMax;
+    private double defaultYMin = Double.NaN;
+    private double defaultYMax = Double.NaN;
+    private final double defaultTickX;
+    private final double defaultTickY;
+    private final boolean horizontalZoom;
+    private final boolean verticalZoom;
+    private BooleanProperty defaultZoomProperty = new SimpleBooleanProperty(true);
 
     /**
-     * Constructs a new chart without any labels. Labels can still be added later, by retrieving the chart (
-     * {@link #getChart()}) and decorating it.
+     * Constructs a new zoomable chart without any labels. 
      */
-    public ZoomableLineChart(LineChart<Number, Number> chart) {
+    public ZoomableLineChart(LineChart<Number, Number> chart, boolean useXAutoRangeForDefaultZoom,
+            boolean horizontalZoom, boolean verticalZoom) {
         this.chart = chart;
-        xAxis = (NumberAxis) chart.getXAxis();
-        yAxis = (NumberAxis) chart.getYAxis();
-        zoomRect = new Rectangle();
-        zoomRect.setManaged(false);
-        zoomRect.setFill(Color.LIGHTSEAGREEN.deriveColor(0, 1, 1, 0.5));
-        zoomRect.setStroke(Color.DARKSEAGREEN.darker());
-        getChildren().addAll(chart, zoomRect);
+        this.useXAutoRangeForDefaultZoom = useXAutoRangeForDefaultZoom;
+        this.xAxis = (NumberAxis) chart.getXAxis();
+        this.yAxis = (NumberAxis) chart.getYAxis();
+        this.defaultXMin = xAxis.getLowerBound();
+        this.defaultXMax = xAxis.getUpperBound();
+        this.defaultTickX = xAxis.getTickUnit();
+        this.defaultTickY = yAxis.getTickUnit();
+        this.horizontalZoom = horizontalZoom;
+        this.verticalZoom = verticalZoom;
+        this.zoomRect = new Rectangle();
+        this.zoomRect.setManaged(false);
+        this.zoomRect.setFill(Color.LIGHTSEAGREEN.deriveColor(0, 1, 1, 0.5));
+        this.zoomRect.setStroke(Color.DARKSEAGREEN.darker());
+        getChildren().addAll(this.chart, this.zoomRect);
         setUpZooming();
     }
 
-    /**
-     * Returns the underlying chart. Invoke this method to obtain the reference to the chart and adjust it to your
-     * satisfaction. You may decorate the axes, change colours etc. Also use this method to add data to the chart. The
-     * only thing that is not allowed is to add the chart to another parent. The chart is a direct descendant of this
-     * stack pane.
-     *
-     * @return the underlying chart
-     */
-    public LineChart<Number, Number> getChart() {
-        return chart;
+    private double[] snap(double x, double y) {
+        Bounds bounds = chart.getLayoutBounds();
+        Bounds xAxisBounds = xAxis.getLayoutBounds();
+        Bounds yAxisBounds = yAxis.getLayoutBounds();
+        Insets padding = chart.getPadding();
+        if (x > bounds.getMaxX() - padding.getRight() - 1)
+            x = bounds.getMaxX() - padding.getRight() - 1;
+        if (xAxis.isTickLabelsVisible()) {
+            if (y > yAxisBounds.getMaxY() - 2)
+                y = yAxisBounds.getMaxY() - 2;
+        } else {
+            if (y > bounds.getMaxY() - xAxisBounds.getMaxY() - 1)
+                y = bounds.getMaxY() - xAxisBounds.getMaxY() - 1;
+        }
+        if (x < yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft())
+            x = yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft();
+        if (y < padding.getTop() + 1)
+            y = padding.getTop() + 1;
+        return new double[] { x, y };
     }
 
     private void setUpZooming() {
         final ObjectProperty<Point2D> mouseAnchor = new SimpleObjectProperty<>();
+        mouseAnchor.set(new Point2D(0, 0));
+        chart.setOnMouseClicked(e -> {
+            if (e.getClickCount() > 1) {
+                defaultZoom();
+            }
+        });
         chart.setOnMousePressed(e -> {
-            mouseAnchor.set(new Point2D(e.getX(), e.getY()));
+            double[] snap = snap(e.getX(), e.getY());
+            mouseAnchor.set(new Point2D(snap[0], snap[1]));
             zoomRect.setWidth(0);
             zoomRect.setHeight(0);
         });
@@ -69,15 +103,23 @@ public class ZoomableLineChart extends StackPane {
             double x = e.getX();
             double y = e.getY();
             double xAnchor = mouseAnchor.get().getX();
-            if (x < xAnchor) {
-                if (x + ZOOM_OUT_THRESHOLD < xAnchor) {
-                    defaultZoom();
-                }
-            } else {
+
+            double[] snap = snap(e.getX(), e.getY());
+            x = snap[0];
+            y = snap[1];
+            if (horizontalZoom) {
                 zoomRect.setX(Math.min(x, xAnchor));
-                zoomRect.setY(Math.min(y, mouseAnchor.get().getY()));
                 zoomRect.setWidth(Math.abs(x - xAnchor));
+            } else {
+                zoomRect.setX(snap(0, 0)[0]);
+                zoomRect.setWidth(snap(chart.getWidth(), chart.getHeight())[0]);
+            }
+            if (verticalZoom) {
+                zoomRect.setY(Math.min(y, mouseAnchor.get().getY()));
                 zoomRect.setHeight(Math.abs(y - mouseAnchor.get().getY()));
+            } else {
+                zoomRect.setY(snap(0, 0)[1]);
+                zoomRect.setHeight(snap(chart.getWidth(), chart.getHeight())[1]);
             }
         });
         chart.setOnMouseReleased(e -> {
@@ -91,30 +133,63 @@ public class ZoomableLineChart extends StackPane {
         defaultZoom();
     }
 
-    private void defaultZoom() {
-        xAxis.setAutoRanging(true);
-        yAxis.setAutoRanging(true);
+    public void defaultZoom() {
+        if (horizontalZoom) {
+            if (useXAutoRangeForDefaultZoom) {
+                xAxis.setAutoRanging(true);
+            } else {
+                xAxis.setLowerBound(defaultXMin);
+                xAxis.setUpperBound(defaultXMax);
+            }
+            xAxis.setTickUnit(defaultTickX);
+        }
+        if (verticalZoom) {
+            if (!Double.isNaN(defaultYMin) && !Double.isNaN(defaultYMax)) {
+                yAxis.setLowerBound(defaultYMin);
+                yAxis.setUpperBound(defaultYMax);
+            }
+            yAxis.setAutoRanging(true);
+            yAxis.setTickUnit(defaultTickY);
+        }
+        defaultYMax = Double.NaN;
+        defaultYMin = Double.NaN;
         zoomRect.setWidth(0);
         zoomRect.setHeight(0);
+        defaultZoomProperty.set(true);
     }
 
     private void doZoom() {
-        xAxis.setAutoRanging(false);
-        yAxis.setAutoRanging(false);
-        Point2D zoomTopLeft = new Point2D(zoomRect.getX(), zoomRect.getY());
-        Point2D zoomBottomRight = new Point2D(zoomRect.getX() + zoomRect.getWidth(),
-            zoomRect.getY() + zoomRect.getHeight());
-        Point2D yAxisInScene = yAxis.localToScene(0, 0);
-        Point2D xAxisInScene = xAxis.localToScene(0, 0);
-        double xOffset = zoomTopLeft.getX() - yAxisInScene.getX();
-        double yOffset = zoomBottomRight.getY() - xAxisInScene.getY();
-        double xAxisScale = xAxis.getScale();
-        double yAxisScale = yAxis.getScale();
-        xAxis.setLowerBound(xAxis.getLowerBound() + xOffset / xAxisScale);
-        xAxis.setUpperBound(xAxis.getLowerBound() + zoomRect.getWidth() / xAxisScale);
-        yAxis.setLowerBound(yAxis.getLowerBound() + yOffset / yAxisScale);
-        yAxis.setUpperBound(yAxis.getLowerBound() - zoomRect.getHeight() / yAxisScale);
+        if (defaultZoomProperty.get()) {
+            defaultYMin = yAxis.getLowerBound();
+            defaultYMax = yAxis.getUpperBound();
+        }
+        if (horizontalZoom) {
+            xAxis.setAutoRanging(false);
+            Number low = xAxis.getValueForDisplay(zoomRect.getX());
+            Number high = xAxis.getValueForDisplay(zoomRect.getX() + zoomRect.getWidth());
+            xAxis.setLowerBound(low.doubleValue());
+            xAxis.setUpperBound(high.doubleValue());
+            xAxis.setTickUnit((xAxis.getUpperBound() - xAxis.getLowerBound()) / 6.);
+        }
+        if (verticalZoom) {
+            yAxis.setAutoRanging(false);
+            Number high = yAxis.getValueForDisplay(zoomRect.getY());
+            Number low = yAxis.getValueForDisplay(zoomRect.getY() + zoomRect.getHeight());
+            yAxis.setLowerBound(low.doubleValue());
+            yAxis.setUpperBound(high.doubleValue());
+            yAxis.setTickUnit((yAxis.getUpperBound() - yAxis.getLowerBound()) / 6.);
+        }
         zoomRect.setWidth(0);
         zoomRect.setHeight(0);
+        defaultZoomProperty.set(false);
+    }
+
+    /**
+     * Returns the property that defines whether we are currently in default range or zoomed in.
+     * 
+     * @return true if in default range, or false if zoomed in
+     */
+    public BooleanProperty defaultZoomProperty() {
+        return defaultZoomProperty;
     }
 }

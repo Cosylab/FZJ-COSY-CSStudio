@@ -49,6 +49,14 @@
     -fx-font-weight: bold;
 }
 
+.chart {
+    -fx-padding: 10px 10px 0px 10px;
+}
+
+.chart-content {
+    -fx-padding: 0px;
+}
+
 .orbit-chart .default-color0.chart-series-line { 
 	-fx-stroke: #0000ff;
 }
@@ -83,8 +91,8 @@
 
 .corrections-chart .chart-line-symbol {
 	-fx-scale-shape: false;
-	-fx-scale-x: 1.5;
-	-fx-scale-x: 1.5;
+	-fx-scale-x: 1;
+	-fx-scale-y: 1;
 }
 
 .corrections-chart .default-color0.chart-line-symbol {
@@ -99,7 +107,7 @@
 
 .lattice-chart .chart-line-symbol {
   -fx-scale-shape: false;
-  -fx-scale-x: 2.0;
+  -fx-scale-x: 1.0;
   -fx-scale-y: 2.0;
 }
 
