@@ -14,22 +14,26 @@ public class OrbitCorrectionResultsEntry {
     private final DoubleProperty rms = new SimpleDoubleProperty(this, "rms");
     private final DoubleProperty std = new SimpleDoubleProperty(this, "std");
 
-    public StringProperty getName() {
+    public OrbitCorrectionResultsEntry(String name) {
+        this.name.set(name);
+    }
+    
+    public StringProperty nameProperty() {
         return name;
     }
-    public DoubleProperty getMin() {
+    public DoubleProperty minProperty() {
         return min;
     }
-    public DoubleProperty getMax() {
+    public DoubleProperty maxProperty() {
         return max;
     }
-    public DoubleProperty getAvg() {
+    public DoubleProperty avgProperty() {
         return avg;
     }
-    public DoubleProperty getRms() {
+    public DoubleProperty rmsProperty() {
         return rms;
     }
-    public DoubleProperty getStd() {
+    public DoubleProperty stdProperty() {
         return std;
     }
 }
