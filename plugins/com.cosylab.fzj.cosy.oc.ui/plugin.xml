@@ -18,7 +18,8 @@
                id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
                minimized="false"
                moveable="true"
-               relationship="top"
+               relationship="right"
+               relative="org.eclipse.ui.editorss"
                showTitle="true"
                standalone="false"
                visible="true">
@@ -32,6 +33,7 @@
          point="org.eclipse.ui.views">
       <view
             allowMultiple="false"
+            category="org.csstudio"
             class="com.cosylab.fzj.cosy.oc.ui.OrbitCorrectionView"
             id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
             name="Orbit Correction"
