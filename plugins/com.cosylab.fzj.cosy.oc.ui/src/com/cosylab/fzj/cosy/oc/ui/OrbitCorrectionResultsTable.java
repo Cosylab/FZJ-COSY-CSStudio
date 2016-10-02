@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.beans.binding.Bindings;
-import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -54,9 +53,7 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
     }
 
     public void updateTable(List<OrbitCorrectionResultsEntry> entries) {
-        final ObservableList<OrbitCorrectionResultsEntry> items = getItems();
-        items.clear();
-        entries.forEach(e -> items.add(e));
+        getItems().setAll(entries);
     }
 
 }
