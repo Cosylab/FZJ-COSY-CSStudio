@@ -26,10 +26,13 @@
 
 .axis-tick-mark, 
 .axis-minor-tick-mark, 
-.chart-vertical-grid-lines, 
-.chart-horizontal-grid-lines, 
 .chart-vertical-zero-line {
     -fx-stroke: transparent;
+}
+
+.chart-vertical-grid-lines, 
+.chart-horizontal-grid-lines {
+	-fx-stroke: #cccccc;
 }
 
 .chart-plot-background {
@@ -109,6 +112,11 @@
   -fx-scale-shape: false;
   -fx-scale-x: 1.0;
   -fx-scale-y: 2.0;
+}
+
+.lattice-chart .chart-vertical-grid-lines, 
+.lattice-chart .chart-horizontal-grid-lines {
+	-fx-stroke: transparent;
 }
 
 .lattice-chart .default-color0.chart-series-line { 

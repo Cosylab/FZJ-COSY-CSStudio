@@ -14,11 +14,11 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
         setEditable(false);
         setMaxWidth(Double.MAX_VALUE);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
+        setFocusTraversable(false);
         createTable();
 
-        setFixedCellSize(25);
-        prefHeightProperty().bind(Bindings.size(getItems()).multiply(getFixedCellSize()).add(30));
+        setFixedCellSize(23);
+        prefHeightProperty().bind(Bindings.size(getItems()).multiply(getFixedCellSize()).add(26));
     }
 
     private void createTable() {

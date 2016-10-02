@@ -30,17 +30,18 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 
 public class OrbitCorrectionView extends FXViewPart {
 
-    private LineChart<Number,Number> orbitChart;
+    private LineChart<Number, Number> orbitChart;
     private CorrectionsChart<Number, Number> correctionsChart;
-    private LineChart<Number,Number> latticeChart;
+    private LineChart<Number, Number> latticeChart;
     private ZoomableLineChart orbitZoom;
     private ZoomableLineChart correctionsZoom;
     private ZoomableLineChart latticeZoom;
-    
+
     private OrbitCorrectionController controller;
 
     public OrbitCorrectionView() {
@@ -62,13 +63,13 @@ public class OrbitCorrectionView extends FXViewPart {
     private GridPane createContentPane() {
         GridPane contentPane = new GridPane();
         contentPane.getStyleClass().add("root");
-        
+
         RowConstraints row1Constraint = new RowConstraints();
         RowConstraints row2Constraint = new RowConstraints();
         row2Constraint.setMaxHeight(310);
-        row2Constraint.setMinHeight(230);
+        row2Constraint.setMinHeight(310);
         contentPane.getRowConstraints().addAll(row1Constraint, row2Constraint);
-        
+
         GridPane chartsPane = createCharts();
         setGridConstraints(chartsPane, true, true, Priority.ALWAYS, Priority.ALWAYS);
         contentPane.add(chartsPane, 0, 0);
@@ -81,7 +82,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
     private GridPane createCharts() {
         GridPane charts = new GridPane();
-        
+
         ColumnConstraints column0Constraint = new ColumnConstraints();
         column0Constraint.setMinWidth(50);
         column0Constraint.setMaxWidth(50);
@@ -92,17 +93,17 @@ public class OrbitCorrectionView extends FXViewPart {
         column2Constraint.setMaxWidth(200);
         charts.getColumnConstraints().setAll(column0Constraint, column1Constraint, column2Constraint);
 
-        Node orbitNode = createOrbitChart();
-        Node orbitLegendNode = createOrbitChartLegend();
+        Region orbitNode = createOrbitChart();
+        GridPane orbitLegendNode = createOrbitChartLegend();
         setGridConstraints(orbitNode, true, true, Priority.ALWAYS, Priority.ALWAYS);
         setGridConstraints(orbitLegendNode, true, false, HPos.LEFT, VPos.TOP, Priority.NEVER, Priority.ALWAYS);
-        
-        Node correctionNode = createCorrectionsChart();
-        Node correctionLegendNode = createCorrectionsChartLegend();
+            
+        Region correctionNode = createCorrectionsChart();
+        GridPane correctionLegendNode = createCorrectionsChartLegend();
         setGridConstraints(correctionNode, true, true, Priority.ALWAYS, Priority.ALWAYS);
         setGridConstraints(correctionLegendNode, true, false, HPos.LEFT, VPos.TOP, Priority.NEVER, Priority.ALWAYS);
-        
-        Node latticeNode = createLatticeChart();
+
+        Region latticeNode = createLatticeChart();
         GridPane latticeLegendNode = createLatticeChartLegend();
         setGridConstraints(latticeNode, true, false, Priority.ALWAYS, Priority.NEVER);
         setGridConstraints(latticeLegendNode, true, false, HPos.LEFT, VPos.TOP, Priority.NEVER, Priority.NEVER);
@@ -110,112 +111,89 @@ public class OrbitCorrectionView extends FXViewPart {
         charts.add(createVerticalAxis(orbitChart, "Position [mm]"), 0, 0);
         charts.add(orbitNode, 1, 0);
         charts.add(orbitLegendNode, 2, 0);
-        charts.add(createVerticalAxis(correctionsChart, "Kick Angle [mrad]"), 0,1);
+        charts.add(createVerticalAxis(correctionsChart, "Kick Angle [mrad]"), 0, 1);
         charts.add(correctionNode, 1, 1);
         charts.add(correctionLegendNode, 2, 1);
         charts.add(latticeNode, 1, 2);
         charts.add(latticeLegendNode, 2, 2);
-        
-        configureChartSynchronization();
-        
+
+        configureChartSynchronisation();
+
         return charts;
     }
-    
-    private void configureChartSynchronization() {
-        ChangeListener<Number> lowerSynchronizer = (a,o,n) -> {
-            ((NumberAxis)orbitChart.getXAxis()).setLowerBound(n.doubleValue());
-            ((NumberAxis)correctionsChart.getXAxis()).setLowerBound(n.doubleValue());
-            ((NumberAxis)latticeChart.getXAxis()).setLowerBound(n.doubleValue());
-        };
-        ChangeListener<Number> upperSynchronizer = (a,o,n) -> {
-            ((NumberAxis)orbitChart.getXAxis()).setUpperBound(n.doubleValue());
-            ((NumberAxis)correctionsChart.getXAxis()).setUpperBound(n.doubleValue());
-            ((NumberAxis)latticeChart.getXAxis()).setUpperBound(n.doubleValue());
-        };
+
+    private void configureChartSynchronisation() {
+        // synchronise the lower and upper bounds of all three charts
+
+        ((NumberAxis) orbitChart.getXAxis()).lowerBoundProperty().addListener((a,o,n) -> {
+            correctionsZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)orbitChart.getXAxis()).getUpperBound());
+            latticeZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)orbitChart.getXAxis()).getUpperBound());
+        });
+        ((NumberAxis) correctionsChart.getXAxis()).lowerBoundProperty().addListener((a,o,n) -> {
+            orbitZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
+            latticeZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
+        });
+        ((NumberAxis) latticeChart.getXAxis()).lowerBoundProperty().addListener((a,o,n) -> {
+            correctionsZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)latticeChart.getXAxis()).getUpperBound());
+            orbitZoom.doHorizontalZoom(n.doubleValue(), ((NumberAxis)latticeChart.getXAxis()).getUpperBound());
+        });
+        ((NumberAxis) orbitChart.getXAxis()).upperBoundProperty().addListener((a,o,n) -> {
+            correctionsZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
+            latticeZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
+        });
+        ((NumberAxis) correctionsChart.getXAxis()).upperBoundProperty().addListener((a,o,n) -> {
+            orbitZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),n.doubleValue());
+            latticeZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),n.doubleValue());
+        });
+        ((NumberAxis) latticeChart.getXAxis()).upperBoundProperty().addListener((a,o,n) -> {
+            correctionsZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
+            orbitZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
+        });
+
         
-        ((NumberAxis)orbitChart.getXAxis()).lowerBoundProperty().addListener(lowerSynchronizer);
-        ((NumberAxis)orbitChart.getXAxis()).upperBoundProperty().addListener(upperSynchronizer);
-        ((NumberAxis)correctionsChart.getXAxis()).lowerBoundProperty().addListener(lowerSynchronizer);
-        ((NumberAxis)correctionsChart.getXAxis()).upperBoundProperty().addListener(upperSynchronizer);
-        ((NumberAxis)latticeChart.getXAxis()).lowerBoundProperty().addListener(lowerSynchronizer);
-        ((NumberAxis)latticeChart.getXAxis()).upperBoundProperty().addListener(upperSynchronizer);
-        
-        ChangeListener<Boolean> zoomListener = (a,o,n) -> {
+        ChangeListener<Boolean> zoomListener = (a, o, n) -> {
+            // whenever default zoom is called, call it on all three charts
             if (n) {
                 correctionsZoom.defaultZoom();
                 latticeZoom.defaultZoom();
                 orbitZoom.defaultZoom();
-            } 
-            orbitZoom.defaultZoomProperty().set(n);
-            correctionsZoom.defaultZoomProperty().set(n);
-            latticeZoom.defaultZoomProperty().set(n);
+            }
         };
-        
+
         orbitZoom.defaultZoomProperty().addListener(zoomListener);
         correctionsZoom.defaultZoomProperty().addListener(zoomListener);
         latticeZoom.defaultZoomProperty().addListener(zoomListener);
     }
-    
+
+    /**
+     * Construct a standalone vertical chart axis, which receives the range of the vertical axis in the given chart.
+     * 
+     * @param chart the chart to provide the axis bounds
+     * @param label the label for the axis
+     * @return a node containing the axis that can be added to pane next to a chart
+     */
     private static Node createVerticalAxis(LineChart<Number, Number> chart, String label) {
         NumberAxis axis = new NumberAxis();
         axis.autoRangingProperty().set(false);
         axis.setSide(Side.LEFT);
-        axis.upperBoundProperty().bind(((NumberAxis)chart.getYAxis()).upperBoundProperty());
-        axis.lowerBoundProperty().bind(((NumberAxis)chart.getYAxis()).lowerBoundProperty());
-        axis.tickUnitProperty().bind(((NumberAxis)chart.getYAxis()).tickUnitProperty());
+        axis.upperBoundProperty().bind(((NumberAxis) chart.getYAxis()).upperBoundProperty());
+        axis.lowerBoundProperty().bind(((NumberAxis) chart.getYAxis()).lowerBoundProperty());
+        axis.tickUnitProperty().bind(((NumberAxis) chart.getYAxis()).tickUnitProperty());
         axis.setLabel(label);
         axis.setTickMarkVisible(true);
+        axis.setMinorTickVisible(false);
         axis.setTickLabelsVisible(true);
         axis.setTickLabelGap(2);
         GridPane axisPane = new GridPane();
         setGridConstraints(axis, true, true, Priority.ALWAYS, Priority.ALWAYS);
         setGridConstraints(axisPane, true, true, Priority.ALWAYS, Priority.ALWAYS);
-        axisPane.setPadding(new Insets(10,0,2,0));
+        axisPane.setPadding(new Insets(10, 0, 3, 0));
         axisPane.add(axis, 0, 0);
         axisPane.translateXProperty().set(15);
         return axisPane;
     }
-    
-    private GridPane createControls() {
-        GridPane controls = new GridPane();
-        controls.setHgap(10);
-        controls.setVgap(10);
-        controls.setPadding(new Insets(10, 10, 0, 67));
 
-        ColumnConstraints column1Constraint = new ColumnConstraints();
-        column1Constraint.setPercentWidth(35);
-        ColumnConstraints column2Constraint = new ColumnConstraints();
-        column2Constraint.setPercentWidth(35);
-        ColumnConstraints column3Constraint = new ColumnConstraints();
-        column3Constraint.setPercentWidth(30);
-        controls.getColumnConstraints().addAll(column1Constraint, column2Constraint, column3Constraint);
-
-//        RowConstraints row1Constraint = new RowConstraints();
-//        row1Constraint.setPercentHeight(50);
-//        RowConstraints row2Constraint = new RowConstraints();
-//        row2Constraint.setPercentHeight(25);
-//        RowConstraints row3Constraint = new RowConstraints();
-//        row3Constraint.setPercentHeight(25);
-//        controls.getRowConstraints().addAll(row1Constraint, row2Constraint, row3Constraint);
-
-        BorderedTitledPane correctionResults = createCorrectionResults();
-        BorderedTitledPane orbitCorrectionControl = createOrbitCorrectionControls();
-        BorderedTitledPane messageLog = createMessageLog();
-
-        controls.add(correctionResults, 0, 0);
-        controls.add(messageLog, 2, 0);
-        controls.add(orbitCorrectionControl, 0, 1);
-        controls.add(createGoldenOrbitControls(), 1, 1);
-        controls.add(createResponseMatrixControls(), 1, 2);
-        controls.add(createEngineeringScreensControls(), 2, 2);
-
-        GridPane.setColumnSpan(correctionResults, 2);
-        GridPane.setRowSpan(messageLog, 2);
-        GridPane.setRowSpan(orbitCorrectionControl, 2);
-        return controls;
-    }
-
-    private Node createOrbitChart() {
+    private Region createOrbitChart() {
         final NumberAxis xAxis = new NumberAxis(-5, 190, 20);
         final NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
@@ -223,6 +201,7 @@ public class OrbitCorrectionView extends FXViewPart {
         xAxis.setTickMarkVisible(false);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
+        yAxis.setMinorTickVisible(false);
         yAxis.autoRangingProperty().set(true);
 
         orbitChart = new LineChart<>(xAxis, yAxis);
@@ -234,13 +213,16 @@ public class OrbitCorrectionView extends FXViewPart {
         addSeries(ChartType.ORBIT, SeriesType.GOLDEN_HORIZONTAL_ORBIT, false);
         addSeries(ChartType.ORBIT, SeriesType.GOLDEN_VERTICAL_ORBIT, false);
 
-        orbitZoom = new ZoomableLineChart(orbitChart,false,true,true);
+        orbitZoom = new ZoomableLineChart(orbitChart, false, true, true);
         orbitZoom.setMinWidth(0);
         orbitZoom.setMaxWidth(Integer.MAX_VALUE);
+        orbitZoom.setMinHeight(0);
+        orbitZoom.setMaxHeight(Integer.MAX_VALUE);
+        
         return orbitZoom;
     }
 
-    private Node createCorrectionsChart() {
+    private Region createCorrectionsChart() {
         final NumberAxis xAxis = new NumberAxis(-5, 190, 20);
         final NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
@@ -248,6 +230,7 @@ public class OrbitCorrectionView extends FXViewPart {
         xAxis.setTickMarkVisible(false);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
+        yAxis.setMinorTickVisible(false);
         yAxis.autoRangingProperty().set(true);
 
         correctionsChart = new CorrectionsChart<Number, Number>(xAxis, yAxis);
@@ -256,19 +239,22 @@ public class OrbitCorrectionView extends FXViewPart {
 
         addSeries(ChartType.CORRECTIONS, SeriesType.HORIZONTAL_CORRECTORS_CORRECTION, false);
         addSeries(ChartType.CORRECTIONS, SeriesType.VERTICAL_CORRECTORS_CORRECTION, false);
-        
-        correctionsZoom = new ZoomableLineChart(correctionsChart,false,true,true);
+
+        correctionsZoom = new ZoomableLineChart(correctionsChart, false, true, true);
         correctionsZoom.setMinWidth(0);
         correctionsZoom.setMaxWidth(Integer.MAX_VALUE);
+        correctionsZoom.setMinHeight(0);
+        correctionsZoom.setMaxHeight(Integer.MAX_VALUE);
         
         return correctionsZoom;
     }
 
-    private Node createLatticeChart() {
+    private Region createLatticeChart() {
         final NumberAxis xAxis = new NumberAxis(-5, 190, 5);
         final NumberAxis yAxis = new NumberAxis(-50, 50, 10);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
+        yAxis.setMinorTickVisible(false);
         xAxis.setTickLabelsVisible(true);
         xAxis.setTickMarkVisible(true);
 
@@ -279,22 +265,22 @@ public class OrbitCorrectionView extends FXViewPart {
         addSeries(ChartType.LATTICE, SeriesType.BPM, false);
         addSeries(ChartType.LATTICE, SeriesType.HORIZONTAL_CORRECTORS, false);
         addSeries(ChartType.LATTICE, SeriesType.VERTICAL_CORRECTORS, false);
-        
-        latticeZoom = new ZoomableLineChart(latticeChart, false,true,false);
+
+        latticeZoom = new ZoomableLineChart(latticeChart, false, true, false);
         latticeZoom.setMinWidth(0);
         latticeZoom.setMaxWidth(Integer.MAX_VALUE);
         final int height = 80;
         latticeChart.setMaxHeight(height);
         latticeChart.setMinHeight(height);
         latticeChart.setPrefHeight(height);
-        
+
         return latticeZoom;
     }
 
     private GridPane createOrbitChartLegend() {
         GridPane legend = new GridPane();
         legend.setVgap(5);
-        legend.setPadding(new Insets(10,0,0,0));
+        legend.setPadding(new Insets(10, 0, 0, 0));
 
         CheckBox hOrbitCheckBox = new TooltipCheckBox("Horizontal Orbit");
         hOrbitCheckBox.setSelected(true);
@@ -344,13 +330,14 @@ public class OrbitCorrectionView extends FXViewPart {
         legend.add(vOrbitCheckBox, 0, 1);
         legend.add(hGoldenOrbitCheckBox, 0, 2);
         legend.add(vGoldenOrbitCheckBox, 0, 3);
+        legend.setMinHeight(0);
 
         return legend;
     }
 
     private GridPane createCorrectionsChartLegend() {
         GridPane legend = new GridPane();
-        legend.setPadding(new Insets(10,0,0,0));
+        legend.setPadding(new Insets(10, 0, 0, 0));
         legend.setVgap(10);
 
         GridPane checkBoxes = new GridPane();
@@ -398,12 +385,13 @@ public class OrbitCorrectionView extends FXViewPart {
         legend.add(checkBoxes, 0, 0);
         legend.add(radioButtons, 0, 2);
 
+        legend.setMinHeight(0);
         return legend;
     }
 
     private GridPane createLatticeChartLegend() {
         GridPane legend = new GridPane();
-        legend.setPadding(new Insets(10,0,0,0));
+        legend.setPadding(new Insets(10, 0, 0, 0));
         legend.setVgap(5);
 
         CheckBox bpmCheckBox = new TooltipCheckBox("BPMs");
@@ -443,15 +431,51 @@ public class OrbitCorrectionView extends FXViewPart {
         legend.add(hCheckBox, 0, 1);
         legend.add(vCheckBox, 0, 2);
 
+        legend.setMinHeight(0);
         return legend;
+    }
+    
+    private GridPane createControls() {
+        GridPane controls = new GridPane();
+        controls.setHgap(10);
+        controls.setVgap(10);
+        controls.setPadding(new Insets(10, 10, 0, 67));
+
+        ColumnConstraints column1Constraint = new ColumnConstraints();
+        column1Constraint.setPercentWidth(35);
+        ColumnConstraints column2Constraint = new ColumnConstraints();
+        column2Constraint.setPercentWidth(35);
+        ColumnConstraints column3Constraint = new ColumnConstraints();
+        column3Constraint.setPercentWidth(30);
+        controls.getColumnConstraints().addAll(column1Constraint, column2Constraint, column3Constraint);
+
+        // RowConstraints row1Constraint = new RowConstraints();
+        // row1Constraint.setPercentHeight(50);
+        // RowConstraints row2Constraint = new RowConstraints();
+        // row2Constraint.setPercentHeight(25);
+        // RowConstraints row3Constraint = new RowConstraints();
+        // row3Constraint.setPercentHeight(25);
+        // controls.getRowConstraints().addAll(row1Constraint, row2Constraint, row3Constraint);
+
+        BorderedTitledPane correctionResults = createCorrectionResults();
+        BorderedTitledPane orbitCorrectionControl = createOrbitCorrectionControls();
+        BorderedTitledPane messageLog = createMessageLog();
+
+        controls.add(correctionResults, 0, 0);
+        controls.add(messageLog, 2, 0);
+        controls.add(orbitCorrectionControl, 0, 1);
+        controls.add(createGoldenOrbitControls(), 1, 1);
+        controls.add(createResponseMatrixControls(), 1, 2);
+        controls.add(createEngineeringScreensControls(), 2, 2);
+
+        GridPane.setColumnSpan(correctionResults, 2);
+        GridPane.setRowSpan(messageLog, 2);
+        GridPane.setRowSpan(orbitCorrectionControl, 2);
+        return controls;
     }
 
     private BorderedTitledPane createCorrectionResults() {
         GridPane correctionResults = new GridPane();
-        correctionResults.setHgap(10);
-        correctionResults.setVgap(10);
-        correctionResults.setPadding(new Insets(0, 10, 0, 10));
-
         OrbitCorrectionResultsTable correctionResultsTable = new OrbitCorrectionResultsTable();
 
         // FIXME -> start tmp code
@@ -468,16 +492,12 @@ public class OrbitCorrectionView extends FXViewPart {
         // FIXME <- end tmp code
 
         correctionResults.add(correctionResultsTable, 0, 0);
-        setGridConstraints(correctionResultsTable, true, false, HPos.LEFT, VPos.TOP, Priority.ALWAYS, Priority.NEVER);
-
+        setGridConstraints(correctionResultsTable, true, true, Priority.ALWAYS, Priority.ALWAYS);
         return new BorderedTitledPane("Orbit Correction Results", correctionResults);
     }
 
     private BorderedTitledPane createMessageLog() {
         GridPane messageLog = new GridPane();
-        messageLog.setHgap(10);
-        messageLog.setVgap(10);
-        messageLog.setPadding(new Insets(0, 10, 0, 10));
 
         TextArea messageLogTextArea = new TextArea();
         messageLogTextArea.setEditable(false);
@@ -493,7 +513,6 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane orbitCorrectionControl = new GridPane();
         orbitCorrectionControl.setHgap(10);
         orbitCorrectionControl.setVgap(10);
-        orbitCorrectionControl.setPadding(new Insets(0, 10, 0, 10));
 
         ColumnConstraints column1Constraint = new ColumnConstraints();
         column1Constraint.setPercentWidth(25);
@@ -503,8 +522,8 @@ public class OrbitCorrectionView extends FXViewPart {
         column3Constraint.setPercentWidth(25);
         ColumnConstraints column4Constraint = new ColumnConstraints();
         column4Constraint.setPercentWidth(25);
-        orbitCorrectionControl.getColumnConstraints().addAll(column1Constraint,
-                column2Constraint, column3Constraint, column4Constraint);
+        orbitCorrectionControl.getColumnConstraints().addAll(column1Constraint, column2Constraint, column3Constraint,
+                column4Constraint);
 
         RowConstraints row1Constraint = new RowConstraints();
         row1Constraint.setPercentHeight(50);
@@ -558,7 +577,7 @@ public class OrbitCorrectionView extends FXViewPart {
         advancedButton.setOnAction(e -> {
 
         });
-
+        
         orbitCorrectionControl.add(startMeasuringOrbitButton, 0, 0);
         orbitCorrectionControl.add(measureOrbitOnceButton, 1, 0);
         orbitCorrectionControl.add(startOrbitCorrectionButton, 2, 0);
@@ -567,19 +586,7 @@ public class OrbitCorrectionView extends FXViewPart {
         orbitCorrectionControl.add(correctOrbitOnceButton, 1, 1);
         orbitCorrectionControl.add(stopOrbitCorrectionButton, 2, 1);
         orbitCorrectionControl.add(advancedButton, 3, 1);
-
-//        setGridConstraints(startMeasuringOrbitButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(measureOrbitOnceButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(startOrbitCorrectionButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(exportCurrentOrbitButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(stopMeasuringOrbit, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(correctOrbitOnceButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(stopOrbitCorrectionButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//        setGridConstraints(advancedButton, false, false, HPos.CENTER, VPos.TOP, null, null);
-//
-//        GridPane.setMargin(exportCurrentOrbitButton, new Insets(0, 0, 0, 20));
-//        GridPane.setMargin(advancedButton, new Insets(0, 0, 0, 20));
-
+        
         return new BorderedTitledPane("Orbit Correction Control", orbitCorrectionControl);
     }
 
@@ -595,8 +602,7 @@ public class OrbitCorrectionView extends FXViewPart {
         column2Constraint.setPercentWidth(33);
         ColumnConstraints column3Constraint = new ColumnConstraints();
         column3Constraint.setPercentWidth(33);
-        goldenOrbitControl.getColumnConstraints().addAll(column1Constraint,
-                column2Constraint, column3Constraint);
+        goldenOrbitControl.getColumnConstraints().addAll(column1Constraint, column2Constraint, column3Constraint);
 
         RowConstraints row1Constraint = new RowConstraints();
         row1Constraint.setPercentHeight(100);
@@ -621,9 +627,9 @@ public class OrbitCorrectionView extends FXViewPart {
         goldenOrbitControl.add(downloadButton, 1, 0);
         goldenOrbitControl.add(useCurrentButton, 2, 0);
 
-//        setGridConstraints(uploadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
-//        setGridConstraints(downloadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
-//        setGridConstraints(useCurrentButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(uploadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(downloadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(useCurrentButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
 
         return new BorderedTitledPane("Golden Orbit", goldenOrbitControl);
     }
@@ -640,8 +646,7 @@ public class OrbitCorrectionView extends FXViewPart {
         column2Constraint.setPercentWidth(33);
         ColumnConstraints column3Constraint = new ColumnConstraints();
         column3Constraint.setPercentWidth(33);
-        responseMatrixControl.getColumnConstraints().addAll(column1Constraint,
-                column2Constraint, column3Constraint);
+        responseMatrixControl.getColumnConstraints().addAll(column1Constraint, column2Constraint, column3Constraint);
 
         RowConstraints row1Constraint = new RowConstraints();
         row1Constraint.setPercentHeight(100);
@@ -666,9 +671,9 @@ public class OrbitCorrectionView extends FXViewPart {
         responseMatrixControl.add(uploadButton, 1, 0);
         responseMatrixControl.add(measureButton, 2, 0);
 
-//        setGridConstraints(downloadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
-//        setGridConstraints(uploadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
-//        setGridConstraints(measureButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(downloadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(uploadButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
+        // setGridConstraints(measureButton, false, false, HPos.CENTER, VPos.CENTER, null, null);
 
         return new BorderedTitledPane("Response Matrix", responseMatrixControl);
     }
@@ -682,8 +687,7 @@ public class OrbitCorrectionView extends FXViewPart {
         column1Constraint.setPercentWidth(80);
         ColumnConstraints column2Constraint = new ColumnConstraints();
         column2Constraint.setPercentWidth(20);
-        engineeringScreensControl.getColumnConstraints().addAll(column1Constraint,
-                column2Constraint);
+        engineeringScreensControl.getColumnConstraints().addAll(column1Constraint, column2Constraint);
 
         RowConstraints row1Constraint = new RowConstraints();
         row1Constraint.setPercentHeight(100);
@@ -699,11 +703,11 @@ public class OrbitCorrectionView extends FXViewPart {
 
         });
 
-//        engineeringScreensControl.add(bpmControlButton, 0, 0);
-//        engineeringScreensControl.add(correctorsControlButton, 1, 0);
-//
-//        setGridConstraints(bpmControlButton, false, false, HPos.RIGHT, VPos.CENTER, null, null);
-//        setGridConstraints(correctorsControlButton, false, false, HPos.RIGHT, VPos.CENTER, null, null);
+        // engineeringScreensControl.add(bpmControlButton, 0, 0);
+        // engineeringScreensControl.add(correctorsControlButton, 1, 0);
+        //
+        // setGridConstraints(bpmControlButton, false, false, HPos.RIGHT, VPos.CENTER, null, null);
+        // setGridConstraints(correctorsControlButton, false, false, HPos.RIGHT, VPos.CENTER, null, null);
 
         return engineeringScreensControl;
     }
@@ -745,7 +749,7 @@ public class OrbitCorrectionView extends FXViewPart {
             data = latticeChart.getData();
         }
         if (data != null && !data.isEmpty()) {
-            for(int i = 0; i < data.size(); i++) {
+            for (int i = 0; i < data.size(); i++) {
                 if (data.get(i).getName().equals(seriesType.getSeriesName())) {
                     addSeries(chartType, seriesType, true);
                     break;
@@ -776,12 +780,14 @@ public class OrbitCorrectionView extends FXViewPart {
                 } else if (seriesType == SeriesType.VERTICAL_CORRECTORS_CORRECTION) {
                     dataPoint.YValueProperty().bind(element.getVerticalCorrectionValue());
                 }
-            } else if (chartType == ChartType.LATTICE){
+            } else if (chartType == ChartType.LATTICE) {
                 if (seriesType == SeriesType.BPM && elementType == LatticeElementType.BPM) {
                     dataPoint.setYValue(0.0);
-                } else if (seriesType == SeriesType.HORIZONTAL_CORRECTORS && elementType == LatticeElementType.HORIZONTAL_CORRECTOR) {
+                } else if (seriesType == SeriesType.HORIZONTAL_CORRECTORS
+                        && elementType == LatticeElementType.HORIZONTAL_CORRECTOR) {
                     dataPoint.setYValue(0.0);
-                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS && elementType ==LatticeElementType.VERTICAL_CORRECTOR) {
+                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS
+                        && elementType == LatticeElementType.VERTICAL_CORRECTOR) {
                     dataPoint.setYValue(0.0);
                 }
             }
