@@ -4,8 +4,8 @@ public enum LatticeElementPVType {
 
     HORIZONTAL_ORBIT("horizontalOrbit"),
     VERTICAL_ORBIT("verticalOrbit"),
-    GOLDEN_HORIZONTAL_ORBIT("golednHorizontalOrbit"),
-    GOLDEN_VERTICAL_ORBIT("goledneVerticalOrbit"),
+    GOLDEN_HORIZONTAL_ORBIT("goldenHorizontalOrbit"),
+    GOLDEN_VERTICAL_ORBIT("goldenVerticalOrbit"),
     HORIZONTAL_CORRECTOR_CORRECTION("horizontalCorrectorCorrection"),
     VERTICAL_CORRECTOR_CORRECTION("verticalCorrectorCorrection");
 
