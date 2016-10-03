@@ -28,7 +28,7 @@ public class ZoomableLineChart extends StackPane {
     private static final int MIN_ZOOM_THRESHOLD = 5;
 
     private final LineChart<Number, Number> chart;
-    private final NumberAxis xAxis;
+    private final SpecialNumberAxis xAxis;
     private final NumberAxis yAxis;
     private final Rectangle zoomRect;
     private final boolean useXAutoRangeForDefaultZoom;
@@ -49,7 +49,7 @@ public class ZoomableLineChart extends StackPane {
             boolean horizontalZoom, boolean verticalZoom) {
         this.chart = chart;
         this.useXAutoRangeForDefaultZoom = useXAutoRangeForDefaultZoom;
-        this.xAxis = (NumberAxis) chart.getXAxis();
+        this.xAxis = (SpecialNumberAxis) chart.getXAxis();
         this.yAxis = (NumberAxis) chart.getYAxis();
         this.defaultXMin = xAxis.getLowerBound();
         this.defaultXMax = xAxis.getUpperBound();
