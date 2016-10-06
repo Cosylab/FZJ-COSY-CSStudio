@@ -5,8 +5,20 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
+/**
+ * <code>BorderedTitledPane</code> is an extension of the javafx {@link StackPane} which displays titled border around
+ * the pane.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ */
 public class BorderedTitledPane extends StackPane {
 
+    /**
+     * Constructs a new bordered titled pane with the given text as a title and the given content.
+     *
+     * @param title the bordered pane title
+     * @param content the bordered pane content
+     */
     public BorderedTitledPane(String title, Node content) {
         StringBuilder sb = new StringBuilder().append(' ').append(title).append(' ');
         final Label titleLabel = new Label(sb.toString());

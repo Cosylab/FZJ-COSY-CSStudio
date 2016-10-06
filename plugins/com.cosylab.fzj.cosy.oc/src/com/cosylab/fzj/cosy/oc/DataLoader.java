@@ -1,6 +1,8 @@
 package com.cosylab.fzj.cosy.oc;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -19,16 +21,17 @@ public class DataLoader {
         dl.loadLatticeElements().forEach(e -> System.out.println(e.getName() + " " + e.getType() + " " + e.getPosition()));
     }
 
-    public List<LatticeElement> loadLatticeElements() {
-        List<LatticeElement> elements = new ArrayList<>();
+    public List<LatticeElementData> loadLatticeElements() {
+        List<LatticeElementData> elements = new ArrayList<>();
         try {
-            //TODO file loading
-            String bpmsFilePath = "C:\\Cosylab\\Projects\\FZJ-COSY\\env-setup\\CS-Studio\\plugins\\com.cosylab.fzj.cosy.oc\\bpms.twiss";
-            String correctorsFilePath = "C:\\Cosylab\\Projects\\FZJ-COSY\\env-setup\\CS-Studio\\plugins\\com.cosylab.fzj.cosy.oc\\correctors.twiss";
-            elements.addAll(getBpms(getFileContent(bpmsFilePath)));
-            elements.addAll(getCorrectors(getFileContent(correctorsFilePath)));
-
-            elements.get(0).addPV(LatticeElementPVType.VERTICAL_CORRECTOR_CORRECTION, "SPTC:PPS:Heartbeat");
+            URL bpmsFile = Preferences.getInstance().getBpmsFile();
+            URL correctorsFile = Preferences.getInstance().getCorrectorsFile();
+            if (bpmsFile != null) {
+                elements.addAll(getBpms(getFileContent(bpmsFile)));
+            }
+            if (correctorsFile != null) {
+                elements.addAll(getCorrectors(getFileContent(correctorsFile)));
+            }
         } catch (IOException ioe) {
             //TODO
             ioe.printStackTrace();
@@ -36,22 +39,22 @@ public class DataLoader {
         return elements;
     }
 
-    private List<LatticeElement> getBpms(List<String> fileContent) {
-        List<LatticeElement> bpms = new ArrayList<>();
+    private List<LatticeElementData> getBpms(List<String> fileContent) {
+        List<LatticeElementData> bpms = new ArrayList<>();
         fileContent.forEach(line -> {
             String[] splittedLine = line.split(DATA_DELIMITER);
             if (splittedLine.length >= 2) {
                 String name = splittedLine[NAME_INDEX];
                 double position = Double.parseDouble(splittedLine[POSITION_INDEX]); //TODO NumberFormatExcpetion
 
-                bpms.add(new LatticeElement(name, position, LatticeElementType.BPM));
+                bpms.add(new LatticeElementData(name, position, LatticeElementType.BPM));
             }
         });
         return bpms;
     }
 
-    private List<LatticeElement> getCorrectors(List<String> fileContent) {
-        List<LatticeElement> correctors = new ArrayList<>();
+    private List<LatticeElementData> getCorrectors(List<String> fileContent) {
+        List<LatticeElementData> correctors = new ArrayList<>();
         fileContent.forEach(line -> {
             String[] splittedLine = line.split(DATA_DELIMITER);
             if (splittedLine.length >= 4) {
@@ -67,15 +70,16 @@ public class DataLoader {
                     type = LatticeElementType.HORIZONTAL_VERTICAL_CORRECTOR;
                 }
                 // TODO if type == null -> exception
-                correctors.add(new LatticeElement(name, position, type));
+                correctors.add(new LatticeElementData(name, position, type));
             }
         });
         return correctors;
     }
 
-    private List<String> getFileContent(String filePath) throws IOException {
+    private List<String> getFileContent(URL filePath) throws IOException {
+        File file = new File(filePath.getFile());
         List<String> fileContent = new ArrayList<>();
-        try (Stream<String> fileStream = Files.lines(Paths.get(filePath))) {
+        try (Stream<String> fileStream = Files.lines(Paths.get(file.getPath()))) {
             fileStream.forEach(line -> {
                 if (isElementLine(line)) {
                     String parsedLine = line.replaceAll("\\s+", DATA_DELIMITER).replaceAll("\"", "").trim();

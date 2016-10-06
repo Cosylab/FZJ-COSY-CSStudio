@@ -1,4 +1,4 @@
-package com.cosylab.fzj.cosy.oc.ui;
+package com.cosylab.fzj.cosy.oc.ui.model;
 
 public enum SeriesType {
     HORIZONTAL_ORBIT(0, "Horizontal Orbit"),

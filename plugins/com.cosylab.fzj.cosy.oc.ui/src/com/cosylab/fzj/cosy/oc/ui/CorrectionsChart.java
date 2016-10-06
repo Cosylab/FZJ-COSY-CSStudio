@@ -6,12 +6,27 @@ import javafx.scene.Node;
 import javafx.scene.chart.Axis;
 import javafx.scene.chart.LineChart;
 
+/**
+ * <code>CorrectionsChart</code> is an extension of the javafx {@link LineChart}. This chart replaces points with
+ * rectangles.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ */
 public class CorrectionsChart<X,Y> extends LineChart<X,Y> {
 
+    /**
+     * Constructs a new corrections chart with the given xAxis and yAxis.
+     *
+     * @param xAxis xAxis of the corrections chart
+     * @param yAxis yAxis of the corrections chart
+     */
     public CorrectionsChart(Axis<X> xAxis, Axis<Y> yAxis) {
         super(xAxis, yAxis);
     }
 
+    /* (non-Javadoc)
+     * @see javafx.scene.chart.LineChart#layoutPlotChildren()
+     */
     @Override
     protected void layoutPlotChildren() {
         if (getData() == null) {
@@ -22,7 +37,7 @@ public class CorrectionsChart<X,Y> extends LineChart<X,Y> {
         final double yAxisHeight = yAxis.getHeight();
         final double yAxisZeroPos = yAxis.getZeroPosition();
         final boolean isYAxisZeroPosVisible = !Double.isNaN(yAxisZeroPos);
-        
+
         for (Series<X, Y> series : getData()) {
             Iterator<Data<X, Y>> it = getDisplayedDataIterator(series);
             while(it.hasNext()) {

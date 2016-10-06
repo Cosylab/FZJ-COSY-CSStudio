@@ -11,5 +11,7 @@ Require-Bundle: org.eclipse.ui,
  com.cosylab.fzj.cosy.oc,
  org.diirt.datasource,
  org.diirt.vtype,
- org.csstudio.ui.fx.util;bundle-version="1.0.0"
+ org.csstudio.ui.fx.util;bundle-version="1.0.0",
+ org.diirt.util,
+ org.diirt.support.diirt-ca
 Import-Package: javafx.scene.chart

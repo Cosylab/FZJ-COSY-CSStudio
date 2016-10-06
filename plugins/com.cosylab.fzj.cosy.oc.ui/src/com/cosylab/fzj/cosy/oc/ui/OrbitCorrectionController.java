@@ -1,105 +1,314 @@
 package com.cosylab.fzj.cosy.oc.ui;
 
+import static org.diirt.datasource.ExpressionLanguage.channel;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.diirt.datasource.PV;
+import org.diirt.datasource.PVManager;
+import org.diirt.datasource.PVReader;
+import org.diirt.datasource.PVWriter;
+import org.diirt.util.array.ListDouble;
+import org.diirt.util.array.ListNumber;
+import org.diirt.vtype.VNumberArray;
+import org.diirt.vtype.VType;
 
 import com.cosylab.fzj.cosy.oc.DataLoader;
-import com.cosylab.fzj.cosy.oc.LatticeElement;
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
+import com.cosylab.fzj.cosy.oc.Preferences;
+import com.cosylab.fzj.cosy.oc.ui.model.BPM;
+import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
+import com.cosylab.fzj.cosy.oc.ui.util.GUIUpdateThrottle;
+
+import javafx.application.Platform;
 
 public class OrbitCorrectionController {
 
-//    private class PV {
-//        final String pvName;
-//        final PVReader<VType> reader;
-//        final PVWriter<Object> writer;
-//        VType value;
-//
-//        PV(String pvName, PVReader<VType> reader, PVWriter<Object> writer) {
-//            this.pvName = pvName;
-//            this.reader = reader;
-//            this.writer = writer;
-//            this.reader.addPVReaderListener(e -> {
-//                synchronized (OrbitCorrectionController.this) {
-//                    if (suspend.get() > 0) {
-//                        return;
-//                    }
-//                }
-//                if (e.isExceptionChanged()) {
-////                    SaveRestoreService.LOGGER.log(Level.WARNING, "DIIRT Connection Error.",
-////                        e.getPvReader().lastException());
-//                }
-//                value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
-//
-//            });
-//            this.value = reader.getValue();
-//
-//        }
-//
-//        void dispose() {
-//            if (!reader.isClosed()) {
-//                reader.close();
-//            }
-//            if (!writer.isClosed()) {
-//                writer.close();
-//            }
-//        }
-//    }
+    /** The rate at which the UI is updated */
+    public static final long UPDATE_RATE = 500;
+    private static Executor UI_EXECUTOR = Platform::runLater;
 
+    private class PV {
+        final String pvName;
+        final PVReader<VType> reader;
+        final PVWriter<Object> writer;
+        VType value;
+
+        PV(String pvName, PVReader<VType> reader, PVWriter<Object> writer) {
+            this.pvName = pvName;
+            this.reader = reader;
+            this.writer = writer;
+            this.reader.addPVReaderListener(e -> {
+                synchronized (OrbitCorrectionController.this) {
+                    if (suspend.get() > 0) {
+                        return;
+                    }
+                }
+                if (e.isExceptionChanged()) {
+                    // TODO log
+                }
+                value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
+                throttle.trigger();
+            });
+            this.value = reader.getValue();
+        }
+
+        void dispose() {
+            if (!reader.isClosed()) {
+                reader.close();
+            }
+            if (!writer.isClosed()) {
+                writer.close();
+            }
+        }
+    }
+
+    private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20, UPDATE_RATE) {
+        @Override
+        protected void fire() {
+            UI_EXECUTOR.execute(() -> {
+                if (suspend.get() > 0) {
+                    return;
+                }
+                update();
+            });
+        }
+    };
     private final AtomicInteger suspend = new AtomicInteger(0);
 
-    private Map<String, LatticeElement> latticeElements = new HashMap<>();
-    private Map<String, PV> pvs = new HashMap<>();
-    private List<LatticeElementChartValues> latticeElementChartValues;
+    private Map<String, PV> chartPVs = new HashMap<>();
+    private Map<OrbitCorrectionResultsEntry, PV> correctionResultPVs = new HashMap<>();
 
-    public OrbitCorrectionController() {
-        latticeElementChartValues = new ArrayList<>();
+    private List<BPM> bpms = new ArrayList<>();
+    private List<Corrector> correctors = new ArrayList<>();
+
+
+    public OrbitCorrectionController() throws Exception {
+        loadLatticeElements();
+        connectPVs();
+        start();
+    }
+
+    /**
+     * Start the gui throttle.
+     */
+    protected void start() {
+        throttle.start();
+    }
+
+    public void dispose() {
+//        synchronized (snapshots) {
+//            // synchronise, because this method can be called from the UI thread by Eclipse, when the editor is closing
+//            if (closePVs) {
+//                pvsForDisposal.values().forEach(e -> e.dispose());
+//                pvsForDisposal.clear();
+//                pvs.values().forEach(e -> e.dispose());
+//                pvs.clear();
+//            } else {
+//                pvs.forEach((e, p) -> pvsForDisposal.put(e.pvNameProperty().get(), p));
+//                pvs.clear();
+//            }
+//            items.clear();
+//            snapshots.clear();
+//        }
+//        }
+    }
+
+    private void loadLatticeElements() {
         DataLoader dataLoader = new DataLoader();
-        List<LatticeElement> elements = dataLoader.loadLatticeElements();
-        elements.forEach(el -> {
-            String name = el.getName();
-
-//            el.getPVs().forEach((k, v) -> {
-//                PVReader<VType> reader = PVManager.read(channel(v, VType.class, VType.class))
-//                        .maxRate(Duration.ofMillis(10000));
-//                PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(1000)).async();
-//                PV pv = new PV(v, reader, writer);
-//
-//                System.out.println(pv.value);
-//                pvs.put(k, pv);
-//
-//            });
-
-            Random rand = new Random();
-
-            // create random data TODO: only for testing
-            LatticeElementChartValues lecv = new LatticeElementChartValues();
-            lecv.getElementType().set(el.getType());
-            lecv.getPositionValue().set(el.getPosition());
-            if (el.getType() == LatticeElementType.BPM) {
-                lecv.getGoldenHorizontalOrbitValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
-                lecv.getGoldenVerticalOrbitValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
-                lecv.getHorizontalOrbitValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
-                lecv.getVerticalOrbitValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
+        dataLoader.loadLatticeElements().forEach(e -> {
+            if (e.getType() == LatticeElementType.BPM) {
+                bpms.add(new BPM(e));
+            } else {
+                correctors.add(new Corrector(e));
             }
-            if (el.getType() == LatticeElementType.HORIZONTAL_CORRECTOR) {
-                lecv.getHorizontalCorrectionValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
-            } else if (el.getType() == LatticeElementType.VERTICAL_CORRECTOR) {
-                lecv.getVerticalCorrectionValue().set((double) rand.nextInt((200 + 200) + 1) - 200);
-            }
-            latticeElementChartValues.add(lecv);
-
-//            latticeElements.put(name, el);
         });
     }
 
-    public List<LatticeElementChartValues> getLatticeElementChartValues() {
-        return latticeElementChartValues;
+    private void connectPVs() {
+        connectChartPVs();
+        connectOrbitCorrectionResultsPVs();
+    }
+
+    private void connectChartPVs() {
+        Preferences.getInstance().getChartPVNames().forEach((k, v) -> {
+            if (v != null) {
+                PVReader<VType> reader = PVManager.read(channel(v, VType.class, VType.class))
+                        .maxRate(Duration.ofMillis(100));
+                PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
+                chartPVs.put(k, new PV(v, reader, writer));
+            }
+        });
+    }
+
+    private void connectOrbitCorrectionResultsPVs() {
+        Preferences.getInstance().getStatisticPVNames().forEach((k,v) -> {
+            if (v != null) {
+                PVReader<VType> reader = PVManager.read(channel(v, VType.class, VType.class))
+                        .maxRate(Duration.ofMillis(100));
+                PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
+
+                String name = resolveEntryName(k);
+                correctionResultPVs.put(new OrbitCorrectionResultsEntry(name), new PV(v, reader, writer));
+            }
+        });
+    }
+
+    private String resolveEntryName(String name) {
+        switch (name) {
+            case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
+                return "Horizontal Orbit";
+            case Preferences.VERTICAL_ORBIT_STATISTIC_PV:
+                return "Vertical Orbit";
+            case Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV:
+                return "Golden Horizontal Orbit";
+            case Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV:
+                return "Golden Vertical Orbit";
+            default:
+                return "";
+        }
+    }
+
+    public List<OrbitCorrectionResultsEntry> getOrbitCorrectionResults() {
+        if (correctionResultPVs != null) {
+            return new ArrayList<OrbitCorrectionResultsEntry>(correctionResultPVs.keySet()); // TODO ORDER?
+        }
+        return new ArrayList<>(5);
+    }
+
+    public List<BPM> getBpms() {
+        return bpms;
+    }
+
+    public List<Corrector> getCorrectors() {
+        return correctors;
+    }
+
+    public void startMeasuringOrbit() {
+
+    }
+
+    public void stopMeasuringOrbit() {
+
+    }
+
+    public void measureOrbitOnce() {
+
+    }
+
+    public void correctOrbitOnce() {
+
+    }
+
+    public void startOrbitCorrection() {
+
+    }
+
+    public void stopOrbitCorrection() {
+
+    }
+
+    public void exportCurrentOrbit() {
+
+    }
+
+    private void update() {
+        updateCharts();
+        updateOrbitCorrectionResults();
+    }
+
+    private void updateCharts() {
+        chartPVs.forEach((k, v) -> {
+            List<Double> values = retrieveWaveformValues(v.value);
+            switch(k) {
+                case Preferences.HORIZONTAL_ORBIT_PV:
+                    updateHorizontalOrbit(values);
+                    break;
+                case Preferences.VERTICAL_ORBIT_PV:
+                    updateVerticalOrbit(values);
+                    break;
+                case Preferences.GOLDEN_HORIZONTAL_ORBIT_PV:
+                    updateGoldenHorizontalOrbit(values);
+                    break;
+                case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
+                    updateGoldenVerticalOrbit(values);
+                    break;
+                case Preferences.HORIZONTAL_CORRECTORS_PV:
+                    updateHorizontalCorrectors(values);
+                    break;
+                case Preferences.VERTICAL_CORRECTORS_PV:
+                    updateVerticalCorrectors(values);
+                    break;
+            }
+        });
+    }
+
+    private void updateOrbitCorrectionResults() {
+        correctionResultPVs.forEach((k, v) -> {
+            List<Double> values = retrieveWaveformValues(v.value);
+            if (values.size() >= 5) {
+                k.minProperty().set(values.get(0));
+                k.maxProperty().set(values.get(1));
+                k.avgProperty().set(values.get(2));
+                k.rmsProperty().set(values.get(3));
+                k.stdProperty().set(values.get(4));
+            }
+        });
+    }
+
+    private void updateHorizontalOrbit(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
+            bpms.get(i).horizontalOrbitProperty().set(values.get(i));
+        }
+    }
+
+    private void updateVerticalOrbit(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
+            bpms.get(i).verticalOrbitProperty().set(values.get(i));
+        }
+    }
+
+    private void updateGoldenHorizontalOrbit(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
+            bpms.get(i).goldenHorizontalOrbitProperty().set(values.get(i));
+        }
+    }
+
+    private void updateGoldenVerticalOrbit(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
+            bpms.get(i).goldenVerticalOrbitProperty().set(values.get(i));
+        }
+    }
+
+    private void updateHorizontalCorrectors(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < correctors.size()); i++) {
+            correctors.get(i).horizontalCorrectionProperty().set(values.get(i));
+        }
+    }
+
+    private void updateVerticalCorrectors(List<Double> values) {
+        for (int i = 0; (i < values.size()) && (i < correctors.size()); i++) {
+            correctors.get(i).verticalCorrectionProperty().set(values.get(i));
+        }
+    }
+
+    private List<Double> retrieveWaveformValues(VType value) {
+        if (value instanceof VNumberArray) {
+            ListNumber data = ((VNumberArray) value).getData();
+            int length = data.size();
+            if (data instanceof ListDouble) {
+                List<Double> values = new ArrayList<>(length);
+                for (int i = 0; i < length; i++) {
+                    values.add(data.getDouble(i));
+                }
+                return values;
+            }
+        }
+        return new ArrayList<>();
     }
 }

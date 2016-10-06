@@ -2,12 +2,14 @@ package com.cosylab.fzj.cosy.oc.ui;
 
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
+import com.cosylab.fzj.cosy.oc.ui.model.ChartType;
+import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -26,7 +28,6 @@ import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -46,7 +47,12 @@ public class OrbitCorrectionView extends FXViewPart {
     private OrbitCorrectionController controller;
 
     public OrbitCorrectionView() {
-        controller = new OrbitCorrectionController();
+        try {
+            controller = new OrbitCorrectionController();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -59,6 +65,12 @@ public class OrbitCorrectionView extends FXViewPart {
     @Override
     protected void setFxFocus() {
         orbitChart.requestFocus();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        controller.dispose();
     }
 
     private GridPane createContentPane() {
@@ -161,7 +173,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
     /**
      * Construct a standalone vertical chart axis, which receives the range of the vertical axis in the given chart.
-     * 
+     *
      * @param chart
      *            the chart to provide the axis bounds
      * @param label
@@ -471,15 +483,7 @@ public class OrbitCorrectionView extends FXViewPart {
         OrbitCorrectionResultsTable correctionResultsTable = new OrbitCorrectionResultsTable();
 
         // FIXME -> start tmp code
-        List<OrbitCorrectionResultsEntry> entries = new ArrayList<>();
-        OrbitCorrectionResultsEntry resultEntry = new OrbitCorrectionResultsEntry("Horizontal Orbit");
-        entries.add(resultEntry);
-        resultEntry = new OrbitCorrectionResultsEntry("Vertical Orbit");
-        entries.add(resultEntry);
-        resultEntry = new OrbitCorrectionResultsEntry("Golden Horizontal");
-        entries.add(resultEntry);
-        resultEntry = new OrbitCorrectionResultsEntry("Golden Vertical");
-        entries.add(resultEntry);
+        List<OrbitCorrectionResultsEntry> entries = controller.getOrbitCorrectionResults();
         correctionResultsTable.updateTable(entries);
         // FIXME <- end tmp code
 
@@ -491,8 +495,7 @@ public class OrbitCorrectionView extends FXViewPart {
     private BorderedTitledPane createMessageLog() {
         GridPane messageLog = new GridPane();
 
-        TextArea messageLogTextArea = new TextArea();
-        messageLogTextArea.setEditable(false);
+        StaticTextArea messageLogTextArea = new StaticTextArea();
         messageLogTextArea.setMaxHeight(Double.MAX_VALUE);
         messageLog.add(messageLogTextArea, 0, 0);
 
@@ -718,34 +721,22 @@ public class OrbitCorrectionView extends FXViewPart {
 
     private ObservableList<Data<Number, Number>> getData(ChartType chartType, SeriesType seriesType) {
         ObservableList<Data<Number, Number>> data = FXCollections.observableArrayList();
-        controller.getLatticeElementChartValues().forEach(element -> {
-            LatticeElementType elementType = element.getElementType().get();
+        controller.getBpms().forEach(bpm -> {
             Data<Number, Number> dataPoint = new Data<>();
-            dataPoint.XValueProperty().bind(element.getPositionValue());
+            dataPoint.setXValue(bpm.getElementData().getPosition());
+
             if (chartType == ChartType.ORBIT) {
                 if (seriesType == SeriesType.VERTICAL_ORBIT) {
-                    dataPoint.YValueProperty().bind(element.getVerticalOrbitValue());
+                    dataPoint.YValueProperty().bind(bpm.verticalOrbitProperty());
                 } else if (seriesType == SeriesType.HORIZONTAL_ORBIT) {
-                    dataPoint.YValueProperty().bind(element.getHorizontalOrbitValue());
+                    dataPoint.YValueProperty().bind(bpm.horizontalOrbitProperty());
                 } else if (seriesType == SeriesType.GOLDEN_VERTICAL_ORBIT) {
-                    dataPoint.YValueProperty().bind(element.getGoldenVerticalOrbitValue());
+                    dataPoint.YValueProperty().bind(bpm.goldenVerticalOrbitProperty());
                 } else if (seriesType == SeriesType.GOLDEN_HORIZONTAL_ORBIT) {
-                    dataPoint.YValueProperty().bind(element.getGoldenHorizontalOrbitValue());
-                }
-            } else if (chartType == ChartType.CORRECTIONS) {
-                if (seriesType == SeriesType.HORIZONTAL_CORRECTORS_CORRECTION) {
-                    dataPoint.YValueProperty().bind(element.getHorizontalCorrectionValue());
-                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS_CORRECTION) {
-                    dataPoint.YValueProperty().bind(element.getVerticalCorrectionValue());
+                    dataPoint.YValueProperty().bind(bpm.goldenHorizontalOrbitProperty());
                 }
             } else if (chartType == ChartType.LATTICE) {
-                if (seriesType == SeriesType.BPM && elementType == LatticeElementType.BPM) {
-                    dataPoint.setYValue(0.0);
-                } else if (seriesType == SeriesType.HORIZONTAL_CORRECTORS
-                        && elementType == LatticeElementType.HORIZONTAL_CORRECTOR) {
-                    dataPoint.setYValue(0.0);
-                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS
-                        && elementType == LatticeElementType.VERTICAL_CORRECTOR) {
+                if (seriesType == SeriesType.BPM) {
                     dataPoint.setYValue(0.0);
                 }
             }
@@ -753,6 +744,33 @@ public class OrbitCorrectionView extends FXViewPart {
                 data.add(dataPoint);
             }
         });
+
+        controller.getCorrectors().forEach(corrector -> {
+            Data<Number, Number> dataPoint = new Data<>();
+            dataPoint.setXValue(corrector.getElementData().getPosition());
+
+            if (chartType == ChartType.CORRECTIONS) {
+                if (seriesType == SeriesType.HORIZONTAL_CORRECTORS_CORRECTION
+                        && corrector.getElementData().getType() == LatticeElementType.HORIZONTAL_CORRECTOR) {
+                    dataPoint.YValueProperty().bind(corrector.horizontalCorrectionProperty());
+                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS_CORRECTION
+                        && corrector.getElementData().getType() == LatticeElementType.VERTICAL_CORRECTOR) {
+                    dataPoint.YValueProperty().bind(corrector.verticalCorrectionProperty());
+                }
+            } else if (chartType == ChartType.LATTICE) {
+                if (seriesType == SeriesType.HORIZONTAL_CORRECTORS
+                        && corrector.getElementData().getType() == LatticeElementType.HORIZONTAL_CORRECTOR) {
+                    dataPoint.setYValue(0.0);
+                } else if (seriesType == SeriesType.VERTICAL_CORRECTORS
+                        && corrector.getElementData().getType() == LatticeElementType.VERTICAL_CORRECTOR) {
+                    dataPoint.setYValue(0.0);
+                }
+            }
+            if (dataPoint.getYValue() != null || dataPoint.YValueProperty().isBound()) {
+                data.add(dataPoint);
+            }
+        });
+
         return data;
     }
 }
