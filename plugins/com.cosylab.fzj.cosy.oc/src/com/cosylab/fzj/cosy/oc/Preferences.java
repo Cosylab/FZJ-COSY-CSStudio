@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
@@ -21,8 +22,6 @@ import org.eclipse.osgi.service.datalocation.Location;
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
 public class Preferences {
-
-    private static final String PLUGIN_ID = "com.cosylab.fzj.cosy.oc";
 
     private static final String BPMS_FILE = "bpms_file";
     private static final String CORRECTORS_FILE = "correctors_file";
@@ -141,7 +140,8 @@ public class Preferences {
         try {
             return getString(HORIZONTAL_ORBIT_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the horizontal orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -153,7 +153,8 @@ public class Preferences {
         try {
             return getString(VERTICAL_ORBIT_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the vertical orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -165,7 +166,8 @@ public class Preferences {
         try {
             return getString(GOLDEN_HORIZONTAL_ORBIT_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the golden horizontal orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -177,7 +179,8 @@ public class Preferences {
         try {
             return getString(GOLDEN_VERTICAL_ORBIT_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the golden vertical orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -189,7 +192,8 @@ public class Preferences {
         try {
             return getString(HORIZONTAL_CORRECTOR_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the horizontal corrector PV name.", e.getMessage());
             return null;
         }
     }
@@ -201,7 +205,8 @@ public class Preferences {
         try {
             return getString(VERTICAL_CORRECTOR_PV, null, true);
         } catch (Exception e) {
-            e.printStackTrace();  // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the vertical corrector PV name.", e.getMessage());
             return null;
         }
     }
@@ -213,7 +218,8 @@ public class Preferences {
         try {
             return getString(HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the horizontal orbit statistic PV name.", e.getMessage());
             return null;
         }
     }
@@ -225,7 +231,8 @@ public class Preferences {
         try {
             return getString(VERTICAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the vertical orbit statistic PV name.", e.getMessage());
             return null;
         }
     }
@@ -237,7 +244,8 @@ public class Preferences {
         try {
             return getString(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the golden horizontal orbit statistic PV name.", e.getMessage());
             return null;
         }
     }
@@ -249,7 +257,8 @@ public class Preferences {
         try {
             return getString(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the golden vertical orbit statistic PV name.", e.getMessage());
             return null;
         }
     }
@@ -261,7 +270,8 @@ public class Preferences {
         try {
             return getString(START_MEASURING_ORBIT_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the start measuring orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -273,7 +283,8 @@ public class Preferences {
         try {
             return getString(STOP_MEASURING_ORBIT_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the stop measuring orbit PV name.", e.getMessage());
             return null;
         }
     }
@@ -285,7 +296,8 @@ public class Preferences {
         try {
             return getString(MEASURE_ORBIT_ONCE_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the measure orbit once PV name.", e.getMessage());
             return null;
         }
     }
@@ -297,7 +309,8 @@ public class Preferences {
         try {
             return getString(CORRECT_ORBIT_ONCE_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the correct orbit once PV name.", e.getMessage());
             return null;
         }
     }
@@ -309,7 +322,8 @@ public class Preferences {
         try {
             return getString(START_ORBIT_CORRECTION_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the start orbit correction PV name.", e.getMessage());
             return null;
         }
     }
@@ -321,7 +335,8 @@ public class Preferences {
         try {
             return getString(STOP_ORBIT_CORRECTION_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace(); // TODO log this
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the stop orbit correction PV name.", e.getMessage());
             return null;
         }
     }
@@ -372,7 +387,8 @@ public class Preferences {
                     properties.load(stream);
                     stream.close();
                 } catch (IOException e) {
-                    //
+                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                            "Could not load the PVs properties file.", e.getMessage());
                 }
             }
             return Preferences.getInstance().properties.getProperty(name, defaultValue);
@@ -380,7 +396,7 @@ public class Preferences {
             final IPreferencesService service = Platform.getPreferencesService();
             if (service == null) return defaultValue;
 
-            return service.getString(PLUGIN_ID, name, defaultValue, null).trim();
+            return service.getString(OrbitCorrectionService.PLUGIN_ID, name, defaultValue, null).trim();
         }
     }
 
