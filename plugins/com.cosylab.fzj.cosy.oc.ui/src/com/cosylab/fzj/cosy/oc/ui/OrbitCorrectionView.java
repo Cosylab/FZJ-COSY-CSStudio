@@ -214,6 +214,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
         orbitChart = new LineChart<>(xAxis, yAxis);
         orbitChart.setLegendVisible(false);
+        orbitChart.setAnimated(false);
         orbitChart.getStyleClass().add("orbit-chart");
 
         addSeries(ChartType.ORBIT, SeriesType.HORIZONTAL_ORBIT, false);
@@ -243,6 +244,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
         correctionsChart = new CorrectionsChart<Number, Number>(xAxis, yAxis);
         correctionsChart.setLegendVisible(false);
+        correctionsChart.setAnimated(false);
         correctionsChart.getStyleClass().add("corrections-chart");
 
         addSeries(ChartType.CORRECTIONS, SeriesType.HORIZONTAL_CORRECTORS_CORRECTION, false);
@@ -268,6 +270,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
         latticeChart = new LineChart<>(xAxis, yAxis);
         latticeChart.setLegendVisible(false);
+        latticeChart.setAnimated(false);
         latticeChart.getStyleClass().add("lattice-chart");
 
         addSeries(ChartType.LATTICE, SeriesType.BPM, false);
