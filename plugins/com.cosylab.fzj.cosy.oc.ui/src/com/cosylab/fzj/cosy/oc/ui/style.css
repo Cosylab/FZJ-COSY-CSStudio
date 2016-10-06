@@ -1,3 +1,8 @@
+/**
+ * Main style class for the Orbit Correction view.
+ * 
+ * Author: Miha Novak <miha.novak@cosylab.com> 
+ */
 .root {
 	-fx-background-color: #ffffff;
 }
@@ -18,10 +23,6 @@
 
 .bordered-titled-content {
 	-fx-padding: 20 10 10 10;	
-}
-
-.big-button {
-	
 }
 
 .axis-tick-mark, 
