@@ -13,6 +13,13 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.osgi.service.datalocation.Location;
 
+/**
+ * <code>Preferences</code> represents the preferences for the Orbit Correction (OC) plugin.
+ * The file names are loaded from the preferences.ini file. Files should exists in the workspace folder.
+ * The PV names are loaded from the properties file which should existis in the workspace folder.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ */
 public class Preferences {
 
     private static final String PLUGIN_ID = "com.cosylab.fzj.cosy.oc";
@@ -21,21 +28,37 @@ public class Preferences {
     private static final String CORRECTORS_FILE = "correctors_file";
     private static final String PVS_FILE = "pvs_file";
 
+    /** Horizontal orbit PV key. */
     public static final String HORIZONTAL_ORBIT_PV = "horizontal_orbit_pv";
+    /** Vertical orbit PV key. */
     public static final String VERTICAL_ORBIT_PV = "vertical_orbit_pv";
+    /** Golden horizontal orbit PV key. */
     public static final String GOLDEN_HORIZONTAL_ORBIT_PV = "golden_horizontal_orbit_pv";
+    /** Golden vertical orbit PV key. */
     public static final String GOLDEN_VERTICAL_ORBIT_PV = "golden_vertical_orbit_pv";
-    public static final String HORIZONTAL_CORRECTORS_PV = "horizontal_correctors_pv";
-    public static final String VERTICAL_CORRECTORS_PV = "vertical_correctors_pv";
+    /** Horizontal correctors PV key. */
+    public static final String HORIZONTAL_CORRECTOR_PV = "horizontal_corrector_pv";
+    /** Vertical correctors PV key. */
+    public static final String VERTICAL_CORRECTOR_PV = "vertical_corrector_pv";
+    /** Horizontal orbit statistic PV key. */
     public static final String HORIZONTAL_ORBIT_STATISTIC_PV = "horizontal_orbit_statistic_pv";
+    /** Vertical orbit statistic PV key. */
     public static final String VERTICAL_ORBIT_STATISTIC_PV = "vertical_orbit_statistic_pv";
+    /** Golden horizontal orbit statistic PV key. */
     public static final String GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV = "golden_horizontal_orbit_statistic_pv";
+    /** Golden vertical orbit statistic PV key. */
     public static final String GOLDEN_VERTICAL_ORBIT_STATISTIC_PV = "golden_vertical_orbit_statistic_pv";
+    /** Start measuring orbit PV key. */
     public static final String START_MEASURING_ORBIT_PV = "start_measuring_orbit_pv";
+    /** Stop measuring orbit PV key. */
     public static final String STOP_MEASURING_ORBIT_PV = "stop_measuring_orbit_pv";
+    /** Measure orbit once PV key. */
     public static final String MEASURE_ORBIT_ONCE_PV = "measure_orbit_once_pv";
+    /** Correct orbit once PV key. */
     public static final String CORRECT_ORBIT_ONCE_PV = "correct_orbit_once_pv";
+    /** Start orbit correction PV key. */
     public static final String START_ORBIT_CORRECTION_PV = "start_orbit_correction_pv";
+    /** Stop orbit correction PV key. */
     public static final String STOP_ORBIT_CORRECTION_PV = "stop_orbit_correction_pv";
 
     private URL bpmsFile;
@@ -51,7 +74,7 @@ public class Preferences {
     }
 
     /**
-     * @return the singleton instance of this class
+     * @return the singleton instance of the class.
      */
     public synchronized static Preferences getInstance() {
         if (instance == null) {
@@ -60,6 +83,9 @@ public class Preferences {
         return instance;
     }
 
+    /**
+     * @return the bpms file url.
+     */
     public URL getBpmsFile() {
         if (bpmsFile == null) {
             bpmsFile = getWorkspaceFile(getBpmsFilename());
@@ -67,10 +93,16 @@ public class Preferences {
         return bpmsFile;
     }
 
+    /**
+     * @return the bpms filename.
+     */
     public String getBpmsFilename() {
         return getString(BPMS_FILE, "bpms.twiss", false);
     }
 
+    /**
+     * @return the correctors file url.
+     */
     public URL getCorrectorsFile() {
         if (correctorsFile == null) {
             correctorsFile = getWorkspaceFile(getCorrectorsFilename());
@@ -78,10 +110,16 @@ public class Preferences {
         return correctorsFile;
     }
 
+    /**
+     * @return the correctors filename.
+     */
     public String getCorrectorsFilename() {
         return getString(CORRECTORS_FILE, "correctors.twiss", false);
     }
 
+    /**
+     * @return the pvs file url.
+     */
     public URL getPVsFile() {
         if (pvsFile == null) {
             pvsFile = getWorkspaceFile(getPVsFilename());
@@ -89,6 +127,9 @@ public class Preferences {
         return pvsFile;
     }
 
+    /**
+     * @return the pvs filename.
+     */
     public String getPVsFilename() {
         return getString(PVS_FILE, "pvs.properties", false);
     }
@@ -141,24 +182,33 @@ public class Preferences {
         }
     }
 
-    public String getHorizontalCorrectorsPVName() {
+    /**
+     * @return the horizontal corrector PV name.
+     */
+    public String getHorizontalCorrectorPVName() {
         try {
-            return getString(HORIZONTAL_CORRECTORS_PV, null, true);
+            return getString(HORIZONTAL_CORRECTOR_PV, null, true);
         } catch (Exception e) {
             e.printStackTrace();  // TODO log this
             return null;
         }
     }
 
-    public String getVerticalCorrectorsPVName() {
+    /**
+     * @return the vertical corrector PV name.
+     */
+    public String getVerticalCorrectorPVName() {
         try {
-            return getString(VERTICAL_CORRECTORS_PV, null, true);
+            return getString(VERTICAL_CORRECTOR_PV, null, true);
         } catch (Exception e) {
             e.printStackTrace();  // TODO log this
             return null;
         }
     }
 
+    /**
+     * @return the horizontal orbit statistic PV name.
+     */
     public String getHorizontalOrbitStatisticPVName() {
         try {
             return getString(HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
@@ -168,6 +218,9 @@ public class Preferences {
         }
     }
 
+    /**
+     * @return the vertical orbit statistic PV name.
+     */
     public String getVerticalOrbitStatisticPVName() {
         try {
             return getString(VERTICAL_ORBIT_STATISTIC_PV, null ,true);
@@ -177,6 +230,9 @@ public class Preferences {
         }
     }
 
+    /**
+     * @return the golden horizontal orbit statistic PV name.
+     */
     public String getGoldenHorizontalOrbitStatisticPVName() {
         try {
             return getString(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
@@ -186,6 +242,9 @@ public class Preferences {
         }
     }
 
+    /**
+     * @return the golden vertical orbit statistic PV name.
+     */
     public String getGoldenVerticalOrbitStatisticPVName() {
         try {
             return getString(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, null ,true);
@@ -195,17 +254,23 @@ public class Preferences {
         }
     }
 
+    /**
+     * @return the map with the PV names which values are show in the charts.
+     */
     public Map<String, String> getChartPVNames() {
         Map<String, String> pvs = new HashMap<>();
         pvs.put(HORIZONTAL_ORBIT_PV, getHorizontalOrbitPVName());
         pvs.put(VERTICAL_ORBIT_PV, getVerticalOrbitPVName());
         pvs.put(GOLDEN_HORIZONTAL_ORBIT_PV, getGoldenHorizontalOrbitPVName());
         pvs.put(GOLDEN_VERTICAL_ORBIT_PV, getGoldenVerticalOrbitPVName());
-        pvs.put(HORIZONTAL_CORRECTORS_PV, getHorizontalCorrectorsPVName());
-        pvs.put(VERTICAL_CORRECTORS_PV, getVerticalCorrectorsPVName());
+        pvs.put(HORIZONTAL_CORRECTOR_PV, getHorizontalCorrectorPVName());
+        pvs.put(VERTICAL_CORRECTOR_PV, getVerticalCorrectorPVName());
         return pvs;
     }
 
+    /**
+     * @return the map with the PV names which values are show in the table.
+     */
     public Map<String, String> getStatisticPVNames() {
         Map<String, String> pvs = new HashMap<>();
         pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV, getHorizontalOrbitStatisticPVName());
@@ -215,6 +280,17 @@ public class Preferences {
         return pvs;
     }
 
+    /**
+     * Read a preference from the Eclipse preferences service or from the pvs properties file. If a preference is not
+     * defined, a default value is returned.
+     *
+     * @param name the name of the preference
+     * @param defaultValue the default value to use if the preference is not defined
+     * @param mainFile if true the property value will be read from the pvs properties file, if false the Eclipse
+     *                 preference service is used
+     *
+     * @return the preference.
+     */
     private String getString(final String name, final String defaultValue, boolean pvsFile) {
         if (pvsFile) {
             if (properties == null) {
@@ -240,7 +316,8 @@ public class Preferences {
      * Retrieves a file url located in the workspace.
      *
      * @param fileName the file name to open, relative to workspace root
-     * @return the file url
+     *
+     * @return the file url.
      * @throws PreferencesException if the file could not be loaded
      */
     public static URL getWorkspaceFile(String fileName) throws PreferencesException {

@@ -1,5 +1,10 @@
 package com.cosylab.fzj.cosy.oc;
 
+/**
+ * <code>PreferencesException</code> is thrown when an error occurs while reading the preferences.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ */
 public class PreferencesException extends RuntimeException {
 
     private static final long serialVersionUID = -3105716121426808758L;
