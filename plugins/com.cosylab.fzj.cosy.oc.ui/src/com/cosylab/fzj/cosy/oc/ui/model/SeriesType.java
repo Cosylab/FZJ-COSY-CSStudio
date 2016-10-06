@@ -1,5 +1,11 @@
 package com.cosylab.fzj.cosy.oc.ui.model;
 
+/**
+ * <code>SeriesType</code> represents the type of the series with the index and name.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ *
+ */
 public enum SeriesType {
     HORIZONTAL_ORBIT(0, "Horizontal Orbit"),
     VERTICAL_ORBIT(1, "Vertical Orbit"),
@@ -14,15 +20,27 @@ public enum SeriesType {
     private int seriesIndex;
     private String seriesName;
 
+    /**
+     * Constructs the series type with the series index and name.
+     *
+     * @param seriesIndex the series index
+     * @param seriesName the series name
+     */
     private SeriesType(int seriesIndex, String seriesName) {
         this.seriesIndex = seriesIndex;
         this.seriesName = seriesName;
     }
 
+    /**
+     * @return the series index.
+     */
     public int getSeriesIndex() {
         return seriesIndex;
     }
 
+    /**
+     * @return the series name.
+     */
     public String getSeriesName() {
         return seriesName;
     }

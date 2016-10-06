@@ -18,7 +18,7 @@ import org.diirt.util.array.ListNumber;
 import org.diirt.vtype.VNumberArray;
 import org.diirt.vtype.VType;
 
-import com.cosylab.fzj.cosy.oc.DataLoader;
+import com.cosylab.fzj.cosy.oc.LatticeElementDataLoader;
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
@@ -102,25 +102,19 @@ public class OrbitCorrectionController {
     }
 
     public void dispose() {
-//        synchronized (snapshots) {
-//            // synchronise, because this method can be called from the UI thread by Eclipse, when the editor is closing
-//            if (closePVs) {
-//                pvsForDisposal.values().forEach(e -> e.dispose());
-//                pvsForDisposal.clear();
-//                pvs.values().forEach(e -> e.dispose());
-//                pvs.clear();
-//            } else {
-//                pvs.forEach((e, p) -> pvsForDisposal.put(e.pvNameProperty().get(), p));
-//                pvs.clear();
-//            }
-//            items.clear();
-//            snapshots.clear();
-//        }
-//        }
+        synchronized (chartPVs) {
+            // synchronise, because this method can be called from the UI thread by Eclipse, when the editor is closing
+            chartPVs.values().forEach(e -> e.dispose());
+            chartPVs.clear();
+            correctionResultPVs.values().forEach(e -> e.dispose());
+            correctionResultPVs.clear();
+            bpms.clear();
+            correctors.clear();
+        }
     }
 
     private void loadLatticeElements() {
-        DataLoader dataLoader = new DataLoader();
+        LatticeElementDataLoader dataLoader = new LatticeElementDataLoader();
         dataLoader.loadLatticeElements().forEach(e -> {
             if (e.getType() == LatticeElementType.BPM) {
                 bpms.add(new BPM(e));
@@ -238,10 +232,10 @@ public class OrbitCorrectionController {
                 case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
                     updateGoldenVerticalOrbit(values);
                     break;
-                case Preferences.HORIZONTAL_CORRECTORS_PV:
+                case Preferences.HORIZONTAL_CORRECTOR_PV:
                     updateHorizontalCorrectors(values);
                     break;
-                case Preferences.VERTICAL_CORRECTORS_PV:
+                case Preferences.VERTICAL_CORRECTOR_PV:
                     updateVerticalCorrectors(values);
                     break;
             }

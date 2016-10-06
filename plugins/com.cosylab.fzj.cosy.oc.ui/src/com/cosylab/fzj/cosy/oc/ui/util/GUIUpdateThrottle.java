@@ -1,5 +1,9 @@
 package com.cosylab.fzj.cosy.oc.ui.util;
 
+import java.util.logging.Level;
+
+import com.cosylab.fzj.cosy.oc.OrbitCorrectionService;
+
 /**
  * GUI Update throttle
  * <p>
@@ -76,8 +80,7 @@ public abstract class GUIUpdateThrottle extends Thread {
                 Thread.sleep(suppressionMillis);
             }
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
-            // TODO log
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "GUI Update failed", ex);
         }
     }
 

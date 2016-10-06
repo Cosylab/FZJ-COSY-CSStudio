@@ -15,8 +15,7 @@ public class TooltipCheckBox extends CheckBox {
     /**
      * Construct a new check box with the given text and tooltip.
      *
-     * @param text
-     *            the text to use as the checkbox text and tooltip
+     * @param text the text to use as the checkbox text and tooltip
      */
     public TooltipCheckBox(String text) {
         super(text);

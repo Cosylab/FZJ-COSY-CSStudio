@@ -6,8 +6,12 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 
 /**
-* @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
-*/
+ * <code>BPM</code> represents the bpm in the lattice. It is extended from the <code>LatticeElement</code> and provides
+ * properties for providing horizontal orbit, vertical orbit, golden horizontal orbit or golden vertical orbit values.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ *
+ */
 public class BPM extends LatticeElement {
 
     private DoubleProperty horizontalOrbit = new SimpleDoubleProperty(this, "horizontalOrbit");
@@ -15,6 +19,11 @@ public class BPM extends LatticeElement {
     private DoubleProperty goldenHorizontalOrbit = new SimpleDoubleProperty(this, "goldenHorizontalOrbit");
     private DoubleProperty goldenVerticalOrbit = new SimpleDoubleProperty(this, "goldenVerticalOrbit");
 
+    /**
+     * Constructs the new BPM with the given lattice element data.
+     *
+     * @param elementData the lattice element data
+     */
     public BPM(LatticeElementData elementData) {
         super(elementData);
     }

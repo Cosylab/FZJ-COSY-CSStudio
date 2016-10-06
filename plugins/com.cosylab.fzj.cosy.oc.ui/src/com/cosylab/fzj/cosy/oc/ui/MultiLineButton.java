@@ -22,7 +22,7 @@ import javafx.scene.text.Text;
  * The text is split by spaces (individual words are never split) and is shown in as little lines as possible. If the
  * width of the button is smaller than the width of individual line that line is split into two lines and the second
  * line is concatenated with the next one. The process is repeated until all text is displayed.
- * 
+ *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
  *
  */
@@ -32,7 +32,7 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
 
     /**
      * Constructs a new multi line button showing the given text.
-     * 
+     *
      * @param text the text of to display on the button
      */
     public MultiLineButton(String text) {
@@ -45,6 +45,9 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         widthProperty().addListener(this);
     }
 
+    /* (non-Javadoc)
+     * @see javafx.beans.value.ChangeListener#changed(javafx.beans.value.ObservableValue, java.lang.Object, java.lang.Object)
+     */
     @Override
     public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
         final Insets padding = getPadding();
@@ -61,7 +64,7 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         if (width > newWidth) {
             String[] parts = text.split("\\s+");
             if (parts.length < 2) {
-                if (box.getChildren().size() != 1) { 
+                if (box.getChildren().size() != 1) {
                     box.getChildren().setAll(new Label(text));
                 }
             } else {
@@ -89,7 +92,7 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
                                     break;
                                 }
                                 currentText = newText.toString();
-                            }                      
+                            }
                             start = i;
                         } else {
                             start++;
@@ -124,5 +127,5 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         }
         return (int) mText.getLayoutBounds().getHeight();
     }
-    
+
 }

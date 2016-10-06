@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
@@ -37,9 +38,9 @@ public class LatticeElementDataLoader {
             if (correctorsFile != null) {
                 elements.addAll(getCorrectors(getFileContent(correctorsFile)));
             }
-        } catch (IOException ioe) {
-            //TODO log
-            ioe.printStackTrace();
+        } catch (IOException e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the lattice elements.", e);
         }
         return elements;
     }
