@@ -213,7 +213,7 @@ public class Preferences {
         try {
             return getString(HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // TODO log this
             return null;
         }
     }
@@ -225,7 +225,7 @@ public class Preferences {
         try {
             return getString(VERTICAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // TODO log this
             return null;
         }
     }
@@ -237,7 +237,7 @@ public class Preferences {
         try {
             return getString(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // TODO log this
             return null;
         }
     }
@@ -249,7 +249,79 @@ public class Preferences {
         try {
             return getString(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, null ,true);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the start measuring orbit PV name.
+     */
+    public String getStartMeasuringOrbitPVName() {
+        try {
+            return getString(START_MEASURING_ORBIT_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the stop measuring orbit PV name.
+     */
+    public String getStopMeasuringOrbitPVName() {
+        try {
+            return getString(STOP_MEASURING_ORBIT_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the measure orbit once PV name.
+     */
+    public String getMeasureOrbitOncePVName() {
+        try {
+            return getString(MEASURE_ORBIT_ONCE_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the correct orbit once PV name.
+     */
+    public String getCorrectOrbitOncePVName() {
+        try {
+            return getString(CORRECT_ORBIT_ONCE_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the start orbit correction PV name.
+     */
+    public String getStartOrbitCorrectionPVName() {
+        try {
+            return getString(START_ORBIT_CORRECTION_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
+            return null;
+        }
+    }
+
+    /**
+     * @return the stop orbit correction PV name.
+     */
+    public String getStopOrbitCorrectionPVName() {
+        try {
+            return getString(STOP_ORBIT_CORRECTION_PV, null ,true);
+        } catch (Exception e) {
+            e.printStackTrace(); // TODO log this
             return null;
         }
     }
