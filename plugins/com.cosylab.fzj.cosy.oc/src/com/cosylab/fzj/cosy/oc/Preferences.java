@@ -35,10 +35,14 @@ public final class Preferences {
     public static final String GOLDEN_HORIZONTAL_ORBIT_PV = "golden_horizontal_orbit_pv";
     /** Golden vertical orbit PV key. */
     public static final String GOLDEN_VERTICAL_ORBIT_PV = "golden_vertical_orbit_pv";
-    /** Horizontal correctors PV key. */
-    public static final String HORIZONTAL_CORRECTOR_PV = "horizontal_corrector_pv";
-    /** Vertical correctors PV key. */
-    public static final String VERTICAL_CORRECTOR_PV = "vertical_corrector_pv";
+    /** Horizontal correctors (mrad) PV key. */
+    public static final String HORIZONTAL_CORRECTOR_MRAD_PV = "horizontal_corrector_mrad_pv";
+    /** Vertical correctors (mrad) PV key. */
+    public static final String VERTICAL_CORRECTOR_MRAD_PV = "vertical_corrector_mrad_pv";
+    /** Horizontal correctors (ma) PV key. */
+    public static final String HORIZONTAL_CORRECTOR_MA_PV = "horizontal_corrector_ma_pv";
+    /** Vertical correctors (ma) PV key. */
+    public static final String VERTICAL_CORRECTOR_MA_PV = "vertical_corrector_ma_pv";
     /** Horizontal orbit statistic PV key. */
     public static final String HORIZONTAL_ORBIT_STATISTIC_PV = "horizontal_orbit_statistic_pv";
     /** Vertical orbit statistic PV key. */
@@ -47,18 +51,20 @@ public final class Preferences {
     public static final String GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV = "golden_horizontal_orbit_statistic_pv";
     /** Golden vertical orbit statistic PV key. */
     public static final String GOLDEN_VERTICAL_ORBIT_STATISTIC_PV = "golden_vertical_orbit_statistic_pv";
+    /** Operation status PV key. */
+    public static final String OPERATION_STATUS_PV = "operation_status_pv";
     /** Start measuring orbit PV key. */
     public static final String START_MEASURING_ORBIT_PV = "start_measuring_orbit_pv";
     /** Stop measuring orbit PV key. */
     public static final String STOP_MEASURING_ORBIT_PV = "stop_measuring_orbit_pv";
     /** Measure orbit once PV key. */
     public static final String MEASURE_ORBIT_ONCE_PV = "measure_orbit_once_pv";
+    /** Start orbit correction PV key. */
+    public static final String START_CORRECTING_ORBIT_PV = "start_correcting_orbit_pv";
+    /** Stop orbit correction PV key. */
+    public static final String STOP_CORRECTING_ORBIT_PV = "stop_correcting_orbit_pv";
     /** Correct orbit once PV key. */
     public static final String CORRECT_ORBIT_ONCE_PV = "correct_orbit_once_pv";
-    /** Start orbit correction PV key. */
-    public static final String START_ORBIT_CORRECTION_PV = "start_orbit_correction_pv";
-    /** Stop orbit correction PV key. */
-    public static final String STOP_ORBIT_CORRECTION_PV = "stop_orbit_correction_pv";
 
     private URL bpmsFile;
     private URL correctorsFile;
@@ -221,27 +227,53 @@ public final class Preferences {
     }
 
     /**
-     * @return the horizontal corrector PV name.
+     * @return the horizontal corrector (mrad) PV name.
      */
-    public String getHorizontalCorrectorPVName() {
+    public String getHorizontalCorrectorMradPVName() {
         try {
-            return getString(HORIZONTAL_CORRECTOR_PV, null, true);
+            return getString(HORIZONTAL_CORRECTOR_MRAD_PV, null, true);
         } catch (Exception e) {
             OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal corrector PV name.", e);
+                    "Could not load the horizontal corrector (mrad) PV name.", e);
             return null;
         }
     }
 
     /**
-     * @return the vertical corrector PV name.
+     * @return the vertical corrector (mrad) PV name.
      */
-    public String getVerticalCorrectorPVName() {
+    public String getVerticalCorrectorMradPVName() {
         try {
-            return getString(VERTICAL_CORRECTOR_PV, null, true);
+            return getString(VERTICAL_CORRECTOR_MRAD_PV, null, true);
         } catch (Exception e) {
             OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical corrector PV name.", e);
+                    "Could not load the vertical corrector (mrad) PV name.", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return the horizontal corrector (ma) PV name.
+     */
+    public String getHorizontalCorrectorMaPVName() {
+        try {
+            return getString(HORIZONTAL_CORRECTOR_MA_PV, null, true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the horizontal corrector (ma) PV name.", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return the vertical corrector (ma) PV name.
+     */
+    public String getVerticalCorrectorMaPVName() {
+        try {
+            return getString(VERTICAL_CORRECTOR_MA_PV, null, true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the vertical corrector (ma) PV name.", e);
             return null;
         }
     }
@@ -299,6 +331,19 @@ public final class Preferences {
     }
 
     /**
+     * @return the operation status PV name.
+     */
+    public String getOperationStatusPV() {
+        try {
+            return getString(OPERATION_STATUS_PV, null ,true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the operation status PV name.", e);
+            return null;
+        }
+    }
+
+    /**
      * @return the start measuring orbit PV name.
      */
     public String getStartMeasuringOrbitPVName() {
@@ -338,6 +383,32 @@ public final class Preferences {
     }
 
     /**
+     * @return the start correcting orbit PV name.
+     */
+    public String getStartCorrectingOrbitPVName() {
+        try {
+            return getString(START_CORRECTING_ORBIT_PV, null ,true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the start start correcting PV name.", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return the stop correcting orbit PV name.
+     */
+    public String getStopCorrectingOrbitPVName() {
+        try {
+            return getString(STOP_CORRECTING_ORBIT_PV, null ,true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the stop correcting orbit PV name.", e);
+            return null;
+        }
+    }
+
+    /**
      * @return the correct orbit once PV name.
      */
     public String getCorrectOrbitOncePVName() {
@@ -351,32 +422,6 @@ public final class Preferences {
     }
 
     /**
-     * @return the start orbit correction PV name.
-     */
-    public String getStartOrbitCorrectionPVName() {
-        try {
-            return getString(START_ORBIT_CORRECTION_PV, null ,true);
-        } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the start orbit correction PV name.", e);
-            return null;
-        }
-    }
-
-    /**
-     * @return the stop orbit correction PV name.
-     */
-    public String getStopOrbitCorrectionPVName() {
-        try {
-            return getString(STOP_ORBIT_CORRECTION_PV, null ,true);
-        } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the stop orbit correction PV name.", e);
-            return null;
-        }
-    }
-
-    /**
      * @return the map with the PV keys and names.
      */
     public Map<String, String> getPVNames() {
@@ -385,12 +430,21 @@ public final class Preferences {
         pvs.put(VERTICAL_ORBIT_PV, getVerticalOrbitPVName());
         pvs.put(GOLDEN_HORIZONTAL_ORBIT_PV, getGoldenHorizontalOrbitPVName());
         pvs.put(GOLDEN_VERTICAL_ORBIT_PV, getGoldenVerticalOrbitPVName());
-        pvs.put(HORIZONTAL_CORRECTOR_PV, getHorizontalCorrectorPVName());
-        pvs.put(VERTICAL_CORRECTOR_PV, getVerticalCorrectorPVName());
+        pvs.put(HORIZONTAL_CORRECTOR_MRAD_PV, getHorizontalCorrectorMradPVName());
+        pvs.put(VERTICAL_CORRECTOR_MRAD_PV, getVerticalCorrectorMradPVName());
+        pvs.put(HORIZONTAL_CORRECTOR_MA_PV, getHorizontalCorrectorMaPVName());
+        pvs.put(VERTICAL_CORRECTOR_MA_PV, getVerticalCorrectorMaPVName());
+        pvs.put(OPERATION_STATUS_PV, getOperationStatusPV());
         pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV, getHorizontalOrbitStatisticPVName());
         pvs.put(VERTICAL_ORBIT_STATISTIC_PV, getVerticalOrbitStatisticPVName());
         pvs.put(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, getGoldenHorizontalOrbitStatisticPVName());
         pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, getGoldenVerticalOrbitStatisticPVName());
+        pvs.put(START_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
+        pvs.put(STOP_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
+        pvs.put(MEASURE_ORBIT_ONCE_PV, getMeasureOrbitOncePVName());
+        pvs.put(START_CORRECTING_ORBIT_PV, getStartCorrectingOrbitPVName());
+        pvs.put(STOP_CORRECTING_ORBIT_PV, getStopCorrectingOrbitPVName());
+        pvs.put(CORRECT_ORBIT_ONCE_PV, getCorrectOrbitOncePVName());
         return pvs;
     }
 

@@ -191,10 +191,10 @@ public class OrbitCorrectionController {
             case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
                 updateGoldenVerticalOrbit(values);
                 break;
-            case Preferences.HORIZONTAL_CORRECTOR_PV:
+            case Preferences.HORIZONTAL_CORRECTOR_MRAD_PV:
                 updateHorizontalCorrectors(values);
                 break;
-            case Preferences.VERTICAL_CORRECTOR_PV:
+            case Preferences.VERTICAL_CORRECTOR_MRAD_PV:
                 updateVerticalCorrectors(values);
                 break;
             case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
