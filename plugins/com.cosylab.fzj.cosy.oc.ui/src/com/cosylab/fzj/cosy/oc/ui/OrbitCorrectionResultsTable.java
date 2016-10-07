@@ -1,6 +1,5 @@
 package com.cosylab.fzj.cosy.oc.ui;
 
-import java.awt.event.FocusAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +54,4 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
     public void updateTable(List<OrbitCorrectionResultsEntry> entries) {
         getItems().setAll(entries);
     }
-
-
 }

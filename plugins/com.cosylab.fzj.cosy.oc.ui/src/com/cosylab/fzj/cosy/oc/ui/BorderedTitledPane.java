@@ -20,7 +20,7 @@ public class BorderedTitledPane extends StackPane {
      * @param content the bordered pane content
      */
     public BorderedTitledPane(String title, Node content) {
-        StringBuilder sb = new StringBuilder().append(' ').append(title).append(' ');
+        StringBuilder sb = new StringBuilder(title.length() + 2).append(' ').append(title).append(' ');
         final Label titleLabel = new Label(sb.toString());
         titleLabel.getStyleClass().add("bordered-titled-title");
 
