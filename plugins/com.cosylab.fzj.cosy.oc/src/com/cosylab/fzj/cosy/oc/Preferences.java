@@ -377,9 +377,9 @@ public final class Preferences {
     }
 
     /**
-     * @return the map with the PV names which values are show in the charts.
+     * @return the map with the PV keys and names.
      */
-    public Map<String, String> getChartPVNames() {
+    public Map<String, String> getPVNames() {
         Map<String, String> pvs = new HashMap<>();
         pvs.put(HORIZONTAL_ORBIT_PV, getHorizontalOrbitPVName());
         pvs.put(VERTICAL_ORBIT_PV, getVerticalOrbitPVName());
@@ -387,14 +387,6 @@ public final class Preferences {
         pvs.put(GOLDEN_VERTICAL_ORBIT_PV, getGoldenVerticalOrbitPVName());
         pvs.put(HORIZONTAL_CORRECTOR_PV, getHorizontalCorrectorPVName());
         pvs.put(VERTICAL_CORRECTOR_PV, getVerticalCorrectorPVName());
-        return pvs;
-    }
-
-    /**
-     * @return the map with the PV names which values are show in the table.
-     */
-    public Map<String, String> getStatisticPVNames() {
-        Map<String, String> pvs = new HashMap<>();
         pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV, getHorizontalOrbitStatisticPVName());
         pvs.put(VERTICAL_ORBIT_STATISTIC_PV, getVerticalOrbitStatisticPVName());
         pvs.put(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, getGoldenHorizontalOrbitStatisticPVName());

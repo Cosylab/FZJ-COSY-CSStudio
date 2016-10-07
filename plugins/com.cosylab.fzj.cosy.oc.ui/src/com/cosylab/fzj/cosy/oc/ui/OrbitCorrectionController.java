@@ -4,22 +4,21 @@ import static org.diirt.datasource.ExpressionLanguage.channel;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import org.diirt.datasource.PVManager;
 import org.diirt.datasource.PVReader;
 import org.diirt.datasource.PVWriter;
-import org.diirt.util.array.ListDouble;
 import org.diirt.util.array.ListNumber;
 import org.diirt.vtype.VNumberArray;
 import org.diirt.vtype.VType;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementDataLoader;
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
+import com.cosylab.fzj.cosy.oc.OrbitCorrectionService;
 import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
@@ -33,24 +32,25 @@ public class OrbitCorrectionController {
     public static final long UPDATE_RATE = 500;
     private static Executor UI_EXECUTOR = Platform::runLater;
 
+    private static final String HORIZONTAL_ORBIT_TABLE_ENTRY = "Horizontal Orbit";
+    private static final String VERTICAL_ORBIT_TABLE_ENTRY = "Vertical Orbit";
+    private static final String GOLDEN_HORIZONTAL_ORBIT_TABLE_ENTRY = "Golden Horizontal Orbit";
+    private static final String GOLDEN_VERTICAL_ORBIT_TABLE_ENTRY = "Golden Vertical Orbit";
+
     private class PV {
-        final String pvName;
+        final String pvKey;
         final PVReader<VType> reader;
         final PVWriter<Object> writer;
         VType value;
 
-        PV(String pvName, PVReader<VType> reader, PVWriter<Object> writer) {
-            this.pvName = pvName;
+        PV(String pvKey, PVReader<VType> reader, PVWriter<Object> writer) {
+            this.pvKey = pvKey;
             this.reader = reader;
             this.writer = writer;
             this.reader.addPVReaderListener(e -> {
-                synchronized (OrbitCorrectionController.this) {
-                    if (suspend.get() > 0) {
-                        return;
-                    }
-                }
                 if (e.isExceptionChanged()) {
-                    // TODO log
+                    OrbitCorrectionService.LOGGER.log(Level.WARNING, "DIIRT Connection Error.",
+                            e.getPvReader().lastException());
                 }
                 value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
                 throttle.trigger();
@@ -72,26 +72,70 @@ public class OrbitCorrectionController {
         @Override
         protected void fire() {
             UI_EXECUTOR.execute(() -> {
-                if (suspend.get() > 0) {
-                    return;
-                }
                 update();
             });
         }
     };
-    private final AtomicInteger suspend = new AtomicInteger(0);
-
-    private Map<String, PV> chartPVs = new HashMap<>();
-    private Map<OrbitCorrectionResultsEntry, PV> correctionResultPVs = new HashMap<>();
-
+    private List<PV> pvs = new ArrayList<>();
+    private List<OrbitCorrectionResultsEntry> correctionResultsEntries = new ArrayList<>();
     private List<BPM> bpms = new ArrayList<>();
     private List<Corrector> correctors = new ArrayList<>();
 
-
     public OrbitCorrectionController() throws Exception {
         loadLatticeElements();
+        createCorrectionResultsEntries();
         connectPVs();
         start();
+    }
+
+    public void startMeasuringOrbit() {
+        // TODO implementation
+    }
+
+    public void stopMeasuringOrbit() {
+        // TODO implementation
+    }
+
+    public void measureOrbitOnce() {
+        // TODO implementation
+    }
+
+    public void correctOrbitOnce() {
+        // TODO implementation
+    }
+
+    public void startOrbitCorrection() {
+        // TODO implementation
+    }
+
+    public void stopOrbitCorrection() {
+        // TODO implementation
+    }
+
+    public void exportCurrentOrbit() {
+        // TODO implementation
+    }
+
+    public List<OrbitCorrectionResultsEntry> getOrbitCorrectionResults() {
+        return correctionResultsEntries;
+    }
+
+    public List<BPM> getBpms() {
+        return bpms;
+    }
+
+    public List<Corrector> getCorrectors() {
+        return correctors;
+    }
+
+    public void dispose() {
+        synchronized (pvs) {
+            // synchronise, because this method can be called from the UI thread by Eclipse, when the editor is closing
+            pvs.forEach(e -> e.dispose());
+            pvs.clear();
+            bpms.clear();
+            correctors.clear();
+        }
     }
 
     /**
@@ -99,18 +143,6 @@ public class OrbitCorrectionController {
      */
     protected void start() {
         throttle.start();
-    }
-
-    public void dispose() {
-        synchronized (chartPVs) {
-            // synchronise, because this method can be called from the UI thread by Eclipse, when the editor is closing
-            chartPVs.values().forEach(e -> e.dispose());
-            chartPVs.clear();
-            correctionResultPVs.values().forEach(e -> e.dispose());
-            correctionResultPVs.clear();
-            bpms.clear();
-            correctors.clear();
-        }
     }
 
     private void loadLatticeElements() {
@@ -124,135 +156,69 @@ public class OrbitCorrectionController {
         });
     }
 
+    private void createCorrectionResultsEntries() {
+        correctionResultsEntries = new ArrayList<>(4);
+        correctionResultsEntries.add(new OrbitCorrectionResultsEntry(HORIZONTAL_ORBIT_TABLE_ENTRY));
+        correctionResultsEntries.add(new OrbitCorrectionResultsEntry(VERTICAL_ORBIT_TABLE_ENTRY));
+        correctionResultsEntries.add(new OrbitCorrectionResultsEntry(GOLDEN_HORIZONTAL_ORBIT_TABLE_ENTRY));
+        correctionResultsEntries.add(new OrbitCorrectionResultsEntry(GOLDEN_VERTICAL_ORBIT_TABLE_ENTRY));
+    }
+
     private void connectPVs() {
-        connectChartPVs();
-        connectOrbitCorrectionResultsPVs();
-    }
-
-    private void connectChartPVs() {
-        Preferences.getInstance().getChartPVNames().forEach((k, v) -> {
+        Preferences.getInstance().getPVNames().forEach((k, v) -> {
             if (v != null) {
                 PVReader<VType> reader = PVManager.read(channel(v, VType.class, VType.class))
                         .maxRate(Duration.ofMillis(100));
                 PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
-                chartPVs.put(k, new PV(v, reader, writer));
+                pvs.add(new PV(k, reader, writer));
             }
         });
-    }
-
-    private void connectOrbitCorrectionResultsPVs() {
-        Preferences.getInstance().getStatisticPVNames().forEach((k,v) -> {
-            if (v != null) {
-                PVReader<VType> reader = PVManager.read(channel(v, VType.class, VType.class))
-                        .maxRate(Duration.ofMillis(100));
-                PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
-
-                String name = resolveEntryName(k);
-                correctionResultPVs.put(new OrbitCorrectionResultsEntry(name), new PV(v, reader, writer));
-            }
-        });
-    }
-
-    private String resolveEntryName(String name) {
-        switch (name) {
-            case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
-                return "Horizontal Orbit";
-            case Preferences.VERTICAL_ORBIT_STATISTIC_PV:
-                return "Vertical Orbit";
-            case Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV:
-                return "Golden Horizontal Orbit";
-            case Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV:
-                return "Golden Vertical Orbit";
-            default:
-                return "";
-        }
-    }
-
-    public List<OrbitCorrectionResultsEntry> getOrbitCorrectionResults() {
-        if (correctionResultPVs != null) {
-            return new ArrayList<OrbitCorrectionResultsEntry>(correctionResultPVs.keySet()); // TODO ORDER?
-        }
-        return new ArrayList<>(5);
-    }
-
-    public List<BPM> getBpms() {
-        return bpms;
-    }
-
-    public List<Corrector> getCorrectors() {
-        return correctors;
-    }
-
-    public void startMeasuringOrbit() {
-
-    }
-
-    public void stopMeasuringOrbit() {
-
-    }
-
-    public void measureOrbitOnce() {
-
-    }
-
-    public void correctOrbitOnce() {
-
-    }
-
-    public void startOrbitCorrection() {
-
-    }
-
-    public void stopOrbitCorrection() {
-
-    }
-
-    public void exportCurrentOrbit() {
-
     }
 
     private void update() {
-        updateCharts();
-        updateOrbitCorrectionResults();
-    }
-
-    private void updateCharts() {
-        chartPVs.forEach((k, v) -> {
-            List<Double> values = retrieveWaveformValues(v.value);
-            switch(k) {
-                case Preferences.HORIZONTAL_ORBIT_PV:
-                    updateHorizontalOrbit(values);
-                    break;
-                case Preferences.VERTICAL_ORBIT_PV:
-                    updateVerticalOrbit(values);
-                    break;
-                case Preferences.GOLDEN_HORIZONTAL_ORBIT_PV:
-                    updateGoldenHorizontalOrbit(values);
-                    break;
-                case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
-                    updateGoldenVerticalOrbit(values);
-                    break;
-                case Preferences.HORIZONTAL_CORRECTOR_PV:
-                    updateHorizontalCorrectors(values);
-                    break;
-                case Preferences.VERTICAL_CORRECTOR_PV:
-                    updateVerticalCorrectors(values);
-                    break;
+        pvs.forEach(p -> {
+            List<Double> values = retrieveWaveformValues(p.value);
+            switch (p.pvKey) {
+            case Preferences.HORIZONTAL_ORBIT_PV:
+                updateHorizontalOrbit(values);
+                break;
+            case Preferences.VERTICAL_ORBIT_PV:
+                updateVerticalOrbit(values);
+                break;
+            case Preferences.GOLDEN_HORIZONTAL_ORBIT_PV:
+                updateGoldenHorizontalOrbit(values);
+                break;
+            case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
+                updateGoldenVerticalOrbit(values);
+                break;
+            case Preferences.HORIZONTAL_CORRECTOR_PV:
+                updateHorizontalCorrectors(values);
+                break;
+            case Preferences.VERTICAL_CORRECTOR_PV:
+                updateVerticalCorrectors(values);
+                break;
+            case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
+            case Preferences.VERTICAL_ORBIT_STATISTIC_PV:
+            case Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV:
+            case Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV:
+                updateOrbitCorrectionResults(p.pvKey, values);
+                break;
             }
         });
     }
 
-    private void updateOrbitCorrectionResults() {
-        correctionResultPVs.forEach((k, v) -> {
-            List<Double> values = retrieveWaveformValues(v.value);
+    private void updateOrbitCorrectionResults(String pvKey, List<Double> values) {
+        Optional<OrbitCorrectionResultsEntry> correctionResultsEntry = correctionResultsEntries.stream()
+                .filter(e -> e.nameProperty().get().equals(resolveEntryName(pvKey))).findFirst();
+        if (correctionResultsEntry.isPresent()) {
             if (values.size() >= 5) {
-                k.minProperty().set(values.get(0));
-                k.maxProperty().set(values.get(1));
-                k.avgProperty().set(values.get(2));
-                k.rmsProperty().set(values.get(3));
-                k.stdProperty().set(values.get(4));
+                correctionResultsEntry.get().minProperty().set(values.get(0));
+                correctionResultsEntry.get().maxProperty().set(values.get(1));
+                correctionResultsEntry.get().avgProperty().set(values.get(2));
+                correctionResultsEntry.get().rmsProperty().set(values.get(3));
+                correctionResultsEntry.get().stdProperty().set(values.get(4));
             }
-        });
+        }
     }
 
     private void updateHorizontalOrbit(List<Double> values) {
@@ -295,14 +261,27 @@ public class OrbitCorrectionController {
         if (value instanceof VNumberArray) {
             ListNumber data = ((VNumberArray) value).getData();
             int length = data.size();
-            if (data instanceof ListDouble) {
-                List<Double> values = new ArrayList<>(length);
-                for (int i = 0; i < length; i++) {
-                    values.add(data.getDouble(i));
-                }
-                return values;
+            List<Double> values = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                values.add(data.getDouble(i));
             }
+            return values;
         }
         return new ArrayList<>();
+    }
+
+    private String resolveEntryName(String name) {
+        switch (name) {
+        case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
+            return HORIZONTAL_ORBIT_TABLE_ENTRY;
+        case Preferences.VERTICAL_ORBIT_STATISTIC_PV:
+            return VERTICAL_ORBIT_TABLE_ENTRY;
+        case Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV:
+            return GOLDEN_HORIZONTAL_ORBIT_TABLE_ENTRY;
+        case Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV:
+            return GOLDEN_VERTICAL_ORBIT_TABLE_ENTRY;
+        default:
+            return "";
+        }
     }
 }
