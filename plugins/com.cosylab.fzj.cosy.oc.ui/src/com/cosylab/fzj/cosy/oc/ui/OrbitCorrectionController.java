@@ -12,7 +12,9 @@ import java.util.logging.Level;
 import org.diirt.datasource.PVManager;
 import org.diirt.datasource.PVReader;
 import org.diirt.datasource.PVWriter;
+import org.diirt.datasource.PVWriterListener;
 import org.diirt.util.array.ListNumber;
+import org.diirt.vtype.VEnum;
 import org.diirt.vtype.VNumberArray;
 import org.diirt.vtype.VType;
 
@@ -22,9 +24,14 @@ import com.cosylab.fzj.cosy.oc.OrbitCorrectionService;
 import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
+import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 import com.cosylab.fzj.cosy.oc.ui.util.GUIUpdateThrottle;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 
 public class OrbitCorrectionController {
 
@@ -68,6 +75,10 @@ public class OrbitCorrectionController {
         }
     }
 
+    private final BooleanProperty mradProperty = new SimpleBooleanProperty(true);
+    private final StringProperty messageLogProperty = new SimpleStringProperty("");
+    private final StringProperty statusProperty = new SimpleStringProperty();
+
     private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20, UPDATE_RATE) {
         @Override
         protected void fire() {
@@ -82,34 +93,53 @@ public class OrbitCorrectionController {
     private List<Corrector> correctors = new ArrayList<>();
 
     public OrbitCorrectionController() throws Exception {
+
         loadLatticeElements();
         createCorrectionResultsEntries();
         connectPVs();
         start();
+
+        mradProperty.addListener(c -> {
+            UI_EXECUTOR.execute(() -> {
+                update();
+            });
+        });
     }
 
     public void startMeasuringOrbit() {
-        // TODO implementation
+        String successMessage = "Start orbit measuring command was successfully sent.";
+        String failureMessage = "Error occured while sending start orbit measuring command.";
+        executeCommand(Preferences.START_MEASURING_ORBIT_PV, successMessage, failureMessage);
     }
 
     public void stopMeasuringOrbit() {
-        // TODO implementation
+        String successMessage = "Stop orbit measuring command was successfully sent.";
+        String failureMessage = "Error occured while sending stop orbit measuring command.";
+        executeCommand(Preferences.STOP_MEASURING_ORBIT_PV, successMessage, failureMessage);
     }
 
     public void measureOrbitOnce() {
-        // TODO implementation
+        String successMessage = "Measure orbit once command was successfully sent.";
+        String failureMessage = "Error occured while sending measure orbit once command.";
+        executeCommand(Preferences.MEASURE_ORBIT_ONCE_PV, successMessage, failureMessage);
+    }
+
+    public void startCorrectingOrbit() {
+        String successMessage = "Start correcting orbit command was successfully sent.";
+        String failureMessage = "Error occured while sending start correcting orbit command.";
+        executeCommand(Preferences.START_CORRECTING_ORBIT_PV, successMessage, failureMessage);
+    }
+
+    public void stopCorrectingOrbit() {
+        String successMessage = "Stop correcting orbit command was successfully sent.";
+        String failureMessage = "Error occured while sending stop correcting orbit command.";
+        executeCommand(Preferences.STOP_CORRECTING_ORBIT_PV, successMessage, failureMessage);
     }
 
     public void correctOrbitOnce() {
-        // TODO implementation
-    }
-
-    public void startOrbitCorrection() {
-        // TODO implementation
-    }
-
-    public void stopOrbitCorrection() {
-        // TODO implementation
+        String successMessage = "Correct orbit once command was successfully sent.";
+        String failureMessage = "Error occured while sending correct orbit once command.";
+        executeCommand(Preferences.CORRECT_ORBIT_ONCE_PV, successMessage, failureMessage);
     }
 
     public void exportCurrentOrbit() {
@@ -126,6 +156,18 @@ public class OrbitCorrectionController {
 
     public List<Corrector> getCorrectors() {
         return correctors;
+    }
+
+    public StringProperty messageLogProperty() {
+        return messageLogProperty;
+    }
+
+    public BooleanProperty mradProperty() {
+        return mradProperty;
+    }
+
+    public StringProperty statusProperty() {
+        return statusProperty;
     }
 
     public void dispose() {
@@ -180,22 +222,35 @@ public class OrbitCorrectionController {
             List<Double> values = retrieveWaveformValues(p.value);
             switch (p.pvKey) {
             case Preferences.HORIZONTAL_ORBIT_PV:
-                updateHorizontalOrbit(values);
+                updateOrbit(values, SeriesType.HORIZONTAL_ORBIT);
                 break;
             case Preferences.VERTICAL_ORBIT_PV:
-                updateVerticalOrbit(values);
+                updateOrbit(values, SeriesType.VERTICAL_ORBIT);
                 break;
             case Preferences.GOLDEN_HORIZONTAL_ORBIT_PV:
-                updateGoldenHorizontalOrbit(values);
+                updateOrbit(values, SeriesType.GOLDEN_HORIZONTAL_ORBIT);
                 break;
             case Preferences.GOLDEN_VERTICAL_ORBIT_PV:
-                updateGoldenVerticalOrbit(values);
+                updateOrbit(values, SeriesType.GOLDEN_VERTICAL_ORBIT);
                 break;
             case Preferences.HORIZONTAL_CORRECTOR_MRAD_PV:
-                updateHorizontalCorrectors(values);
+                if (mradProperty.get()) {
+                    updateCorrectors(values, LatticeElementType.HORIZONTAL_CORRECTOR);
+                }
                 break;
             case Preferences.VERTICAL_CORRECTOR_MRAD_PV:
-                updateVerticalCorrectors(values);
+                if (mradProperty.get()) {
+                    updateCorrectors(values, LatticeElementType.VERTICAL_CORRECTOR);
+                }
+                break;
+            case Preferences.HORIZONTAL_CORRECTOR_MA_PV:
+                if (!mradProperty.get()) {
+                    updateCorrectors(values, LatticeElementType.HORIZONTAL_CORRECTOR);
+                }
+            case Preferences.VERTICAL_CORRECTOR_MA_PV:
+                if (!mradProperty.get()) {
+                    updateCorrectors(values, LatticeElementType.VERTICAL_CORRECTOR);
+                }
                 break;
             case Preferences.HORIZONTAL_ORBIT_STATISTIC_PV:
             case Preferences.VERTICAL_ORBIT_STATISTIC_PV:
@@ -203,8 +258,30 @@ public class OrbitCorrectionController {
             case Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV:
                 updateOrbitCorrectionResults(p.pvKey, values);
                 break;
+            case Preferences.OPERATION_STATUS_PV:
+                if (p.value instanceof VEnum) {
+                    VEnum enumE = (VEnum) p.value;
+                    statusProperty.set(enumE.getValue());
+                }
             }
         });
+    }
+
+    private void executeCommand(String pvKey, String successMessage, String failureMessage) {
+        Optional<PV> pv = pvs.stream().filter(p -> p.pvKey.equals(pvKey)).findFirst();
+        if (pv.isPresent()) {
+            PVWriterListener<?> pvListener = w -> {
+                StringBuilder sb = new StringBuilder(messageLogProperty.get()).append('\n');
+                if (w.isWriteSucceeded()) {
+                    sb.append(successMessage);
+                } else if (w.isWriteFailed()) {
+                    sb.append(failureMessage);
+                }
+                messageLogProperty.set(sb.toString());
+            };
+            pv.get().writer.addPVWriterListener(pvListener);
+            pv.get().writer.write(1);
+        }
     }
 
     private void updateOrbitCorrectionResults(String pvKey, List<Double> values) {
@@ -221,39 +298,33 @@ public class OrbitCorrectionController {
         }
     }
 
-    private void updateHorizontalOrbit(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
-            bpms.get(i).horizontalOrbitProperty().set(values.get(i));
+    private void updateOrbit(List<Double> values, SeriesType type) {
+        int valueCounter = 0;
+        for (BPM bpm : bpms) {
+            if (type == SeriesType.HORIZONTAL_ORBIT) {
+                bpm.horizontalOrbitProperty().set(values.get(valueCounter));
+            } else if (type == SeriesType.VERTICAL_ORBIT) {
+                bpm.verticalOrbitProperty().set(values.get(valueCounter));
+            } else if (type == SeriesType.GOLDEN_HORIZONTAL_ORBIT) {
+                bpm.goldenHorizontalOrbitProperty().set(values.get(valueCounter));
+            } else if (type == SeriesType.GOLDEN_VERTICAL_ORBIT) {
+                bpm.goldenVerticalOrbitProperty().set(values.get(valueCounter));
+            }
+            valueCounter++;
         }
     }
 
-    private void updateVerticalOrbit(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
-            bpms.get(i).verticalOrbitProperty().set(values.get(i));
-        }
-    }
-
-    private void updateGoldenHorizontalOrbit(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
-            bpms.get(i).goldenHorizontalOrbitProperty().set(values.get(i));
-        }
-    }
-
-    private void updateGoldenVerticalOrbit(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < bpms.size()); i++) {
-            bpms.get(i).goldenVerticalOrbitProperty().set(values.get(i));
-        }
-    }
-
-    private void updateHorizontalCorrectors(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < correctors.size()); i++) {
-            correctors.get(i).horizontalCorrectionProperty().set(values.get(i));
-        }
-    }
-
-    private void updateVerticalCorrectors(List<Double> values) {
-        for (int i = 0; (i < values.size()) && (i < correctors.size()); i++) {
-            correctors.get(i).verticalCorrectionProperty().set(values.get(i));
+    private void updateCorrectors(List<Double> values, LatticeElementType type) {
+        int valueCounter = 0;
+        for (Corrector corrector : correctors) {
+            if (corrector.getElementData().getType() == type) {
+                if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
+                    corrector.horizontalCorrectionProperty().set(values.get(valueCounter));
+                } else {
+                    corrector.verticalCorrectionProperty().set(values.get(valueCounter));
+                }
+                valueCounter++;
+            }
         }
     }
 

@@ -9,6 +9,7 @@ import org.eclipse.fx.ui.workbench3.FXViewPart;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.ui.model.ChartType;
+import com.cosylab.fzj.cosy.oc.ui.model.OperationStatus;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 
 import javafx.beans.value.ChangeListener;
@@ -392,6 +393,16 @@ public class OrbitCorrectionView extends FXViewPart {
         RadioButton maRadioButton = new RadioButton("mA");
         maRadioButton.setToggleGroup(radioButtonsGroup);
 
+        radioButtonsGroup.selectedToggleProperty().addListener((v, o, n) -> {
+            if (mradRadioButton.isSelected()) {
+                controller.mradProperty().set(true);
+                System.out.println("SELECTED");
+            } else {
+                controller.mradProperty().set(false);
+                System.out.println("NOOOOT");
+            }
+        });
+
         radioButtons.add(mradRadioButton, 0, 0);
         radioButtons.add(maRadioButton, 0, 1);
 
@@ -500,6 +511,7 @@ public class OrbitCorrectionView extends FXViewPart {
 
         StaticTextArea messageLogTextArea = new StaticTextArea();
         messageLogTextArea.setMaxHeight(Double.MAX_VALUE);
+        messageLogTextArea.textProperty().bind(controller.messageLogProperty());
         messageLog.add(messageLogTextArea, 0, 0);
 
         setFullResizable(messageLogTextArea);
@@ -519,44 +531,46 @@ public class OrbitCorrectionView extends FXViewPart {
         orbitCorrectionControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
 
         final Button startMeasuringOrbitButton = new MultiLineButton("Start Measuring Orbit");
+        startMeasuringOrbitButton.setWrapText(true);
+        startMeasuringOrbitButton.getStyleClass().add("button");
         startMeasuringOrbitButton.setOnAction(e -> {
-
+            controller.startMeasuringOrbit();
         });
 
         final Button measureOrbitOnceButton = new MultiLineButton("Measure Orbit Once");
         measureOrbitOnceButton.setWrapText(true);
         measureOrbitOnceButton.setOnAction(e -> {
-
+            controller.measureOrbitOnce();
         });
 
         final Button startOrbitCorrectionButton = new MultiLineButton("Start Orbit Correction");
         startOrbitCorrectionButton.setWrapText(true);
         startOrbitCorrectionButton.setOnAction(e -> {
-
+            controller.startCorrectingOrbit();
         });
 
         final Button exportCurrentOrbitButton = new MultiLineButton("Export Current Orbit");
         exportCurrentOrbitButton.setWrapText(true);
         exportCurrentOrbitButton.setOnAction(e -> {
-
+            controller.exportCurrentOrbit();
         });
 
-        final Button stopMeasuringOrbit = new MultiLineButton("Stop Measuring Orbit");
-        stopMeasuringOrbit.setWrapText(true);
-        stopMeasuringOrbit.setOnAction(e -> {
-
+        final Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
+        stopMeasuringOrbitButton.setWrapText(true);
+        stopMeasuringOrbitButton.setOnAction(e -> {
+            controller.stopMeasuringOrbit();
         });
 
         final Button correctOrbitOnceButton = new MultiLineButton("Correct Orbit Once");
         correctOrbitOnceButton.setWrapText(true);
         correctOrbitOnceButton.setOnAction(e -> {
-
+            controller.correctOrbitOnce();
         });
 
         final Button stopOrbitCorrectionButton = new MultiLineButton("Stop Orbit Correction");
         stopOrbitCorrectionButton.setWrapText(true);
         stopOrbitCorrectionButton.setOnAction(e -> {
-
+            controller.stopCorrectingOrbit();
         });
 
         final Button advancedButton = new MultiLineButton("Advanced...");
@@ -566,17 +580,43 @@ public class OrbitCorrectionView extends FXViewPart {
         });
 
         setFullResizable(startMeasuringOrbitButton, measureOrbitOnceButton, startOrbitCorrectionButton,
-                exportCurrentOrbitButton, stopMeasuringOrbit, correctOrbitOnceButton, stopOrbitCorrectionButton,
+                exportCurrentOrbitButton, stopMeasuringOrbitButton, correctOrbitOnceButton, stopOrbitCorrectionButton,
                 advancedButton);
 
         orbitCorrectionControl.add(startMeasuringOrbitButton, 0, 0);
         orbitCorrectionControl.add(measureOrbitOnceButton, 1, 0);
         orbitCorrectionControl.add(startOrbitCorrectionButton, 2, 0);
         orbitCorrectionControl.add(exportCurrentOrbitButton, 3, 0);
-        orbitCorrectionControl.add(stopMeasuringOrbit, 0, 1);
+        orbitCorrectionControl.add(stopMeasuringOrbitButton, 0, 1);
         orbitCorrectionControl.add(correctOrbitOnceButton, 1, 1);
         orbitCorrectionControl.add(stopOrbitCorrectionButton, 2, 1);
         orbitCorrectionControl.add(advancedButton, 3, 1);
+
+        // FIXME: test and correct
+        controller.statusProperty().addListener(e -> {
+            if (controller.statusProperty().get().equals(OperationStatus.IDLE.toString())) {
+                startMeasuringOrbitButton.setDisable(false);
+                stopMeasuringOrbitButton.setDisable(true);
+                measureOrbitOnceButton.setDisable(false);
+                correctOrbitOnceButton.setDisable(false);
+                startOrbitCorrectionButton.setDisable(false);
+                stopOrbitCorrectionButton.setDisable(true);
+            } else if (controller.statusProperty().get().equals(OperationStatus.MEASURING_ORBIT.toString())) {
+                startMeasuringOrbitButton.setDisable(true);
+                stopMeasuringOrbitButton.setDisable(false);
+                measureOrbitOnceButton.setDisable(true);
+                correctOrbitOnceButton.setDisable(true);
+                startOrbitCorrectionButton.setDisable(true);
+                stopOrbitCorrectionButton.setDisable(true);
+            } else if (controller.statusProperty().get().equals(OperationStatus.CORRECTING_ORBIT.toString())) {
+                startMeasuringOrbitButton.setDisable(true);
+                stopMeasuringOrbitButton.setDisable(true);
+                measureOrbitOnceButton.setDisable(true);
+                correctOrbitOnceButton.setDisable(true);
+                startOrbitCorrectionButton.setDisable(true);
+                stopOrbitCorrectionButton.setDisable(false);
+            }
+        });
 
         return new BorderedTitledPane("Orbit Correction Control", orbitCorrectionControl);
     }
