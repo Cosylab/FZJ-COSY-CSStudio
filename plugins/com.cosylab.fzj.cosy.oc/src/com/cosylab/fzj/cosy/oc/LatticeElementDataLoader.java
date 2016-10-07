@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -108,16 +110,14 @@ public class LatticeElementDataLoader {
      * @throws IOException if exception while reading the file occurs.
      */
     private List<String> getFileContent(URL filePath) throws IOException {
-        List<String> fileContent = new ArrayList<>();
         try (Stream<String> fileStream = Files.lines(Paths.get(new File(filePath.getFile()).getPath()))) {
-            fileStream.forEach(line -> {
-                if (isElementLine(line)) {
-                    String parsedLine = line.replaceAll("\\s+", DATA_DELIMITER).replaceAll("\"", "").trim();
-                    fileContent.add(parsedLine);
-                }
-            });
+            Pattern matchSpaces = Pattern.compile("\\s+");
+            Pattern matchQuotes = Pattern.compile("\"");
+            return fileStream
+                    .filter(l -> isElementLine(l))
+                    .map(l -> matchQuotes.matcher(matchSpaces.matcher(l).replaceAll(DATA_DELIMITER)).replaceAll("").trim())
+                    .collect(Collectors.toList());
         }
-        return fileContent;
     }
 
     /**
@@ -127,6 +127,6 @@ public class LatticeElementDataLoader {
      * @return <code>true</code> if string defines lattice element, otherwise <code>false</code>.
      */
     private boolean isElementLine(String line) {
-        return line != null && !line.isEmpty() && !line.startsWith("@") && !line.startsWith("*") && !line.startsWith("$");
+        return line != null && !line.isEmpty() && line.charAt(0) != '@' && line.charAt(0) != '*' && line.charAt(0) != '$';
     }
 }
