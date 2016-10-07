@@ -21,7 +21,7 @@ import org.eclipse.osgi.service.datalocation.Location;
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
-public class Preferences {
+public final class Preferences {
 
     private static final String BPMS_FILE = "bpms_file";
     private static final String CORRECTORS_FILE = "correctors_file";
@@ -69,7 +69,6 @@ public class Preferences {
     private static Preferences instance;
 
     private Preferences() {
-        super();
     }
 
     /**
@@ -87,7 +86,13 @@ public class Preferences {
      */
     public URL getBpmsFile() {
         if (bpmsFile == null) {
-            bpmsFile = getWorkspaceFile(getBpmsFilename());
+            try {
+                bpmsFile = getWorkspaceFile(getBpmsFilename());
+            } catch (Exception e) {
+                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                        "Could not load the bpms file.", e);
+                return null;
+            }
         }
         return bpmsFile;
     }
@@ -96,7 +101,13 @@ public class Preferences {
      * @return the bpms filename.
      */
     public String getBpmsFilename() {
-        return getString(BPMS_FILE, "bpms.twiss", false);
+        try {
+            return getString(BPMS_FILE, "bpms.twiss", false);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the bpms file name.", e);
+            return null;
+        }
     }
 
     /**
@@ -104,7 +115,13 @@ public class Preferences {
      */
     public URL getCorrectorsFile() {
         if (correctorsFile == null) {
-            correctorsFile = getWorkspaceFile(getCorrectorsFilename());
+            try {
+                correctorsFile = getWorkspaceFile(getCorrectorsFilename());
+            } catch (Exception e) {
+                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                        "Could not load the correctors file.", e);
+                return null;
+            }
         }
         return correctorsFile;
     }
@@ -113,7 +130,13 @@ public class Preferences {
      * @return the correctors filename.
      */
     public String getCorrectorsFilename() {
-        return getString(CORRECTORS_FILE, "correctors.twiss", false);
+        try {
+            return getString(CORRECTORS_FILE, "correctors.twiss", false);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the correctors file name.", e);
+            return null;
+        }
     }
 
     /**
@@ -121,7 +144,13 @@ public class Preferences {
      */
     public URL getPVsFile() {
         if (pvsFile == null) {
-            pvsFile = getWorkspaceFile(getPVsFilename());
+            try {
+                pvsFile = getWorkspaceFile(getPVsFilename());
+            } catch (Exception e) {
+                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                        "Could not load the pvs file.", e);
+                return null;
+            }
         }
         return pvsFile;
     }
@@ -130,7 +159,13 @@ public class Preferences {
      * @return the pvs filename.
      */
     public String getPVsFilename() {
-        return getString(PVS_FILE, "pvs.properties", false);
+        try {
+            return getString(PVS_FILE, "pvs.properties", false);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the pvs properties file name.", e);
+            return null;
+        }
     }
 
     /**
@@ -408,7 +443,7 @@ public class Preferences {
      * @return the file url.
      * @throws PreferencesException if the file could not be loaded
      */
-    public static URL getWorkspaceFile(String fileName) throws PreferencesException {
+    private static URL getWorkspaceFile(String fileName) throws PreferencesException {
         Location loc = Platform.getInstanceLocation();
         File file = new File(new File(loc.getURL().getFile()), fileName);
         try {
