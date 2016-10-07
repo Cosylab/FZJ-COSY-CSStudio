@@ -57,11 +57,11 @@ public class LatticeElementDataLoader {
     private List<LatticeElementData> getBpms(List<String> fileContent) {
         List<LatticeElementData> bpms = new ArrayList<>();
         fileContent.forEach(line -> {
-            String[] splittedLine = line.split(DATA_DELIMITER);
-            if (splittedLine.length >= 2) {
+            String[] splitLine = line.split(DATA_DELIMITER);
+            if (splitLine.length >= 2) {
                 try {
-                    String name = splittedLine[NAME_INDEX];
-                    double position = Double.parseDouble(splittedLine[POSITION_INDEX]);
+                    String name = splitLine[NAME_INDEX];
+                    double position = Double.parseDouble(splitLine[POSITION_INDEX]);
                     if (name != null && !name.isEmpty()) {
                         bpms.add(new LatticeElementData(name, position, LatticeElementType.BPM));
                     }
@@ -83,12 +83,12 @@ public class LatticeElementDataLoader {
     private List<LatticeElementData> getCorrectors(List<String> fileContent) {
         List<LatticeElementData> correctors = new ArrayList<>();
         fileContent.forEach(line -> {
-            String[] splittedLine = line.split(DATA_DELIMITER);
-            if (splittedLine.length >= 4) {
+            String[] splitLine = line.split(DATA_DELIMITER);
+            if (splitLine.length >= 4) {
                 try {
-                    String name = splittedLine[NAME_INDEX];
-                    double position = Double.parseDouble(splittedLine[POSITION_INDEX]);
-                    String orientation = splittedLine[CORRECTOR_ORIENTATION_INDEX];
+                    String name = splitLine[NAME_INDEX];
+                    double position = Double.parseDouble(splitLine[POSITION_INDEX]);
+                    String orientation = splitLine[CORRECTOR_ORIENTATION_INDEX];
                     LatticeElementType type = LatticeElementType.getElementType(orientation);
                     if (name != null && !name.isEmpty() && type != null) {
                         correctors.add(new LatticeElementData(name, position, type));
