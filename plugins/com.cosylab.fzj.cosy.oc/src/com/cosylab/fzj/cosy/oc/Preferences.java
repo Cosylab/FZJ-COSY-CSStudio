@@ -51,6 +51,10 @@ public final class Preferences {
     public static final String GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV = "golden_horizontal_orbit_statistic_pv";
     /** Golden vertical orbit statistic PV key. */
     public static final String GOLDEN_VERTICAL_ORBIT_STATISTIC_PV = "golden_vertical_orbit_statistic_pv";
+    /** Horizontal orbit weights PV key. */
+    public static final String HORIZONTAL_ORBIT_WEIGHTS_PV = "horizontal_orbit_weights_pv";
+    /** Vertical orbit weights PV key. */
+    public static final String VERTICAL_ORBIT_WEIGHTS_PV = "vertical_orbit_weights_pv";
     /** Operation status PV key. */
     public static final String OPERATION_STATUS_PV = "operation_status_pv";
     /** Start measuring orbit PV key. */
@@ -331,9 +335,35 @@ public final class Preferences {
     }
 
     /**
+     * @return the horizontal orbit weights PV name.
+     */
+    public String getHorizontalOrbitWeightsPVName() {
+        try {
+            return getString(HORIZONTAL_ORBIT_WEIGHTS_PV, null ,true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the horizontal orbit weights PV name.", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return the vertical orbit weights PV name.
+     */
+    public String getVerticalOrbitWeightsPVName() {
+        try {
+            return getString(VERTICAL_ORBIT_WEIGHTS_PV, null ,true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the vertical orbit weights PV name.", e);
+            return null;
+        }
+    }
+
+    /**
      * @return the operation status PV name.
      */
-    public String getOperationStatusPV() {
+    public String getOperationStatusPVName() {
         try {
             return getString(OPERATION_STATUS_PV, null ,true);
         } catch (Exception e) {
@@ -434,11 +464,13 @@ public final class Preferences {
         pvs.put(VERTICAL_CORRECTOR_MRAD_PV, getVerticalCorrectorMradPVName());
         pvs.put(HORIZONTAL_CORRECTOR_MA_PV, getHorizontalCorrectorMaPVName());
         pvs.put(VERTICAL_CORRECTOR_MA_PV, getVerticalCorrectorMaPVName());
-        pvs.put(OPERATION_STATUS_PV, getOperationStatusPV());
+        pvs.put(OPERATION_STATUS_PV, getOperationStatusPVName());
         pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV, getHorizontalOrbitStatisticPVName());
         pvs.put(VERTICAL_ORBIT_STATISTIC_PV, getVerticalOrbitStatisticPVName());
         pvs.put(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, getGoldenHorizontalOrbitStatisticPVName());
         pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, getGoldenVerticalOrbitStatisticPVName());
+        pvs.put(HORIZONTAL_ORBIT_WEIGHTS_PV, getHorizontalOrbitWeightsPVName());
+        pvs.put(VERTICAL_ORBIT_WEIGHTS_PV, getVerticalOrbitWeightsPVName());
         pvs.put(START_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
         pvs.put(STOP_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
         pvs.put(MEASURE_ORBIT_ONCE_PV, getMeasureOrbitOncePVName());
