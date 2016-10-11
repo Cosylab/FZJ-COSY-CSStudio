@@ -471,7 +471,7 @@ public final class Preferences {
         pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, getGoldenVerticalOrbitStatisticPVName());
         pvs.put(HORIZONTAL_ORBIT_WEIGHTS_PV, getHorizontalOrbitWeightsPVName());
         pvs.put(VERTICAL_ORBIT_WEIGHTS_PV, getVerticalOrbitWeightsPVName());
-        pvs.put(START_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
+        pvs.put(START_MEASURING_ORBIT_PV, getStartMeasuringOrbitPVName());
         pvs.put(STOP_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
         pvs.put(MEASURE_ORBIT_ONCE_PV, getMeasureOrbitOncePVName());
         pvs.put(START_CORRECTING_ORBIT_PV, getStartCorrectingOrbitPVName());

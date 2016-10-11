@@ -8,8 +8,17 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+/**
+ * <code>OrbitCorrectionResultsTable</code> is an table which contains information about orbit correction results.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ *
+ */
 public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResultsEntry> {
 
+    /**
+     * Constructs new orbit correction results table.
+     */
     public OrbitCorrectionResultsTable () {
         setEditable(false);
         setMaxWidth(Double.MAX_VALUE);
@@ -20,6 +29,9 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
         prefHeightProperty().bind(Bindings.size(getItems()).multiply(getFixedCellSize()).add(26));
     }
 
+    /**
+     * Creates orbit correction results table columns.
+     */
     private void createTable() {
 
         List<TableColumn<OrbitCorrectionResultsEntry, ?>> list = new ArrayList<>(6);
@@ -51,6 +63,11 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
         getColumns().addAll(list);
     }
 
+    /**
+     * Updates table values.
+     *
+     * @param entries updated entries
+     */
     public void updateTable(List<OrbitCorrectionResultsEntry> entries) {
         getItems().setAll(entries);
     }

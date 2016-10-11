@@ -2,7 +2,7 @@ package com.cosylab.fzj.cosy.oc.ui;
 
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
-import java.util.List;
+import java.io.File;
 
 import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
@@ -12,6 +12,7 @@ import com.cosylab.fzj.cosy.oc.ui.model.ChartType;
 import com.cosylab.fzj.cosy.oc.ui.model.OperationStatus;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -35,7 +36,17 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 
+/**
+ * <code>OrbitCorrectionView</code> is an {@link FXViewPart} implementation for displaying and controlling orbit correction.
+ * It provides charts that displays orbit, corrections and lattice. It also provides table that displays orbit correction
+ * results, message logs and controls for executing actions.
+ *
+ * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
+ *
+ */
 public class OrbitCorrectionView extends FXViewPart {
 
     private LineChart<Number, Number> orbitChart;
@@ -46,34 +57,49 @@ public class OrbitCorrectionView extends FXViewPart {
     private ZoomableLineChart latticeZoom;
 
     private OrbitCorrectionController controller;
+    private FileChooser fileChooser;
+    private Scene scene;
 
+    /**
+     * Constructs new orbit correction view.
+     */
     public OrbitCorrectionView() {
-        try {
-            controller = new OrbitCorrectionController();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(0, new ExtensionFilter("All Files", "*.*"));
+
+        controller = new OrbitCorrectionController();
     }
 
+    /* (non-Javadoc)
+     * @see org.eclipse.fx.ui.workbench3.FXViewPart#createFxScene()
+     */
     @Override
     protected Scene createFxScene() {
-        Scene scene = new Scene(createContentPane());
+        scene = new Scene(createContentPane());
         scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
         return scene;
     }
 
+    /* (non-Javadoc)
+     * @see org.eclipse.fx.ui.workbench3.FXViewPart#setFxFocus()
+     */
     @Override
     protected void setFxFocus() {
         orbitChart.requestFocus();
     }
 
+    /* (non-Javadoc)
+     * @see org.eclipse.ui.part.WorkbenchPart#dispose()
+     */
     @Override
     public void dispose() {
         super.dispose();
         controller.dispose();
     }
 
+    /**
+     * @return grid pane with charts and controls.
+     */
     private GridPane createContentPane() {
         GridPane contentPane = new GridPane();
         contentPane.getStyleClass().add("root");
@@ -90,6 +116,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return contentPane;
     }
 
+    /**
+     * @return grid pane with orbit chart, correction chart and lattice chart.
+     */
     private GridPane createCharts() {
         GridPane charts = new GridPane();
 
@@ -130,6 +159,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return charts;
     }
 
+    /**
+     * Synchronise the lower and upper bound of all three charts, when zoom is called.
+     */
     private void configureChartSynchronisation() {
         // synchronise the lower and upper bounds of all three charts
 
@@ -175,10 +207,9 @@ public class OrbitCorrectionView extends FXViewPart {
     /**
      * Construct a standalone vertical chart axis, which receives the range of the vertical axis in the given chart.
      *
-     * @param chart
-     *            the chart to provide the axis bounds
-     * @param label
-     *            the label for the axis
+     * @param chart the chart to provide the axis bounds
+     * @param label the label for the axis
+     *
      * @return a node containing the axis that can be added to pane next to a chart
      */
     private static Node createVerticalAxis(LineChart<Number, Number> chart, String label) {
@@ -202,9 +233,12 @@ public class OrbitCorrectionView extends FXViewPart {
         return axisPane;
     }
 
+    /**
+     * @return region with configured orbit chart.
+     */
     private Region createOrbitChart() {
-        final ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
-        final NumberAxis yAxis = new NumberAxis();
+        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
+        NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
         xAxis.setTickMarkVisible(false);
@@ -232,9 +266,12 @@ public class OrbitCorrectionView extends FXViewPart {
         return orbitZoom;
     }
 
+    /**
+     * @return region with configured corrections chart.
+     */
     private Region createCorrectionsChart() {
-        final ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
-        final NumberAxis yAxis = new NumberAxis();
+        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
+        NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
         xAxis.setTickMarkVisible(false);
@@ -260,9 +297,12 @@ public class OrbitCorrectionView extends FXViewPart {
         return correctionsZoom;
     }
 
+    /**
+     * @return region with configured lattice chart.
+     */
     private Region createLatticeChart() {
-        final ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
-        final NumberAxis yAxis = new NumberAxis(-50, 50, 10);
+        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5, 185, 5);
+        NumberAxis yAxis = new NumberAxis(-50, 50, 10);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
         yAxis.setMinorTickVisible(false);
@@ -289,6 +329,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return latticeZoom;
     }
 
+    /**
+     * @return grid pane with orbit chart legend.
+     */
     private GridPane createOrbitChartLegend() {
         GridPane legend = new GridPane();
         legend.setVgap(5);
@@ -349,6 +392,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return legend;
     }
 
+    /**
+     * @return grid pane with corrections chart legend.
+     */
     private GridPane createCorrectionsChartLegend() {
         GridPane legend = new GridPane();
         legend.setPadding(new Insets(10, 0, 0, 0));
@@ -385,23 +431,14 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane radioButtons = new GridPane();
         radioButtons.setVgap(5);
 
-        ToggleGroup radioButtonsGroup = new ToggleGroup();
         RadioButton mradRadioButton = new RadioButton("mrad");
-        mradRadioButton.setToggleGroup(radioButtonsGroup);
         mradRadioButton.setSelected(true);
-
         RadioButton maRadioButton = new RadioButton("mA");
-        maRadioButton.setToggleGroup(radioButtonsGroup);
 
-        radioButtonsGroup.selectedToggleProperty().addListener((v, o, n) -> {
-            if (mradRadioButton.isSelected()) {
-                controller.mradProperty().set(true);
-                System.out.println("SELECTED");
-            } else {
-                controller.mradProperty().set(false);
-                System.out.println("NOOOOT");
-            }
-        });
+        ToggleGroup radioButtonsGroup = new ToggleGroup();
+        mradRadioButton.setToggleGroup(radioButtonsGroup);
+        maRadioButton.setToggleGroup(radioButtonsGroup);
+        radioButtonsGroup.selectedToggleProperty().addListener(l -> controller.mradProperty().set(mradRadioButton.isSelected()));
 
         radioButtons.add(mradRadioButton, 0, 0);
         radioButtons.add(maRadioButton, 0, 1);
@@ -415,6 +452,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return legend;
     }
 
+    /**
+     * @return grid pane with lattice chart legend.
+     */
     private GridPane createLatticeChartLegend() {
         GridPane legend = new GridPane();
         legend.setPadding(new Insets(10, 0, 0, 0));
@@ -463,6 +503,10 @@ public class OrbitCorrectionView extends FXViewPart {
         return legend;
     }
 
+    /**
+     * @return grid pane which contains orbit correction results table, orbit correction controls, golden orbit
+     *         controls, response matrix controls, engineering screens controls and message log.
+     */
     private GridPane createControls() {
         GridPane controls = new GridPane();
         controls.setHgap(10);
@@ -492,20 +536,22 @@ public class OrbitCorrectionView extends FXViewPart {
         return controls;
     }
 
+    /**
+     * @return titled pane with correction results table.
+     */
     private BorderedTitledPane createCorrectionResults() {
         GridPane correctionResults = new GridPane();
         OrbitCorrectionResultsTable correctionResultsTable = new OrbitCorrectionResultsTable();
-
-        // FIXME -> start tmp code
-        List<OrbitCorrectionResultsEntry> entries = controller.getOrbitCorrectionResults();
-        correctionResultsTable.updateTable(entries);
-        // FIXME <- end tmp code
+        correctionResultsTable.updateTable(controller.getOrbitCorrectionResults());
 
         correctionResults.add(correctionResultsTable, 0, 0);
         setGridConstraints(correctionResultsTable, true, true, Priority.ALWAYS, Priority.ALWAYS);
         return new BorderedTitledPane("Orbit Correction Results", correctionResults);
     }
 
+    /**
+     * @return titled pane with message logs.
+     */
     private BorderedTitledPane createMessageLog() {
         GridPane messageLog = new GridPane();
 
@@ -521,63 +567,62 @@ public class OrbitCorrectionView extends FXViewPart {
         return new BorderedTitledPane("Message Log", messageLog);
     }
 
+    /**
+     * @return titled pane with orbit correction controls.
+     */
     private BorderedTitledPane createOrbitCorrectionControls() {
         GridPane orbitCorrectionControl = new GridPane();
         orbitCorrectionControl.setHgap(10);
         orbitCorrectionControl.setVgap(10);
 
         orbitCorrectionControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(4));
-
         orbitCorrectionControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
 
-        final Button startMeasuringOrbitButton = new MultiLineButton("Start Measuring Orbit");
+        final StringProperty status = controller.statusProperty();
+
+        Button startMeasuringOrbitButton = new MultiLineButton("Start Measuring Orbit");
         startMeasuringOrbitButton.setWrapText(true);
         startMeasuringOrbitButton.getStyleClass().add("button");
-        startMeasuringOrbitButton.setOnAction(e -> {
-            controller.startMeasuringOrbit();
-        });
+        startMeasuringOrbitButton.setOnAction(e -> controller.startMeasuringOrbit());
+        startMeasuringOrbitButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button measureOrbitOnceButton = new MultiLineButton("Measure Orbit Once");
+        Button measureOrbitOnceButton = new MultiLineButton("Measure Orbit Once");
         measureOrbitOnceButton.setWrapText(true);
-        measureOrbitOnceButton.setOnAction(e -> {
-            controller.measureOrbitOnce();
-        });
+        measureOrbitOnceButton.setOnAction(e -> controller.measureOrbitOnce());
+        measureOrbitOnceButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button startOrbitCorrectionButton = new MultiLineButton("Start Orbit Correction");
+        Button startOrbitCorrectionButton = new MultiLineButton("Start Orbit Correction");
         startOrbitCorrectionButton.setWrapText(true);
-        startOrbitCorrectionButton.setOnAction(e -> {
-            controller.startCorrectingOrbit();
-        });
+        startOrbitCorrectionButton.setOnAction(e -> controller.startCorrectingOrbit());
+        startOrbitCorrectionButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button exportCurrentOrbitButton = new MultiLineButton("Export Current Orbit");
+        Button exportCurrentOrbitButton = new MultiLineButton("Export Current Orbit");
         exportCurrentOrbitButton.setWrapText(true);
         exportCurrentOrbitButton.setOnAction(e -> {
-            controller.exportCurrentOrbit();
+            final File file = fileChooser.showSaveDialog(scene.getWindow());
+            if (file != null) {
+                controller.exportCurrentOrbit(file);
+            }
         });
 
-        final Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
+        Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
         stopMeasuringOrbitButton.setWrapText(true);
-        stopMeasuringOrbitButton.setOnAction(e -> {
-            controller.stopMeasuringOrbit();
-        });
+        stopMeasuringOrbitButton.setOnAction(e -> controller.stopMeasuringOrbit());
+        stopMeasuringOrbitButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.MEASURING_ORBIT.toString()));
 
-        final Button correctOrbitOnceButton = new MultiLineButton("Correct Orbit Once");
+        Button correctOrbitOnceButton = new MultiLineButton("Correct Orbit Once");
         correctOrbitOnceButton.setWrapText(true);
-        correctOrbitOnceButton.setOnAction(e -> {
-            controller.correctOrbitOnce();
-        });
+        correctOrbitOnceButton.setOnAction(e -> controller.correctOrbitOnce());
+        correctOrbitOnceButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button stopOrbitCorrectionButton = new MultiLineButton("Stop Orbit Correction");
+        Button stopOrbitCorrectionButton = new MultiLineButton("Stop Orbit Correction");
         stopOrbitCorrectionButton.setWrapText(true);
-        stopOrbitCorrectionButton.setOnAction(e -> {
-            controller.stopCorrectingOrbit();
-        });
+        stopOrbitCorrectionButton.setOnAction(e -> controller.stopCorrectingOrbit());
+        stopOrbitCorrectionButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.CORRECTING_ORBIT.toString()));
 
-        final Button advancedButton = new MultiLineButton("Advanced...");
+        Button advancedButton = new MultiLineButton("Advanced...");
         advancedButton.setWrapText(true);
-        advancedButton.setOnAction(e -> {
-
-        });
+        // TODO implement advanced button action
 
         setFullResizable(startMeasuringOrbitButton, measureOrbitOnceButton, startOrbitCorrectionButton,
                 exportCurrentOrbitButton, stopMeasuringOrbitButton, correctOrbitOnceButton, stopOrbitCorrectionButton,
@@ -592,35 +637,12 @@ public class OrbitCorrectionView extends FXViewPart {
         orbitCorrectionControl.add(stopOrbitCorrectionButton, 2, 1);
         orbitCorrectionControl.add(advancedButton, 3, 1);
 
-        // FIXME: test and correct
-        controller.statusProperty().addListener(e -> {
-            if (controller.statusProperty().get().equals(OperationStatus.IDLE.toString())) {
-                startMeasuringOrbitButton.setDisable(false);
-                stopMeasuringOrbitButton.setDisable(true);
-                measureOrbitOnceButton.setDisable(false);
-                correctOrbitOnceButton.setDisable(false);
-                startOrbitCorrectionButton.setDisable(false);
-                stopOrbitCorrectionButton.setDisable(true);
-            } else if (controller.statusProperty().get().equals(OperationStatus.MEASURING_ORBIT.toString())) {
-                startMeasuringOrbitButton.setDisable(true);
-                stopMeasuringOrbitButton.setDisable(false);
-                measureOrbitOnceButton.setDisable(true);
-                correctOrbitOnceButton.setDisable(true);
-                startOrbitCorrectionButton.setDisable(true);
-                stopOrbitCorrectionButton.setDisable(true);
-            } else if (controller.statusProperty().get().equals(OperationStatus.CORRECTING_ORBIT.toString())) {
-                startMeasuringOrbitButton.setDisable(true);
-                stopMeasuringOrbitButton.setDisable(true);
-                measureOrbitOnceButton.setDisable(true);
-                correctOrbitOnceButton.setDisable(true);
-                startOrbitCorrectionButton.setDisable(true);
-                stopOrbitCorrectionButton.setDisable(false);
-            }
-        });
-
         return new BorderedTitledPane("Orbit Correction Control", orbitCorrectionControl);
     }
 
+    /**
+     * Sets given regions full resizable.
+     */
     private static void setFullResizable(Region... components) {
         for (Region component : components) {
             setGridConstraints(component, true, true, Priority.ALWAYS, Priority.ALWAYS);
@@ -629,6 +651,9 @@ public class OrbitCorrectionView extends FXViewPart {
         }
     }
 
+    /**
+     * @return titled pane with golden orbit controls.
+     */
     private BorderedTitledPane createGoldenOrbitControls() {
         GridPane goldenOrbitControl = new GridPane();
         goldenOrbitControl.setHgap(10);
@@ -636,20 +661,30 @@ public class OrbitCorrectionView extends FXViewPart {
 
         goldenOrbitControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
 
-        final Button uploadButton = new Button("Upload");
+        final StringProperty status = controller.statusProperty();
+
+        Button uploadButton = new Button("Upload");
         uploadButton.setOnAction(e -> {
-
+            final File file = fileChooser.showOpenDialog(scene.getWindow());
+            if (file != null) {
+                controller.uploadGoldenOrbit(file);
+            }
         });
+        uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button downloadButton = new Button("Download");
+
+        Button downloadButton = new Button("Download");
         downloadButton.setOnAction(e -> {
-
+            final File file = fileChooser.showSaveDialog(scene.getWindow());
+            if (file != null) {
+                controller.downloadGoldenOrbit(file);
+            }
         });
+        downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button useCurrentButton = new Button("Use current");
-        useCurrentButton.setOnAction(e -> {
-
-        });
+        Button useCurrentButton = new Button("Use current");
+        useCurrentButton.setOnAction(e -> controller.useCurrent());
+        useCurrentButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
         setFullResizable(uploadButton, downloadButton, useCurrentButton);
 
@@ -660,6 +695,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return new BorderedTitledPane("Golden Orbit", goldenOrbitControl);
     }
 
+    /**
+     * @return titled pane with response matrix controls.
+     */
     private BorderedTitledPane createResponseMatrixControls() {
         GridPane responseMatrixControl = new GridPane();
         responseMatrixControl.setHgap(10);
@@ -668,20 +706,29 @@ public class OrbitCorrectionView extends FXViewPart {
 
         responseMatrixControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
 
-        final Button downloadButton = new Button("Download");
+        final StringProperty status = controller.statusProperty();
+
+        Button downloadButton = new Button("Download");
         downloadButton.setOnAction(e -> {
-
+            final File file = fileChooser.showSaveDialog(scene.getWindow());
+            if (file != null) {
+                controller.downloadResponseMatrix(file);
+            }
         });
+        downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button uploadButton = new Button("Upload");
+        Button uploadButton = new Button("Upload");
         uploadButton.setOnAction(e -> {
-
+            final File file = fileChooser.showOpenDialog(scene.getWindow());
+            if (file != null) {
+                controller.uploadResponseMatrix(file);
+            }
         });
+        uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
-        final Button measureButton = new Button("Measure");
-        measureButton.setOnAction(e -> {
-
-        });
+        Button measureButton = new Button("Measure");
+        measureButton.setOnAction(e -> controller.measure());
+        measureButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
 
         setFullResizable(uploadButton, downloadButton, measureButton);
 
@@ -692,6 +739,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return new BorderedTitledPane("Response Matrix", responseMatrixControl);
     }
 
+    /**
+     * @return titled pane with engineering screens controls.
+     */
     private BorderedTitledPane createEngineeringScreensControls() {
         GridPane engineeringScreensControl = new GridPane();
         engineeringScreensControl.setHgap(10);
@@ -699,15 +749,13 @@ public class OrbitCorrectionView extends FXViewPart {
 
         engineeringScreensControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
 
-        final Button bpmControlButton = new MultiLineButton("BPM Control");
-        bpmControlButton.setOnAction(e -> {
+        Button bpmControlButton = new MultiLineButton("BPM Control");
+        bpmControlButton.setDisable(true);
+        // TODO open OPI file
 
-        });
-
-        final Button correctorsControlButton = new MultiLineButton("Correctors Control");
-        correctorsControlButton.setOnAction(e -> {
-
-        });
+        Button correctorsControlButton = new MultiLineButton("Correctors Control");
+        correctorsControlButton.setDisable(true);
+        // TODO open OPI file
 
         setFullResizable(bpmControlButton, correctorsControlButton);
         engineeringScreensControl.add(bpmControlButton, 0, 0);
@@ -716,7 +764,9 @@ public class OrbitCorrectionView extends FXViewPart {
         return new BorderedTitledPane("Engineering Screens", engineeringScreensControl);
     }
 
-    // TODO make method nicer?
+    /**
+     * Adds given series type to the given chart. Series could also be empty if the given empty flag is set to true.
+     */
     private void addSeries(ChartType chartType, SeriesType seriesType, boolean empty) {
         Series<Number, Number> series = new Series<>("Empty Series", FXCollections.emptyObservableList());
         if (!empty) {
@@ -743,6 +793,12 @@ public class OrbitCorrectionView extends FXViewPart {
         }
     }
 
+    /**
+     * Removes the given series from the given chart.
+     *
+     * @param chartType chart type
+     * @param seriesType series type
+     */
     private void removeSeries(ChartType chartType, SeriesType seriesType) {
         ObservableList<Series<Number, Number>> data = FXCollections.emptyObservableList();
         if (chartType == ChartType.ORBIT) {
@@ -762,6 +818,12 @@ public class OrbitCorrectionView extends FXViewPart {
         }
     }
 
+    /**
+     * @param chartType chart type
+     * @param seriesType series type
+     *
+     * @return data from the given chart type
+     */
     private ObservableList<Data<Number, Number>> getData(ChartType chartType, SeriesType seriesType) {
         ObservableList<Data<Number, Number>> data = FXCollections.observableArrayList();
         controller.getBpms().forEach(bpm -> {
