@@ -103,7 +103,7 @@ public class OrbitCorrectionController {
     private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20, UPDATE_RATE) {
         @Override
         protected void fire() {
-            updateScreen();
+            update();
         }
     };
 
@@ -121,7 +121,7 @@ public class OrbitCorrectionController {
         connectPVs();
         start();
 
-        mradProperty.addListener(e -> updateScreen());
+        mradProperty.addListener(e -> throttle.trigger());
     }
 
     /**
@@ -277,6 +277,7 @@ public class OrbitCorrectionController {
             String failureMessage = "Error occured while updatind golden vertical orbit.";
             writeData(goldenVerticalOrbit, Optional.of(verticalOrbit.value), successMessage, failureMessage);
         }
+        throttle.trigger();
     }
 
     public void downloadResponseMatrix(File file) {
@@ -660,15 +661,6 @@ public class OrbitCorrectionController {
         }
         sb.append(message);
         messageLogProperty.set(sb.toString());
-    }
-
-    /**
-     * Updates screen.
-     */
-    private void updateScreen() {
-        UI_EXECUTOR.execute(() -> {
-            update();
-        });
     }
 
     /**
