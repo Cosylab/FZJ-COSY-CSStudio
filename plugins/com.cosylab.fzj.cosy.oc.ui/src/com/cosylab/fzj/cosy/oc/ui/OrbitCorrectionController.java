@@ -103,7 +103,7 @@ public class OrbitCorrectionController {
     private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20, UPDATE_RATE) {
         @Override
         protected void fire() {
-            update();
+            UI_EXECUTOR.execute(() -> update());
         }
     };
 
@@ -289,7 +289,9 @@ public class OrbitCorrectionController {
     }
 
     public void measure() {
-        // TODO
+        String successMessage = "Measure orbit respone matrix command was successfully sent.";
+        String failureMessage = "Error occured while sending Measure orbit respone matrix command.";
+        executeCommand(Preferences.MEASURE_ORM_PV, successMessage, failureMessage);
     }
 
     /**

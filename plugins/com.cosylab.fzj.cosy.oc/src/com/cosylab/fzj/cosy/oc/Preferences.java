@@ -69,6 +69,8 @@ public final class Preferences {
     public static final String STOP_CORRECTING_ORBIT_PV = "stop_correcting_orbit_pv";
     /** Correct orbit once PV key. */
     public static final String CORRECT_ORBIT_ONCE_PV = "correct_orbit_once_pv";
+    /** Measure orbit response matrix. */
+    public static final String MEASURE_ORM_PV = "measure_orm_pv";
 
     private URL bpmsFile;
     private URL correctorsFile;
@@ -452,6 +454,19 @@ public final class Preferences {
     }
 
     /**
+     * @return the measure ORM PV name.
+     */
+    public String getMeasureOrmPVName() {
+        try {
+            return getString(MEASURE_ORM_PV, null, true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the measure orm PV name.", e);
+            return null;
+        }
+    }
+
+    /**
      * @return the map with the PV keys and names.
      */
     public Map<String, String> getPVNames() {
@@ -477,6 +492,7 @@ public final class Preferences {
         pvs.put(START_CORRECTING_ORBIT_PV, getStartCorrectingOrbitPVName());
         pvs.put(STOP_CORRECTING_ORBIT_PV, getStopCorrectingOrbitPVName());
         pvs.put(CORRECT_ORBIT_ONCE_PV, getCorrectOrbitOncePVName());
+        pvs.put(MEASURE_ORM_PV, getMeasureOrmPVName());
         return pvs;
     }
 
