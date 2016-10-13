@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 import org.diirt.datasource.PVManager;
 import org.diirt.datasource.PVReader;
@@ -246,7 +247,36 @@ public class OrbitCorrectionController {
      * @param file file in which golden horizontal and vertical orbit with weights are written
      */
     public void uploadGoldenOrbit(File file) {
-        readGoldenOrbitFromFile(file);
+        final PV xOrbitPV = findPV(Preferences.GOLDEN_HORIZONTAL_ORBIT_PV);
+        final PV xWeightsPV = findPV(Preferences.HORIZONTAL_ORBIT_WEIGHTS_PV);
+        final PV yOrbitPV = findPV(Preferences.GOLDEN_VERTICAL_ORBIT_PV);
+        final PV yWeightsPV = findPV(Preferences.VERTICAL_ORBIT_WEIGHTS_PV);
+
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(file.getPath()))) {
+            int lineCounter = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lineCounter++;
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String[] values = line.split(" ");
+                if (xOrbitPV != null && lineCounter == 1) {
+                    convertAndWriteData(xOrbitPV, values, "Golden Horizontal Orbit");
+                } else if (xWeightsPV != null && lineCounter == 2) {
+                    convertAndWriteData(xWeightsPV, values, "Horizontal Orbit Weights");
+                } else if (yOrbitPV != null && lineCounter == 3) {
+                    convertAndWriteData(yOrbitPV, values, "Golden Vertical Orbit");
+                } else if (xOrbitPV != null && lineCounter == 4) {
+                    convertAndWriteData(yWeightsPV, values, "Vertical OrbitWeights");
+                } else {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Reading orbit from the selected file fails.", e);
+        }
     }
 
     /**
@@ -280,14 +310,76 @@ public class OrbitCorrectionController {
         throttle.trigger();
     }
 
+    /**
+     * Downloads response matrix.
+     */
     public void downloadResponseMatrix(File file) {
-        // TODO
+        final PV ormPV = findPV(Preferences.ORM_PV);
+        final PV horizontalOrbitPV = findPV(Preferences.HORIZONTAL_ORBIT_PV);
+        final PV horizontalCorrectorPV = findPV(Preferences.HORIZONTAL_CORRECTOR_MA_PV);
+
+        int n = horizontalOrbitPV != null ? ((VNumberArray) horizontalOrbitPV.value).getData().size() : -1;
+        int m = horizontalCorrectorPV != null ? ((VNumberArray) horizontalCorrectorPV.value).getData().size() : -1;
+
+        if (n == -1 || m == -1 || ormPV == null) {
+            return;
+        }
+
+        final VNumberArray value = (VNumberArray) ormPV.value;
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()))) {
+            if (value != null) {
+                StringBuilder sb = new StringBuilder(n * m);
+                ListNumber data = value.getData();
+                for (int i = 0; i < data.size(); i++) {
+                    if (i != 0 && i % n == 0) {
+                        sb.append('\n');
+                    }
+                    sb.append(data.getDouble(i)).append(' ');
+                }
+                writer.write(sb.toString());
+            }
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Downloading response matrix fails.", e);
+        }
     }
 
+    /**
+     * Uploads response matrix.
+     */
     public void uploadResponseMatrix(File file) {
-        // TODO
+        final PV ormPV = findPV(Preferences.ORM_PV);
+        final PV horizontalOrbitPV = findPV(Preferences.HORIZONTAL_ORBIT_PV);
+        final PV horizontalCorrectorPV = findPV(Preferences.HORIZONTAL_CORRECTOR_MA_PV);
+
+        int n = horizontalOrbitPV != null ? ((VNumberArray) horizontalOrbitPV.value).getData().size() : -1;
+        int m = horizontalCorrectorPV != null ? ((VNumberArray) horizontalCorrectorPV.value).getData().size() : -1;
+
+        if (n == -1 || m == -1 || ormPV == null) {
+            return;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(file.getPath()))) {
+            StringBuilder sb = new StringBuilder (n * m);
+            String line;
+            Pattern matchSpaces = Pattern.compile("\\s+");
+            Pattern matchTabs = Pattern.compile("\\t+");
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty()) {
+                    continue;
+                }
+                line = matchSpaces.matcher(matchTabs.matcher(line).replaceAll(" ")).replaceAll(" ");
+                sb.append(line).append(' ');
+            }
+            String[] waveform = sb.toString().split(" ");
+            convertAndWriteData(ormPV, waveform, "Orbit response matrix");
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Uploading response matrix fails.", e);
+        }
     }
 
+    /**
+     * Measure orbit response matrix.
+     */
     public void measure() {
         String successMessage = "Measure orbit respone matrix command was successfully sent.";
         String failureMessage = "Error occured while sending Measure orbit respone matrix command.";
@@ -510,7 +602,7 @@ public class OrbitCorrectionController {
      * @param values new values
      * @param orbitName orbit name
      */
-    private void convertedAndWriteData(PV pv, String[] values, String orbitName) {
+    private void convertAndWriteData(PV pv, String[] values, String orbitName) {
         Alarm alarm = ValueFactory.newAlarm(AlarmSeverity.NONE, "USER DEFINED");
         Time time = ValueFactory.timeNow();
         ListNumber list = null;
@@ -522,46 +614,8 @@ public class OrbitCorrectionController {
         VNumberArray data = ValueFactory.newVNumberArray(list, alarm, time, (VNumberArray) pv.value);
 
         String successMessage = orbitName + " was successfully updated.";
-        String failureMessage = "Error occured while updatind " + orbitName + ".";
+        String failureMessage = "Error occured while updating " + orbitName + ".";
         writeData(pv, Optional.of(data), successMessage, failureMessage);
-    }
-
-    /**
-     * Reads golden orbit values with weights from file.
-     *
-     * @param file file with golden orbit values.
-     */
-    private void readGoldenOrbitFromFile(File file) {
-        final PV xOrbitPV = findPV(Preferences.GOLDEN_HORIZONTAL_ORBIT_PV);
-        final PV xWeightsPV = findPV(Preferences.HORIZONTAL_ORBIT_WEIGHTS_PV);
-        final PV yOrbitPV = findPV(Preferences.GOLDEN_VERTICAL_ORBIT_PV);
-        final PV yWeightsPV = findPV(Preferences.VERTICAL_ORBIT_WEIGHTS_PV);
-
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(file.getPath()))) {
-            int lineCounter = 0;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lineCounter++;
-                line = line.trim();
-                if (line.isEmpty()) {
-                    continue;
-                }
-                String[] values = line.split(" ");
-                if (xOrbitPV != null && lineCounter == 1) {
-                    convertedAndWriteData(xOrbitPV, values, "Golden Horizontal Orbit");
-                } else if (xWeightsPV != null && lineCounter == 2) {
-                    convertedAndWriteData(xWeightsPV, values, "Horizontal Orbit Weights");
-                } else if (yOrbitPV != null && lineCounter == 3) {
-                    convertedAndWriteData(yOrbitPV, values, "Golden Vertical Orbit");
-                } else if (xOrbitPV != null && lineCounter == 4) {
-                    convertedAndWriteData(yWeightsPV, values, "Vertical OrbitWeights");
-                } else {
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Reading orbit from the selected file fails.", e);
-        }
     }
 
     /**
@@ -639,7 +693,7 @@ public class OrbitCorrectionController {
      * @return string representation of the data.
      */
     private String getStringValue(VType value) {
-        if (value instanceof VNumberArray) {
+        if (value != null && value instanceof VNumberArray) {
             ListNumber data = ((VNumberArray) value).getData();
             int size = data.size();
             StringBuilder sb = new StringBuilder(size * 2 - 1);

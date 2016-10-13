@@ -55,6 +55,8 @@ public final class Preferences {
     public static final String HORIZONTAL_ORBIT_WEIGHTS_PV = "horizontal_orbit_weights_pv";
     /** Vertical orbit weights PV key. */
     public static final String VERTICAL_ORBIT_WEIGHTS_PV = "vertical_orbit_weights_pv";
+    /** Orbit response matrix PV key. */
+    public static final String ORM_PV = "orm_pv";
     /** Operation status PV key. */
     public static final String OPERATION_STATUS_PV = "operation_status_pv";
     /** Start measuring orbit PV key. */
@@ -69,7 +71,7 @@ public final class Preferences {
     public static final String STOP_CORRECTING_ORBIT_PV = "stop_correcting_orbit_pv";
     /** Correct orbit once PV key. */
     public static final String CORRECT_ORBIT_ONCE_PV = "correct_orbit_once_pv";
-    /** Measure orbit response matrix. */
+    /** Measure orbit response matrix PV key. */
     public static final String MEASURE_ORM_PV = "measure_orm_pv";
 
     private URL bpmsFile;
@@ -363,6 +365,19 @@ public final class Preferences {
     }
 
     /**
+     * @return the orbit response matrix PV name.
+     */
+    public String getOrmPVName() {
+        try {
+            return getString(ORM_PV, null, true);
+        } catch (Exception e) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                    "Could not load the ORM PV name.", e);
+            return null;
+        }
+    }
+
+    /**
      * @return the operation status PV name.
      */
     public String getOperationStatusPVName() {
@@ -486,6 +501,7 @@ public final class Preferences {
         pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, getGoldenVerticalOrbitStatisticPVName());
         pvs.put(HORIZONTAL_ORBIT_WEIGHTS_PV, getHorizontalOrbitWeightsPVName());
         pvs.put(VERTICAL_ORBIT_WEIGHTS_PV, getVerticalOrbitWeightsPVName());
+        pvs.put(ORM_PV, getOrmPVName());
         pvs.put(START_MEASURING_ORBIT_PV, getStartMeasuringOrbitPVName());
         pvs.put(STOP_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
         pvs.put(MEASURE_ORBIT_ONCE_PV, getMeasureOrbitOncePVName());
