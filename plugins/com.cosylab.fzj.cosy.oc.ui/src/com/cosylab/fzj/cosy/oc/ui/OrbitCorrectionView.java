@@ -3,6 +3,7 @@ package com.cosylab.fzj.cosy.oc.ui;
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
@@ -542,7 +543,7 @@ public class OrbitCorrectionView extends FXViewPart {
     private BorderedTitledPane createCorrectionResults() {
         GridPane correctionResults = new GridPane();
         OrbitCorrectionResultsTable correctionResultsTable = new OrbitCorrectionResultsTable();
-        correctionResultsTable.updateTable(controller.getOrbitCorrectionResults());
+        correctionResultsTable.updateTable(new ArrayList<>(controller.getOrbitCorrectionResults().values()));
 
         correctionResults.add(correctionResultsTable, 0, 0);
         setGridConstraints(correctionResultsTable, true, true, Priority.ALWAYS, Priority.ALWAYS);
