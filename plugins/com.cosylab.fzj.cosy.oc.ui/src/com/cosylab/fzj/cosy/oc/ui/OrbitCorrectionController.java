@@ -58,7 +58,7 @@ import javafx.beans.property.StringProperty;
 public class OrbitCorrectionController {
 
     /** The rate at which the UI is updated */
-    public static final long UPDATE_RATE = 500;
+    private static final long UPDATE_RATE = 500;
     private static Executor UI_EXECUTOR = Platform::runLater;
 
     // Orbit correction results table row names
@@ -66,6 +66,37 @@ public class OrbitCorrectionController {
     private static final String VERTICAL_ORBIT_TABLE_ENTRY = "Vertical Orbit";
     private static final String GOLDEN_HORIZONTAL_ORBIT_TABLE_ENTRY = "Golden Horizontal Orbit";
     private static final String GOLDEN_VERTICAL_ORBIT_TABLE_ENTRY = "Golden Vertical Orbit";
+
+    // status messages
+    private static final String START_ORBIT_MEASURING_CMD_SUCCESS_MSG = "Start orbit measuring command was successfully sent.";
+    private static final String START_ORBIT_MEASURING_CMD_FAILURE_MSG = "Error occured while sending start orbit measuring command.";
+    private static final String STOP_ORBIT_MEASURING_CMD_SUCCESS_MSG = "Stop orbit measuring command was successfully sent.";
+    private static final String STOP_ORBIT_MEASURING_CMD_FAILURE_MSG = "Error occured while sending stop orbit measuring command.";
+    private static final String MEASURE_ORBIT_ONCE_CMD_SUCCESS_MSG = "Measure orbit once command was successfully sent.";
+    private static final String MEASURE_ORBIT_ONCE_CMD_FAILURE_MSG = "Error occured while sending measure orbit once command.";
+    private static final String START_CORRECTING_ORBIT_CMD_SUCCESS_MSG = "Start correcting orbit command was successfully sent.";
+    private static final String START_CORRECTING_ORBIT_CMD_FAILURE_MSG = "Error occured while sending start correcting orbit command.";
+    private static final String STOP_CORRECTING_ORBIT_CMD_SUCCESS_MSG = "Stop correcting orbit command was successfully sent.";
+    private static final String STOP_CORRECTING_ORBIT_CMD_FAILURE_MSG = "Error occured while sending stop correcting orbit command.";
+    private static final String CORRECT_ORBIT_ONCE_CMD_SUCCESS_MSG = "Correct orbit once command was successfully sent.";
+    private static final String CORRECT_ORBIT_ONCE_CMD_FAILURE_MSG = "Error occured while sending correct orbit once command.";
+    private static final String MEASURE_ORM_CMD_SUCCESS_MSG = "Measure orbit respone matrix command was successfully sent.";
+    private static final String MEASURE_ORM_CMD_FAILURE_MSG = "Error occured while sending Measure orbit respone matrix command.";
+    private static final String EXPORT_CURRENT_ORBIT_SUCCESS_MSG = "Current orbit was successfully exported.";
+    private static final String EXPORT_CURRENT_ORBIT_FAILURE_MSG = "Error occured while exporting current orbit.";
+    private static final String UPLOAD_GOLDEN_ORBIT_SUCCESS_MSG = "Golden orbit was successfully uploaded.";
+    private static final String UPLOAD_GOLDEN_ORBIT_FAILURE_MSG = "Error occured while uploading golden orbit.";
+    private static final String DOWNLOAD_GOLDEN_ORBIT_SUCCESS_MSG = "Golden orbit was successfully downloaded.";
+    private static final String DOWNLOAD_GOLDEN_ORBIT_FAILURE_MSG = "Error occured while downloading golden orbit.";
+    private static final String USE_CURRENT_HORIZONTAL_SUCCESS_MSG = "Golden horizontal orbit was successfully updated to current.";
+    private static final String USE_CURRENT_HORIZONTAL_FAILURE_MSG = "Error occured while updating golden horizontal orbit to current.";
+    private static final String USE_CURRENT_VERTICAL_SUCCESS_MSG = "Golden vertical orbit was successfully updated to current.";
+    private static final String USE_CURRENT_VERTICAL_FAILURE_MSG = "Error occured while updatind golden vertical orbit to current.";
+
+    private static final String UPLOAD_ORM_SUCCESS_MSG = "Orbit response matrix was successfully uploaded.";
+    private static final String UPLOAD_ORM_FAILURE_MSG = "Error occured while uploading orbit response matrix.";
+    private static final String DOWNLOAD_ORM_SUCCESS_MSG = "Orbit response matrix was successfully downloaded.";
+    private static final String DOWNLOAD_ORM_FAILURE_MSG = "Error occured while downloading orbit response matrix.";
 
     private static final String EMPTY_STRING = "";
 
@@ -179,9 +210,8 @@ public class OrbitCorrectionController {
      * Calls command which starts measuring orbit and updating horizontal and vertical orbit periodically.
      */
     public void startMeasuringOrbit() {
-        String successMessage = "Start orbit measuring command was successfully sent.";
-        String failureMessage = "Error occured while sending start orbit measuring command.";
-        executeCommand(Preferences.START_MEASURING_ORBIT_PV, successMessage, failureMessage);
+        executeCommand(Preferences.START_MEASURING_ORBIT_PV, START_ORBIT_MEASURING_CMD_SUCCESS_MSG,
+                START_ORBIT_MEASURING_CMD_FAILURE_MSG);
     }
 
     /**
@@ -189,9 +219,8 @@ public class OrbitCorrectionController {
      * it at this time.
      */
     public void stopMeasuringOrbit() {
-        String successMessage = "Stop orbit measuring command was successfully sent.";
-        String failureMessage = "Error occured while sending stop orbit measuring command.";
-        executeCommand(Preferences.STOP_MEASURING_ORBIT_PV, successMessage, failureMessage);
+        executeCommand(Preferences.STOP_MEASURING_ORBIT_PV, STOP_ORBIT_MEASURING_CMD_SUCCESS_MSG,
+                STOP_ORBIT_MEASURING_CMD_FAILURE_MSG);
     }
 
     /**
@@ -199,9 +228,8 @@ public class OrbitCorrectionController {
      * orbit.
      */
     public void measureOrbitOnce() {
-        String successMessage = "Measure orbit once command was successfully sent.";
-        String failureMessage = "Error occured while sending measure orbit once command.";
-        executeCommand(Preferences.MEASURE_ORBIT_ONCE_PV, successMessage, failureMessage);
+        executeCommand(Preferences.MEASURE_ORBIT_ONCE_PV, MEASURE_ORBIT_ONCE_CMD_SUCCESS_MSG,
+                MEASURE_ORBIT_ONCE_CMD_FAILURE_MSG);
     }
 
     /**
@@ -209,18 +237,16 @@ public class OrbitCorrectionController {
      * measurement.
      */
     public void startCorrectingOrbit() {
-        String successMessage = "Start correcting orbit command was successfully sent.";
-        String failureMessage = "Error occured while sending start correcting orbit command.";
-        executeCommand(Preferences.START_CORRECTING_ORBIT_PV, successMessage, failureMessage);
+        executeCommand(Preferences.START_CORRECTING_ORBIT_PV, START_CORRECTING_ORBIT_CMD_SUCCESS_MSG,
+                START_CORRECTING_ORBIT_CMD_FAILURE_MSG);
     }
 
     /**
      * Calls command which stops measuring orbit, all PVs keep their last value.
      */
     public void stopCorrectingOrbit() {
-        String successMessage = "Stop correcting orbit command was successfully sent.";
-        String failureMessage = "Error occured while sending stop correcting orbit command.";
-        executeCommand(Preferences.STOP_CORRECTING_ORBIT_PV, successMessage, failureMessage);
+        executeCommand(Preferences.STOP_CORRECTING_ORBIT_PV, STOP_CORRECTING_ORBIT_CMD_SUCCESS_MSG,
+                STOP_CORRECTING_ORBIT_CMD_FAILURE_MSG);
     }
 
     /**
@@ -228,9 +254,8 @@ public class OrbitCorrectionController {
      * them once
      */
     public void correctOrbitOnce() {
-        String successMessage = "Correct orbit once command was successfully sent.";
-        String failureMessage = "Error occured while sending correct orbit once command.";
-        executeCommand(Preferences.CORRECT_ORBIT_ONCE_PV, successMessage, failureMessage);
+        executeCommand(Preferences.CORRECT_ORBIT_ONCE_PV, CORRECT_ORBIT_ONCE_CMD_SUCCESS_MSG,
+                CORRECT_ORBIT_ONCE_CMD_FAILURE_MSG);
     }
 
     /**
@@ -239,7 +264,8 @@ public class OrbitCorrectionController {
      * @param file file in which horizontal and vertical orbit with weights will be written
      */
     public void exportCurrentOrbit(File file) {
-        writeOrbitInFile(file, Preferences.HORIZONTAL_ORBIT_PV, Preferences.VERTICAL_ORBIT_PV);
+        writeOrbitInFile(file, Preferences.HORIZONTAL_ORBIT_PV, Preferences.VERTICAL_ORBIT_PV,
+                EXPORT_CURRENT_ORBIT_SUCCESS_MSG, EXPORT_CURRENT_ORBIT_FAILURE_MSG);
     }
 
     /**
@@ -275,7 +301,9 @@ public class OrbitCorrectionController {
                     break;
                 }
             }
+            writeToMessageLog(UPLOAD_GOLDEN_ORBIT_SUCCESS_MSG);
         } catch (Exception e) {
+            writeToMessageLog(UPLOAD_GOLDEN_ORBIT_FAILURE_MSG);
             OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Reading orbit from the selected file fails.", e);
         }
     }
@@ -286,7 +314,8 @@ public class OrbitCorrectionController {
      * @param file file in which golden horizontal and vertical orbit with weights will be written
      */
     public void downloadGoldenOrbit(File file) {
-        writeOrbitInFile(file, Preferences.GOLDEN_HORIZONTAL_ORBIT_PV, Preferences.VERTICAL_ORBIT_WEIGHTS_PV);
+        writeOrbitInFile(file, Preferences.GOLDEN_HORIZONTAL_ORBIT_PV, Preferences.VERTICAL_ORBIT_WEIGHTS_PV,
+                DOWNLOAD_GOLDEN_ORBIT_SUCCESS_MSG, DOWNLOAD_GOLDEN_ORBIT_FAILURE_MSG);
     }
 
     /**
@@ -299,14 +328,12 @@ public class OrbitCorrectionController {
         final PV goldenVerticalOrbit = pvs.get(Preferences.GOLDEN_VERTICAL_ORBIT_PV);
 
         if (horizontalOrbit != null && goldenHorizontalOrbit != null) {
-            String successMessage = "Golden horizontal orbit was successfully updated.";
-            String failureMessage = "Error occured while updatind golden horizontal orbit.";
-            writeData(goldenHorizontalOrbit, Optional.of(horizontalOrbit.value), successMessage, failureMessage);
+            writeData(goldenHorizontalOrbit, Optional.of(horizontalOrbit.value), USE_CURRENT_HORIZONTAL_SUCCESS_MSG,
+                    USE_CURRENT_HORIZONTAL_FAILURE_MSG);
         }
         if (verticalOrbit != null && goldenVerticalOrbit != null) {
-            String successMessage = "Golden vertical orbit was successfully updated.";
-            String failureMessage = "Error occured while updatind golden vertical orbit.";
-            writeData(goldenVerticalOrbit, Optional.of(verticalOrbit.value), successMessage, failureMessage);
+            writeData(goldenVerticalOrbit, Optional.of(verticalOrbit.value), USE_CURRENT_VERTICAL_SUCCESS_MSG,
+                    USE_CURRENT_VERTICAL_FAILURE_MSG);
         }
         throttle.trigger();
     }
@@ -339,8 +366,10 @@ public class OrbitCorrectionController {
                 }
                 writer.write(sb.toString());
             }
+            writeToMessageLog(DOWNLOAD_ORM_SUCCESS_MSG);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Downloading response matrix fails.", e);
+            writeToMessageLog(DOWNLOAD_ORM_FAILURE_MSG);
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, DOWNLOAD_ORM_FAILURE_MSG, e);
         }
     }
 
@@ -373,8 +402,10 @@ public class OrbitCorrectionController {
             }
             String[] waveform = sb.toString().split(" ");
             convertAndWriteData(ormPV, waveform, "Orbit response matrix");
+            writeToMessageLog(UPLOAD_ORM_SUCCESS_MSG);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Uploading response matrix fails.", e);
+            writeToMessageLog(UPLOAD_ORM_FAILURE_MSG);
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, UPLOAD_ORM_FAILURE_MSG, e);
         }
     }
 
@@ -382,9 +413,7 @@ public class OrbitCorrectionController {
      * Measure orbit response matrix.
      */
     public void measure() {
-        String successMessage = "Measure orbit respone matrix command was successfully sent.";
-        String failureMessage = "Error occured while sending Measure orbit respone matrix command.";
-        executeCommand(Preferences.MEASURE_ORM_PV, successMessage, failureMessage);
+        executeCommand(Preferences.MEASURE_ORM_PV, MEASURE_ORM_CMD_SUCCESS_MSG, MEASURE_ORM_CMD_FAILURE_MSG);
     }
 
     /**
@@ -630,8 +659,10 @@ public class OrbitCorrectionController {
      * @param file file in which orbit values with weights will be written
      * @param xOrbitKey horizontal or golden horizontal orbit PV key
      * @param yOrbitKey vertical or golden vertical orbit PV key
+     * @param successMessage success message
+     * @param failureMessage failure message
      */
-    private void writeOrbitInFile(File file, String xOrbitKey, String yOrbitKey ) {
+    private void writeOrbitInFile(File file, String xOrbitKey, String yOrbitKey, String successMessage, String failureMessage) {
         final PV xOrbitPV = pvs.get(xOrbitKey);
         final PV xWeightsPV = pvs.get(Preferences.HORIZONTAL_ORBIT_WEIGHTS_PV);
         final PV yOrbitPV = pvs.get(yOrbitKey);
@@ -650,8 +681,10 @@ public class OrbitCorrectionController {
             writer.write(yOrbit);
             writer.newLine();
             writer.write(yWeights);
+            writeToMessageLog(successMessage);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Writing orbit to the selected file fails.", e);
+            writeToMessageLog(failureMessage);
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, failureMessage, e);
         }
     }
 
