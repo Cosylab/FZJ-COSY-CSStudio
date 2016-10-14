@@ -558,12 +558,16 @@ public class OrbitCorrectionView extends FXViewPart {
 
         StaticTextArea messageLogTextArea = new StaticTextArea();
         messageLogTextArea.setMaxHeight(Double.MAX_VALUE);
-        messageLogTextArea.textProperty().bind(controller.messageLogProperty());
         messageLog.add(messageLogTextArea, 0, 0);
 
         setFullResizable(messageLogTextArea);
         messageLog.setMinSize(0, 0);
         messageLog.setMaxSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
+
+        controller.messageLogProperty().addListener((o, v, n) -> {
+            messageLogTextArea.appendText(n);
+            messageLogTextArea.setScrollTop(Double.MAX_VALUE);
+        });
 
         return new BorderedTitledPane("Message Log", messageLog);
     }

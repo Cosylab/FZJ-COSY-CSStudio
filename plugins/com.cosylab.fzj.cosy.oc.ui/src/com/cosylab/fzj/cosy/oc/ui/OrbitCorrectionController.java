@@ -109,8 +109,8 @@ public class OrbitCorrectionController {
             this.writer = writer;
             this.reader.addPVReaderListener(e -> {
                 if (e.isExceptionChanged()) {
-                    OrbitCorrectionService.LOGGER.log(Level.WARNING, "DIIRT Connection Error.",
-                            e.getPvReader().lastException());
+                    writeToLog("DIIRT Connection Error.", true,
+                            Optional.of(e.getPvReader().lastException()));
                 }
                 value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
                 throttle.trigger();
@@ -300,10 +300,9 @@ public class OrbitCorrectionController {
                     break;
                 }
             }
-            writeToMessageLog(UPLOAD_GOLDEN_ORBIT_SUCCESS_MSG);
+            writeToLog(UPLOAD_GOLDEN_ORBIT_SUCCESS_MSG, false, Optional.empty());
         } catch (Exception e) {
-            writeToMessageLog(UPLOAD_GOLDEN_ORBIT_FAILURE_MSG);
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, "Reading orbit from the selected file fails.", e);
+            writeToLog(UPLOAD_GOLDEN_ORBIT_FAILURE_MSG, true, Optional.of(e));
         }
     }
 
@@ -365,10 +364,9 @@ public class OrbitCorrectionController {
                 }
                 writer.write(sb.toString());
             }
-            writeToMessageLog(DOWNLOAD_ORM_SUCCESS_MSG);
+            writeToLog(DOWNLOAD_ORM_SUCCESS_MSG, false, Optional.empty());
         } catch (Exception e) {
-            writeToMessageLog(DOWNLOAD_ORM_FAILURE_MSG);
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, DOWNLOAD_ORM_FAILURE_MSG, e);
+            writeToLog(DOWNLOAD_ORM_FAILURE_MSG, true, Optional.of(e));
         }
     }
 
@@ -401,10 +399,9 @@ public class OrbitCorrectionController {
             }
             String[] waveform = sb.toString().split(" ");
             convertAndWriteData(ormPV, waveform, "Orbit response matrix");
-            writeToMessageLog(UPLOAD_ORM_SUCCESS_MSG);
+            writeToLog(UPLOAD_ORM_SUCCESS_MSG, false, Optional.empty());
         } catch (Exception e) {
-            writeToMessageLog(UPLOAD_ORM_FAILURE_MSG);
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, UPLOAD_ORM_FAILURE_MSG, e);
+            writeToLog(UPLOAD_ORM_FAILURE_MSG, true, Optional.of(e));
         }
     }
 
@@ -612,11 +609,16 @@ public class OrbitCorrectionController {
     private void writeData(PV pv, Optional<VType> data, String successMessage, String failureMessage) {
         PVWriterListener<?> pvListener = new PVWriterListener<PV>() {
             @Override
-            public void pvChanged(PVWriterEvent<PV>w) {
+            public void pvChanged(PVWriterEvent<PV> w) {
                 if (w.isWriteSucceeded()) {
-                    writeToMessageLog(successMessage);
+                    writeToLog(successMessage, false, Optional.empty());
                 } else if (w.isWriteFailed()) {
-                    writeToMessageLog(failureMessage);
+                    if (w.isExceptionChanged()) {
+                        writeToLog(failureMessage, true,
+                                Optional.of(w.getPvWriter().lastWriteException()));
+                    } else {
+                        writeToLog(failureMessage, true, Optional.empty());
+                    }
                 }
                 pv.writer.removePVWriterListener(this);
             }
@@ -680,10 +682,9 @@ public class OrbitCorrectionController {
             writer.write(yOrbit);
             writer.newLine();
             writer.write(yWeights);
-            writeToMessageLog(successMessage);
+            writeToLog(successMessage, false, Optional.empty());
         } catch (Exception e) {
-            writeToMessageLog(failureMessage);
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE, failureMessage, e);
+            writeToLog(failureMessage, true, Optional.of(e));
         }
     }
 
@@ -729,12 +730,15 @@ public class OrbitCorrectionController {
      *
      * @param message message to write
      */
-    private void writeToMessageLog(String message) {
-        StringBuilder sb = new StringBuilder(messageLogProperty.get());
-        if (sb.length() != 0) {
-            sb.append('\n');
+    private void writeToLog(String message, boolean error, Optional<Exception> e) {
+        if (error) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, message);
+        } if (error && e.isPresent()) {
+            OrbitCorrectionService.LOGGER.log(Level.SEVERE, message, e.get());
+        } else {
+            OrbitCorrectionService.LOGGER.log(Level.FINE, message);
         }
-        sb.append(message);
-        messageLogProperty.set(sb.toString());
+        messageLogProperty.set(message);
+        messageLogProperty.set("\n");
     }
 }
