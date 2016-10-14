@@ -6,7 +6,7 @@
     <artifactId>fzj-cosy-plugins</artifactId>
     <version>1.0</version>
   </parent>
-  <artifactId>com.cosylab.fzj.cosy.oc.ui</artifactId>
+  <artifactId>com.cosylab.fzj.cosy.oc</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>eclipse-plugin</packaging>
 </project>

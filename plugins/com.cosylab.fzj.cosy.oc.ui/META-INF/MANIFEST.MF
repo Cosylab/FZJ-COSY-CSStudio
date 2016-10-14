@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Orbit Correction UI
-Bundle-SymbolicName: com.cosylab.fzj.cosy.oc.ui;singleton:=true
+Bundle-SymbolicName: com.cosylab.fzj.cosy.oc;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: COSYLAB
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
