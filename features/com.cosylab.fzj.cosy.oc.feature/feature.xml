@@ -4,7 +4,7 @@
       label="Orbit Correction"
       version="1.0.0.qualifier"
       provider-name="COSYLAB"
-      plugin="com.cosylab.fzj.cosy.oc">
+      plugin="com.cosylab.fzj.cosy.oc.ui">
 
    <description>
       [Enter Feature Description here.]
@@ -17,13 +17,6 @@
    <license>
       [Enter License Description here.]
    </license>
-
-   <plugin
-         id="com.cosylab.fzj.cosy.oc"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
 
    <plugin
          id="com.cosylab.fzj.cosy.oc.ui"
