@@ -92,7 +92,6 @@ public class OrbitCorrectionController {
     private static final String USE_CURRENT_HORIZONTAL_FAILURE_MSG = "Error occured while updating golden horizontal orbit to current.";
     private static final String USE_CURRENT_VERTICAL_SUCCESS_MSG = "Golden vertical orbit was successfully updated to current.";
     private static final String USE_CURRENT_VERTICAL_FAILURE_MSG = "Error occured while updatind golden vertical orbit to current.";
-
     private static final String UPLOAD_ORM_SUCCESS_MSG = "Orbit response matrix was successfully uploaded.";
     private static final String UPLOAD_ORM_FAILURE_MSG = "Error occured while uploading orbit response matrix.";
     private static final String DOWNLOAD_ORM_SUCCESS_MSG = "Orbit response matrix was successfully downloaded.";
