@@ -66,7 +66,8 @@ public class LatticeElementDataLoader {
                         bpms.add(new LatticeElementData(name, position, LatticeElementType.BPM));
                     }
                 } catch(NumberFormatException e) {
-                    // ignore the exception, the element is not added into the list
+                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                            "Could not add the BPM to the lattice, the position is not a number.", e);
                 }
             }
         });
@@ -94,7 +95,8 @@ public class LatticeElementDataLoader {
                         correctors.add(new LatticeElementData(name, position, type));
                     }
                 } catch (NumberFormatException e) {
-                    // ignore the exception, the element is not added into the list
+                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
+                            "Could not add the corrector to the lattice, the position is not a number.", e);
                 }
             }
         });
