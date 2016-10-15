@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -44,6 +44,7 @@ import com.cosylab.fzj.cosy.oc.ui.util.GUIUpdateThrottle;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -58,7 +59,6 @@ public class OrbitCorrectionController {
 
     /** The rate at which the UI is updated */
     private static final long UPDATE_RATE = 500;
-    private static Executor UI_EXECUTOR = Platform::runLater;
     // Orbit correction results table row names
     private static final String HORIZONTAL_ORBIT_TABLE_ENTRY = "Horizontal Orbit";
     private static final String VERTICAL_ORBIT_TABLE_ENTRY = "Vertical Orbit";
@@ -131,7 +131,7 @@ public class OrbitCorrectionController {
 
         @Override
         protected void fire() {
-            UI_EXECUTOR.execute(() -> update());
+            Platform.runLater(() -> update());
         }
     };
     private Map<String,PV> pvs = new HashMap<>();
@@ -449,7 +449,7 @@ public class OrbitCorrectionController {
 
     /**
      * Executes the command. Writes 1 into the PV with the given key. Also writes success message into the message log
-     * if value (1) was successfully written or failure message if write fails.
+     * if value (1) was successfully written or failure message if write failed.
      *
      * @param pvKey PV key
      * @param successMessage success message
@@ -531,19 +531,22 @@ public class OrbitCorrectionController {
      * @param values new values
      * @param type series type
      */
-    private void updateOrbit(List<Double> values, SeriesType type) {
+    private void updateOrbit(double[] values, SeriesType type) {
+        Function<BPM,DoubleProperty> property;
+        if (type == SeriesType.HORIZONTAL_ORBIT) {
+            property = bpm -> bpm.horizontalOrbitProperty();
+        } else if (type == SeriesType.VERTICAL_ORBIT) {
+            property = bpm -> bpm.verticalOrbitProperty();
+        } else if (type == SeriesType.GOLDEN_HORIZONTAL_ORBIT) {
+            property = bpm -> bpm.goldenHorizontalOrbitProperty();
+        } else if (type == SeriesType.GOLDEN_VERTICAL_ORBIT) {
+            property = bpm -> bpm.goldenVerticalOrbitProperty();
+        } else {
+            return;
+        }
         int valueCounter = 0;
         for (BPM bpm : bpms) {
-            if (type == SeriesType.HORIZONTAL_ORBIT) {
-                bpm.horizontalOrbitProperty().set(values.get(valueCounter));
-            } else if (type == SeriesType.VERTICAL_ORBIT) {
-                bpm.verticalOrbitProperty().set(values.get(valueCounter));
-            } else if (type == SeriesType.GOLDEN_HORIZONTAL_ORBIT) {
-                bpm.goldenHorizontalOrbitProperty().set(values.get(valueCounter));
-            } else if (type == SeriesType.GOLDEN_VERTICAL_ORBIT) {
-                bpm.goldenVerticalOrbitProperty().set(values.get(valueCounter));
-            }
-            valueCounter++;
+            property.apply(bpm).set(values[valueCounter++]);
         }
     }
 
@@ -553,15 +556,19 @@ public class OrbitCorrectionController {
      * @param values new correctors values
      * @param type element type
      */
-    private void updateCorrectors(List<Double> values, LatticeElementType type) {
+    private void updateCorrectors(double[] values, LatticeElementType type) {
+        Function<Corrector,DoubleProperty> property;
+        if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
+            property = c -> c.horizontalCorrectionProperty();
+        } else if (type == LatticeElementType.VERTICAL_CORRECTOR) {
+            property = c -> c.verticalCorrectionProperty();
+        } else {
+            return;
+        }
         int valueCounter = 0;
         for (Corrector corrector : correctors) {
             if (corrector.getElementData().getType() == type) {
-                if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
-                    corrector.horizontalCorrectionProperty().set(values.get(valueCounter));
-                } else {
-                    corrector.verticalCorrectionProperty().set(values.get(valueCounter));
-                }
+                property.apply(corrector).set(values[valueCounter++]);
                 valueCounter++;
             }
         }
@@ -570,22 +577,22 @@ public class OrbitCorrectionController {
     /**
      * Updates orbit correction results table entries.
      *
-     * @param pvKey PV key
+     * @param pvKey the key identifying which orbit the results are for
      * @param values new values
      */
-    private void updateOrbitCorrectionResults(String pvKey, List<Double> values) {
+    private void updateOrbitCorrectionResults(String pvKey, double[] values) {
         final OrbitCorrectionResultsEntry correctionResultsEntry = correctionResultsEntries.get(pvKey);
-        if (correctionResultsEntry != null && values.size() >= 5) {
-            correctionResultsEntry.minProperty().set(values.get(0));
-            correctionResultsEntry.maxProperty().set(values.get(1));
-            correctionResultsEntry.avgProperty().set(values.get(2));
-            correctionResultsEntry.rmsProperty().set(values.get(3));
-            correctionResultsEntry.stdProperty().set(values.get(4));
+        if (correctionResultsEntry != null && values.length >= 5) {
+            correctionResultsEntry.minProperty().set(values[0]);
+            correctionResultsEntry.maxProperty().set(values[1]);
+            correctionResultsEntry.avgProperty().set(values[2]);
+            correctionResultsEntry.rmsProperty().set(values[3]);
+            correctionResultsEntry.stdProperty().set(values[4]);
         }
     }
 
     /**
-     * Writes data to the given PV. If data is presented write data as waveform otherwise writes 1 to the PV.
+     * Writes data to the given PV. If data are provided they are written as waveform, otherwise 1 is written to the PV.
      *
      * @param pv pv
      * @param data data to be written, if presented
@@ -622,17 +629,16 @@ public class OrbitCorrectionController {
      *
      * @param pv pv
      * @param values new values
-     * @param orbitName orbit name
+     * @param orbitName the orbit name (used for logging only)
      */
     private void convertAndWriteData(PV pv, String[] values, String orbitName) {
-        Alarm alarm = ValueFactory.newAlarm(AlarmSeverity.NONE,"USER DEFINED");
-        Time time = ValueFactory.timeNow();
-        ListNumber list = null;
         double[] array = new double[values.length];
         for (int i = 0; i < values.length; i++) {
             array[i] = Double.parseDouble(values[i].trim()); // throw exception if value is not double
         }
-        list = new ArrayDouble(array);
+        Alarm alarm = ValueFactory.newAlarm(AlarmSeverity.NONE,"USER DEFINED");
+        Time time = ValueFactory.timeNow();
+        ListNumber list = new ArrayDouble(array);
         VNumberArray data = ValueFactory.newVNumberArray(list,alarm,time,(VNumberArray)pv.value);
         String successMessage = orbitName + " was successfully updated.";
         String failureMessage = "Error occured while updating " + orbitName + ".";
@@ -673,20 +679,22 @@ public class OrbitCorrectionController {
     }
 
     /**
+     * Transforms the given {@link VType} to a double array.
+     * 
      * @param value the value
      * @return a list of double values for the given value.
      */
-    private List<Double> getWaveformValues(VType value) {
+    private static double[] getWaveformValues(VType value) {
         if (value instanceof VNumberArray) {
             ListNumber data = ((VNumberArray)value).getData();
             int size = data.size();
-            List<Double> values = new ArrayList<>(size);
+            double[] values = new double[size];
             for (int i = 0; i < size; i++) {
-                values.add(data.getDouble(i));
+                values[i] = data.getDouble(i);
             }
             return values;
         }
-        return new ArrayList<>();
+        return new double[0];
     }
 
     /**
@@ -695,11 +703,11 @@ public class OrbitCorrectionController {
      * @param type the data to transform
      * @return string representation of the data.
      */
-    private String getStringValue(VType value) {
+    private static String getStringValue(VType value) {
         if (value != null && value instanceof VNumberArray) {
             ListNumber data = ((VNumberArray)value).getData();
             int size = data.size();
-            StringBuilder sb = new StringBuilder(size * 2 - 1);
+            StringBuilder sb = new StringBuilder(size * 15);
             for (int i = 0; i < size; i++) {
                 sb.append(data.getDouble(i)).append(' ');
             }
