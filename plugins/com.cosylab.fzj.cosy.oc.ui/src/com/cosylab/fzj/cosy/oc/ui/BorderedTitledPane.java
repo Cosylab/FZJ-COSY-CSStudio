@@ -23,13 +23,11 @@ public class BorderedTitledPane extends StackPane {
         StringBuilder sb = new StringBuilder(title.length() + 2).append(' ').append(title).append(' ');
         final Label titleLabel = new Label(sb.toString());
         titleLabel.getStyleClass().add("bordered-titled-title");
-
         final StackPane contentPane = new StackPane();
         content.getStyleClass().add("bordered-titled-content");
         contentPane.getChildren().add(content);
-
-        StackPane.setAlignment(titleLabel, Pos.TOP_LEFT);
+        StackPane.setAlignment(titleLabel,Pos.TOP_LEFT);
         getStyleClass().add("bordered-titled-border");
-        getChildren().addAll(titleLabel, contentPane);
+        getChildren().addAll(titleLabel,contentPane);
     }
 }

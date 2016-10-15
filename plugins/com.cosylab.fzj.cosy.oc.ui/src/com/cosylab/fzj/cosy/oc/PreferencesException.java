@@ -16,6 +16,6 @@ public class PreferencesException extends RuntimeException {
      * @param cause the root cause
      */
     public PreferencesException(String message, Throwable cause) {
-        super(message, cause);
+        super(message,cause);
     }
 }

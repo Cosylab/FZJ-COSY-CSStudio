@@ -24,7 +24,6 @@ import javafx.scene.text.Text;
  * line is concatenated with the next one. The process is repeated until all text is displayed.
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
- *
  */
 public class MultiLineButton extends Button implements ChangeListener<Number> {
 
@@ -45,8 +44,10 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         widthProperty().addListener(this);
     }
 
-    /* (non-Javadoc)
-     * @see javafx.beans.value.ChangeListener#changed(javafx.beans.value.ObservableValue, java.lang.Object, java.lang.Object)
+    /*
+     * (non-Javadoc)
+     * @see javafx.beans.value.ChangeListener#changed(javafx.beans.value.ObservableValue, java.lang.Object,
+     * java.lang.Object)
      */
     @Override
     public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
@@ -54,13 +55,13 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         //new width is the width available for the text, which is the total button width - padding and subtract 1,
         //to get rid of potential discrepancy (renderer might already decide to paint the ... instead of the full
         //text, while there might still be enough room for that)
-        final int newWidth = (int) (newValue.doubleValue() - padding.getLeft() - padding.getRight()) - 1;
+        final int newWidth = (int)(newValue.doubleValue() - padding.getLeft() - padding.getRight()) - 1;
         String text = getText();
         Font font = getFont();
-        int width = FXUtilities.measureStringWidth(text, font);
-        int height = measureStringHeight(text, font);
+        int width = FXUtilities.measureStringWidth(text,font);
+        int height = measureStringHeight(text,font);
         int maxHeight = (int)(getHeight());
-        int maxLines = height == 0 ? Integer.MAX_VALUE : maxHeight/height;
+        int maxLines = height == 0 ? Integer.MAX_VALUE : maxHeight / height;
         if (width > newWidth) {
             String[] parts = text.split("\\s+");
             if (parts.length < 2) {
@@ -75,7 +76,7 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
                 int start = 0;
                 while (start != count) {
                     String currentText = newText.toString();
-                    width = FXUtilities.measureStringWidth(currentText, font);
+                    width = FXUtilities.measureStringWidth(currentText,font);
                     int i = start + 1;
                     if (labels.size() == maxLines - 1) {
                         for (; i < count; i++) {
@@ -87,7 +88,7 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
                         if (width < newWidth) {
                             for (; i < count; i++) {
                                 newText.append(' ').append(parts[i]);
-                                width = FXUtilities.measureStringWidth(newText.toString(), font);
+                                width = FXUtilities.measureStringWidth(newText.toString(),font);
                                 if (width > newWidth) {
                                     break;
                                 }
@@ -125,7 +126,6 @@ public class MultiLineButton extends Button implements ChangeListener<Number> {
         if (font != null) {
             mText.setFont(font);
         }
-        return (int) mText.getLayoutBounds().getHeight();
+        return (int)mText.getLayoutBounds().getHeight();
     }
-
 }

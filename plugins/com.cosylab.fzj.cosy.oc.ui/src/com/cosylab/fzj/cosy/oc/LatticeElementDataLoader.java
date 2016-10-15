@@ -41,8 +41,7 @@ public class LatticeElementDataLoader {
                 elements.addAll(getCorrectors(getFileContent(correctorsFile)));
             }
         } catch (IOException e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the lattice elements.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the lattice elements.",e);
         }
         return elements;
     }
@@ -51,7 +50,6 @@ public class LatticeElementDataLoader {
      * Creates and returns list of all bpms retrieved from bpms file.
      *
      * @param fileContent content of the bpms file
-     *
      * @return list of all bpms.
      */
     private List<LatticeElementData> getBpms(List<String> fileContent) {
@@ -63,11 +61,11 @@ public class LatticeElementDataLoader {
                     String name = splitLine[NAME_INDEX];
                     double position = Double.parseDouble(splitLine[POSITION_INDEX]);
                     if (name != null && !name.isEmpty()) {
-                        bpms.add(new LatticeElementData(name, position, LatticeElementType.BPM));
+                        bpms.add(new LatticeElementData(name,position,LatticeElementType.BPM));
                     }
-                } catch(NumberFormatException e) {
-                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                            "Could not add the BPM to the lattice, the position is not a number.", e);
+                } catch (NumberFormatException e) {
+                    OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,
+                            "Could not add the BPM to the lattice, the position is not a number.",e);
                 }
             }
         });
@@ -78,7 +76,6 @@ public class LatticeElementDataLoader {
      * Creates and returns list of all correctors retrieved from correctors file.
      *
      * @param fileContent content of the correctors file
-     *
      * @return list of all correctors.
      */
     private List<LatticeElementData> getCorrectors(List<String> fileContent) {
@@ -92,11 +89,11 @@ public class LatticeElementDataLoader {
                     String orientation = splitLine[CORRECTOR_ORIENTATION_INDEX];
                     LatticeElementType type = LatticeElementType.getElementType(orientation);
                     if (name != null && !name.isEmpty() && type != null) {
-                        correctors.add(new LatticeElementData(name, position, type));
+                        correctors.add(new LatticeElementData(name,position,type));
                     }
                 } catch (NumberFormatException e) {
-                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                            "Could not add the corrector to the lattice, the position is not a number.", e);
+                    OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,
+                            "Could not add the corrector to the lattice, the position is not a number.",e);
                 }
             }
         });
@@ -107,7 +104,6 @@ public class LatticeElementDataLoader {
      * Reads file and returns the list of trimmed lines.
      *
      * @param filePath path of the file
-     *
      * @return the list of trimmed lines.
      * @throws IOException if exception while reading the file occurs.
      */
@@ -116,8 +112,8 @@ public class LatticeElementDataLoader {
             Pattern matchSpaces = Pattern.compile("\\s+");
             Pattern matchQuotes = Pattern.compile("\"");
             return fileStream
-                    .filter(l -> isElementLine(l))
-                    .map(l -> matchQuotes.matcher(matchSpaces.matcher(l).replaceAll(DATA_DELIMITER)).replaceAll("").trim())
+                    .filter(l -> isElementLine(l)).map(l -> matchQuotes
+                            .matcher(matchSpaces.matcher(l).replaceAll(DATA_DELIMITER)).replaceAll("").trim())
                     .collect(Collectors.toList());
         }
     }
@@ -129,6 +125,7 @@ public class LatticeElementDataLoader {
      * @return <code>true</code> if string defines lattice element, otherwise <code>false</code>.
      */
     private boolean isElementLine(String line) {
-        return line != null && !line.isEmpty() && line.charAt(0) != '@' && line.charAt(0) != '*' && line.charAt(0) != '$';
+        return line != null && !line.isEmpty() && line.charAt(0) != '@' && line.charAt(0) != '*'
+                && line.charAt(0) != '$';
     }
 }

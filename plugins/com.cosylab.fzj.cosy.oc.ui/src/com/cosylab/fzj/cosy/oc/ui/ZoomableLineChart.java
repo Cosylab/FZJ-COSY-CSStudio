@@ -21,13 +21,11 @@ import javafx.scene.shape.Rectangle;
  * provide generic zoom - it is intended to be used only with the orbit correction.
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
- *
  */
 public class ZoomableLineChart extends StackPane {
 
     private static final int MIN_ZOOM_THRESHOLD = 5;
-
-    private final LineChart<Number, Number> chart;
+    private final LineChart<Number,Number> chart;
     private final SpecialNumberAxis xAxis;
     private final NumberAxis yAxis;
     private final Rectangle zoomRect;
@@ -45,12 +43,12 @@ public class ZoomableLineChart extends StackPane {
     /**
      * Constructs a new zoomable chart without any labels.
      */
-    public ZoomableLineChart(LineChart<Number, Number> chart, boolean useXAutoRangeForDefaultZoom,
+    public ZoomableLineChart(LineChart<Number,Number> chart, boolean useXAutoRangeForDefaultZoom,
             boolean horizontalZoom, boolean verticalZoom) {
         this.chart = chart;
         this.useXAutoRangeForDefaultZoom = useXAutoRangeForDefaultZoom;
-        this.xAxis = (SpecialNumberAxis) chart.getXAxis();
-        this.yAxis = (NumberAxis) chart.getYAxis();
+        this.xAxis = (SpecialNumberAxis)chart.getXAxis();
+        this.yAxis = (NumberAxis)chart.getYAxis();
         this.defaultXMin = xAxis.getLowerBound();
         this.defaultXMax = xAxis.getUpperBound();
         this.defaultTickX = xAxis.getTickUnit();
@@ -59,9 +57,9 @@ public class ZoomableLineChart extends StackPane {
         this.verticalZoom = verticalZoom;
         this.zoomRect = new Rectangle();
         this.zoomRect.setManaged(false);
-        this.zoomRect.setFill(Color.LIGHTSEAGREEN.deriveColor(0, 1, 1, 0.5));
+        this.zoomRect.setFill(Color.LIGHTSEAGREEN.deriveColor(0,1,1,0.5));
         this.zoomRect.setStroke(Color.DARKSEAGREEN.darker());
-        getChildren().addAll(this.chart, this.zoomRect);
+        getChildren().addAll(this.chart,this.zoomRect);
         setUpZooming();
     }
 
@@ -70,33 +68,29 @@ public class ZoomableLineChart extends StackPane {
         Bounds xAxisBounds = xAxis.getLayoutBounds();
         Bounds yAxisBounds = yAxis.getLayoutBounds();
         Insets padding = chart.getPadding();
-        if (x > bounds.getMaxX() - padding.getRight() - 1)
-            x = bounds.getMaxX() - padding.getRight() - 1;
+        if (x > bounds.getMaxX() - padding.getRight() - 1) x = bounds.getMaxX() - padding.getRight() - 1;
         if (xAxis.isTickLabelsVisible()) {
-            if (y > yAxisBounds.getMaxY() - 2)
-                y = yAxisBounds.getMaxY() - 2;
+            if (y > yAxisBounds.getMaxY() - 2) y = yAxisBounds.getMaxY() - 2;
         } else {
-            if (y > bounds.getMaxY() - xAxisBounds.getMaxY() - 1)
-                y = bounds.getMaxY() - xAxisBounds.getMaxY() - 1;
+            if (y > bounds.getMaxY() - xAxisBounds.getMaxY() - 1) y = bounds.getMaxY() - xAxisBounds.getMaxY() - 1;
         }
         if (x < yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft())
             x = yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft();
-        if (y < padding.getTop() + 1)
-            y = padding.getTop() + 1;
-        return new double[] { x, y };
+        if (y < padding.getTop() + 1) y = padding.getTop() + 1;
+        return new double[]{x,y};
     }
 
     private void setUpZooming() {
         final ObjectProperty<Point2D> mouseAnchor = new SimpleObjectProperty<>();
-        mouseAnchor.set(new Point2D(0, 0));
+        mouseAnchor.set(new Point2D(0,0));
         chart.setOnMouseClicked(e -> {
             if (e.getClickCount() > 1) {
                 defaultZoom();
             }
         });
         chart.setOnMousePressed(e -> {
-            double[] snap = snap(e.getX(), e.getY());
-            mouseAnchor.set(new Point2D(snap[0], snap[1]));
+            double[] snap = snap(e.getX(),e.getY());
+            mouseAnchor.set(new Point2D(snap[0],snap[1]));
             zoomRect.setWidth(0);
             zoomRect.setHeight(0);
         });
@@ -104,23 +98,22 @@ public class ZoomableLineChart extends StackPane {
             double x = e.getX();
             double y = e.getY();
             double xAnchor = mouseAnchor.get().getX();
-
-            double[] snap = snap(e.getX(), e.getY());
+            double[] snap = snap(e.getX(),e.getY());
             x = snap[0];
             y = snap[1];
             if (horizontalZoom) {
-                zoomRect.setX(Math.min(x, xAnchor));
+                zoomRect.setX(Math.min(x,xAnchor));
                 zoomRect.setWidth(Math.abs(x - xAnchor));
             } else {
-                zoomRect.setX(snap(0, 0)[0]);
-                zoomRect.setWidth(snap(chart.getWidth(), chart.getHeight())[0]);
+                zoomRect.setX(snap(0,0)[0]);
+                zoomRect.setWidth(snap(chart.getWidth(),chart.getHeight())[0]);
             }
             if (verticalZoom) {
-                zoomRect.setY(Math.min(y, mouseAnchor.get().getY()));
+                zoomRect.setY(Math.min(y,mouseAnchor.get().getY()));
                 zoomRect.setHeight(Math.abs(y - mouseAnchor.get().getY()));
             } else {
-                zoomRect.setY(snap(0, 0)[1]);
-                zoomRect.setHeight(snap(chart.getWidth(), chart.getHeight())[1]);
+                zoomRect.setY(snap(0,0)[1]);
+                zoomRect.setHeight(snap(chart.getWidth(),chart.getHeight())[1]);
             }
         });
         chart.setOnMouseReleased(e -> {

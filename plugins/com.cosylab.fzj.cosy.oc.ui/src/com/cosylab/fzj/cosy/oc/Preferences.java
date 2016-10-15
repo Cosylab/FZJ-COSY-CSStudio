@@ -15,9 +15,9 @@ import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.osgi.service.datalocation.Location;
 
 /**
- * <code>Preferences</code> represents the preferences for the Orbit Correction (OC) plugin.
- * The file names are loaded from the preferences.ini file. Files should exists in the workspace folder.
- * The PV names are loaded from the properties file which should existis in the workspace folder.
+ * <code>Preferences</code> represents the preferences for the Orbit Correction (OC) plugin. The file names are loaded
+ * from the preferences.ini file. Files should exists in the workspace folder. The PV names are loaded from the
+ * properties file which should exist in the workspace folder.
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
@@ -26,7 +26,6 @@ public final class Preferences {
     private static final String BPMS_FILE = "bpms_file";
     private static final String CORRECTORS_FILE = "correctors_file";
     private static final String PVS_FILE = "pvs_file";
-
     /** Horizontal orbit PV key. */
     public static final String HORIZONTAL_ORBIT_PV = "horizontal_orbit_pv";
     /** Vertical orbit PV key. */
@@ -73,17 +72,13 @@ public final class Preferences {
     public static final String CORRECT_ORBIT_ONCE_PV = "correct_orbit_once_pv";
     /** Measure orbit response matrix PV key. */
     public static final String MEASURE_ORM_PV = "measure_orm_pv";
-
     private URL bpmsFile;
     private URL correctorsFile;
     private URL pvsFile;
-
     private Properties properties;
-
     private static Preferences instance;
 
-    private Preferences() {
-    }
+    private Preferences() {}
 
     /**
      * @return the singleton instance of the class.
@@ -103,8 +98,7 @@ public final class Preferences {
             try {
                 bpmsFile = getWorkspaceFile(getBpmsFilename());
             } catch (Exception e) {
-                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                        "Could not load the bpms file.", e);
+                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the bpms file.",e);
                 return null;
             }
         }
@@ -116,10 +110,9 @@ public final class Preferences {
      */
     public String getBpmsFilename() {
         try {
-            return getString(BPMS_FILE, "bpms.twiss", false);
+            return getString(BPMS_FILE,"bpms.twiss",false);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the bpms file name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the bpms file name.",e);
             return null;
         }
     }
@@ -132,8 +125,7 @@ public final class Preferences {
             try {
                 correctorsFile = getWorkspaceFile(getCorrectorsFilename());
             } catch (Exception e) {
-                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                        "Could not load the correctors file.", e);
+                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the correctors file.",e);
                 return null;
             }
         }
@@ -145,10 +137,9 @@ public final class Preferences {
      */
     public String getCorrectorsFilename() {
         try {
-            return getString(CORRECTORS_FILE, "correctors.twiss", false);
+            return getString(CORRECTORS_FILE,"correctors.twiss",false);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the correctors file name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the correctors file name.",e);
             return null;
         }
     }
@@ -161,8 +152,7 @@ public final class Preferences {
             try {
                 pvsFile = getWorkspaceFile(getPVsFilename());
             } catch (Exception e) {
-                OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                        "Could not load the pvs file.", e);
+                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the pvs file.",e);
                 return null;
             }
         }
@@ -174,10 +164,9 @@ public final class Preferences {
      */
     public String getPVsFilename() {
         try {
-            return getString(PVS_FILE, "pvs.properties", false);
+            return getString(PVS_FILE,"pvs.properties",false);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the pvs properties file name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the pvs properties file name.",e);
             return null;
         }
     }
@@ -187,10 +176,9 @@ public final class Preferences {
      */
     public String getHorizontalOrbitPVName() {
         try {
-            return getString(HORIZONTAL_ORBIT_PV, null, true);
+            return getString(HORIZONTAL_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the horizontal orbit PV name.",e);
             return null;
         }
     }
@@ -200,10 +188,9 @@ public final class Preferences {
      */
     public String getVerticalOrbitPVName() {
         try {
-            return getString(VERTICAL_ORBIT_PV, null, true);
+            return getString(VERTICAL_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the vertical orbit PV name.",e);
             return null;
         }
     }
@@ -213,10 +200,9 @@ public final class Preferences {
      */
     public String getGoldenHorizontalOrbitPVName() {
         try {
-            return getString(GOLDEN_HORIZONTAL_ORBIT_PV, null, true);
+            return getString(GOLDEN_HORIZONTAL_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the golden horizontal orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the golden horizontal orbit PV name.",e);
             return null;
         }
     }
@@ -226,10 +212,9 @@ public final class Preferences {
      */
     public String getGoldenVerticalOrbitPVName() {
         try {
-            return getString(GOLDEN_VERTICAL_ORBIT_PV, null, true);
+            return getString(GOLDEN_VERTICAL_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the golden vertical orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the golden vertical orbit PV name.",e);
             return null;
         }
     }
@@ -239,10 +224,9 @@ public final class Preferences {
      */
     public String getHorizontalCorrectorMradPVName() {
         try {
-            return getString(HORIZONTAL_CORRECTOR_MRAD_PV, null, true);
+            return getString(HORIZONTAL_CORRECTOR_MRAD_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal corrector (mrad) PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the horizontal corrector (mrad) PV name.",e);
             return null;
         }
     }
@@ -252,10 +236,9 @@ public final class Preferences {
      */
     public String getVerticalCorrectorMradPVName() {
         try {
-            return getString(VERTICAL_CORRECTOR_MRAD_PV, null, true);
+            return getString(VERTICAL_CORRECTOR_MRAD_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical corrector (mrad) PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the vertical corrector (mrad) PV name.",e);
             return null;
         }
     }
@@ -265,10 +248,9 @@ public final class Preferences {
      */
     public String getHorizontalCorrectorMaPVName() {
         try {
-            return getString(HORIZONTAL_CORRECTOR_MA_PV, null, true);
+            return getString(HORIZONTAL_CORRECTOR_MA_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal corrector (ma) PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the horizontal corrector (ma) PV name.",e);
             return null;
         }
     }
@@ -278,10 +260,9 @@ public final class Preferences {
      */
     public String getVerticalCorrectorMaPVName() {
         try {
-            return getString(VERTICAL_CORRECTOR_MA_PV, null, true);
+            return getString(VERTICAL_CORRECTOR_MA_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical corrector (ma) PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the vertical corrector (ma) PV name.",e);
             return null;
         }
     }
@@ -291,10 +272,9 @@ public final class Preferences {
      */
     public String getHorizontalOrbitStatisticPVName() {
         try {
-            return getString(HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
+            return getString(HORIZONTAL_ORBIT_STATISTIC_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal orbit statistic PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the horizontal orbit statistic PV name.",e);
             return null;
         }
     }
@@ -304,10 +284,9 @@ public final class Preferences {
      */
     public String getVerticalOrbitStatisticPVName() {
         try {
-            return getString(VERTICAL_ORBIT_STATISTIC_PV, null ,true);
+            return getString(VERTICAL_ORBIT_STATISTIC_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical orbit statistic PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the vertical orbit statistic PV name.",e);
             return null;
         }
     }
@@ -317,10 +296,10 @@ public final class Preferences {
      */
     public String getGoldenHorizontalOrbitStatisticPVName() {
         try {
-            return getString(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, null ,true);
+            return getString(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the golden horizontal orbit statistic PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,
+                    "Could not load the golden horizontal orbit statistic PV name.",e);
             return null;
         }
     }
@@ -330,10 +309,10 @@ public final class Preferences {
      */
     public String getGoldenVerticalOrbitStatisticPVName() {
         try {
-            return getString(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, null ,true);
+            return getString(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the golden vertical orbit statistic PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the golden vertical orbit statistic PV name.",
+                    e);
             return null;
         }
     }
@@ -343,10 +322,9 @@ public final class Preferences {
      */
     public String getHorizontalOrbitWeightsPVName() {
         try {
-            return getString(HORIZONTAL_ORBIT_WEIGHTS_PV, null ,true);
+            return getString(HORIZONTAL_ORBIT_WEIGHTS_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the horizontal orbit weights PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the horizontal orbit weights PV name.",e);
             return null;
         }
     }
@@ -356,10 +334,9 @@ public final class Preferences {
      */
     public String getVerticalOrbitWeightsPVName() {
         try {
-            return getString(VERTICAL_ORBIT_WEIGHTS_PV, null ,true);
+            return getString(VERTICAL_ORBIT_WEIGHTS_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the vertical orbit weights PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the vertical orbit weights PV name.",e);
             return null;
         }
     }
@@ -369,10 +346,9 @@ public final class Preferences {
      */
     public String getOrmPVName() {
         try {
-            return getString(ORM_PV, null, true);
+            return getString(ORM_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the ORM PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the ORM PV name.",e);
             return null;
         }
     }
@@ -382,10 +358,9 @@ public final class Preferences {
      */
     public String getOperationStatusPVName() {
         try {
-            return getString(OPERATION_STATUS_PV, null ,true);
+            return getString(OPERATION_STATUS_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the operation status PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the operation status PV name.",e);
             return null;
         }
     }
@@ -395,10 +370,9 @@ public final class Preferences {
      */
     public String getStartMeasuringOrbitPVName() {
         try {
-            return getString(START_MEASURING_ORBIT_PV, null ,true);
+            return getString(START_MEASURING_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the start measuring orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the start measuring orbit PV name.",e);
             return null;
         }
     }
@@ -408,10 +382,9 @@ public final class Preferences {
      */
     public String getStopMeasuringOrbitPVName() {
         try {
-            return getString(STOP_MEASURING_ORBIT_PV, null ,true);
+            return getString(STOP_MEASURING_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the stop measuring orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the stop measuring orbit PV name.",e);
             return null;
         }
     }
@@ -421,10 +394,9 @@ public final class Preferences {
      */
     public String getMeasureOrbitOncePVName() {
         try {
-            return getString(MEASURE_ORBIT_ONCE_PV, null ,true);
+            return getString(MEASURE_ORBIT_ONCE_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the measure orbit once PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the measure orbit once PV name.",e);
             return null;
         }
     }
@@ -434,10 +406,9 @@ public final class Preferences {
      */
     public String getStartCorrectingOrbitPVName() {
         try {
-            return getString(START_CORRECTING_ORBIT_PV, null ,true);
+            return getString(START_CORRECTING_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the start start correcting PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the start start correcting PV name.",e);
             return null;
         }
     }
@@ -447,10 +418,9 @@ public final class Preferences {
      */
     public String getStopCorrectingOrbitPVName() {
         try {
-            return getString(STOP_CORRECTING_ORBIT_PV, null ,true);
+            return getString(STOP_CORRECTING_ORBIT_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the stop correcting orbit PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the stop correcting orbit PV name.",e);
             return null;
         }
     }
@@ -460,10 +430,9 @@ public final class Preferences {
      */
     public String getCorrectOrbitOncePVName() {
         try {
-            return getString(CORRECT_ORBIT_ONCE_PV, null ,true);
+            return getString(CORRECT_ORBIT_ONCE_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the correct orbit once PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the correct orbit once PV name.",e);
             return null;
         }
     }
@@ -473,10 +442,9 @@ public final class Preferences {
      */
     public String getMeasureOrmPVName() {
         try {
-            return getString(MEASURE_ORM_PV, null, true);
+            return getString(MEASURE_ORM_PV,null,true);
         } catch (Exception e) {
-            OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                    "Could not load the measure orm PV name.", e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the measure orm PV name.",e);
             return null;
         }
     }
@@ -484,31 +452,31 @@ public final class Preferences {
     /**
      * @return the map with the PV keys and names.
      */
-    public Map<String, String> getPVNames() {
-        Map<String, String> pvs = new HashMap<>();
-        pvs.put(HORIZONTAL_ORBIT_PV, getHorizontalOrbitPVName());
-        pvs.put(VERTICAL_ORBIT_PV, getVerticalOrbitPVName());
-        pvs.put(GOLDEN_HORIZONTAL_ORBIT_PV, getGoldenHorizontalOrbitPVName());
-        pvs.put(GOLDEN_VERTICAL_ORBIT_PV, getGoldenVerticalOrbitPVName());
-        pvs.put(HORIZONTAL_CORRECTOR_MRAD_PV, getHorizontalCorrectorMradPVName());
-        pvs.put(VERTICAL_CORRECTOR_MRAD_PV, getVerticalCorrectorMradPVName());
-        pvs.put(HORIZONTAL_CORRECTOR_MA_PV, getHorizontalCorrectorMaPVName());
-        pvs.put(VERTICAL_CORRECTOR_MA_PV, getVerticalCorrectorMaPVName());
-        pvs.put(OPERATION_STATUS_PV, getOperationStatusPVName());
-        pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV, getHorizontalOrbitStatisticPVName());
-        pvs.put(VERTICAL_ORBIT_STATISTIC_PV, getVerticalOrbitStatisticPVName());
-        pvs.put(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV, getGoldenHorizontalOrbitStatisticPVName());
-        pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV, getGoldenVerticalOrbitStatisticPVName());
-        pvs.put(HORIZONTAL_ORBIT_WEIGHTS_PV, getHorizontalOrbitWeightsPVName());
-        pvs.put(VERTICAL_ORBIT_WEIGHTS_PV, getVerticalOrbitWeightsPVName());
-        pvs.put(ORM_PV, getOrmPVName());
-        pvs.put(START_MEASURING_ORBIT_PV, getStartMeasuringOrbitPVName());
-        pvs.put(STOP_MEASURING_ORBIT_PV, getStopMeasuringOrbitPVName());
-        pvs.put(MEASURE_ORBIT_ONCE_PV, getMeasureOrbitOncePVName());
-        pvs.put(START_CORRECTING_ORBIT_PV, getStartCorrectingOrbitPVName());
-        pvs.put(STOP_CORRECTING_ORBIT_PV, getStopCorrectingOrbitPVName());
-        pvs.put(CORRECT_ORBIT_ONCE_PV, getCorrectOrbitOncePVName());
-        pvs.put(MEASURE_ORM_PV, getMeasureOrmPVName());
+    public Map<String,String> getPVNames() {
+        Map<String,String> pvs = new HashMap<>();
+        pvs.put(HORIZONTAL_ORBIT_PV,getHorizontalOrbitPVName());
+        pvs.put(VERTICAL_ORBIT_PV,getVerticalOrbitPVName());
+        pvs.put(GOLDEN_HORIZONTAL_ORBIT_PV,getGoldenHorizontalOrbitPVName());
+        pvs.put(GOLDEN_VERTICAL_ORBIT_PV,getGoldenVerticalOrbitPVName());
+        pvs.put(HORIZONTAL_CORRECTOR_MRAD_PV,getHorizontalCorrectorMradPVName());
+        pvs.put(VERTICAL_CORRECTOR_MRAD_PV,getVerticalCorrectorMradPVName());
+        pvs.put(HORIZONTAL_CORRECTOR_MA_PV,getHorizontalCorrectorMaPVName());
+        pvs.put(VERTICAL_CORRECTOR_MA_PV,getVerticalCorrectorMaPVName());
+        pvs.put(OPERATION_STATUS_PV,getOperationStatusPVName());
+        pvs.put(HORIZONTAL_ORBIT_STATISTIC_PV,getHorizontalOrbitStatisticPVName());
+        pvs.put(VERTICAL_ORBIT_STATISTIC_PV,getVerticalOrbitStatisticPVName());
+        pvs.put(GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV,getGoldenHorizontalOrbitStatisticPVName());
+        pvs.put(GOLDEN_VERTICAL_ORBIT_STATISTIC_PV,getGoldenVerticalOrbitStatisticPVName());
+        pvs.put(HORIZONTAL_ORBIT_WEIGHTS_PV,getHorizontalOrbitWeightsPVName());
+        pvs.put(VERTICAL_ORBIT_WEIGHTS_PV,getVerticalOrbitWeightsPVName());
+        pvs.put(ORM_PV,getOrmPVName());
+        pvs.put(START_MEASURING_ORBIT_PV,getStartMeasuringOrbitPVName());
+        pvs.put(STOP_MEASURING_ORBIT_PV,getStopMeasuringOrbitPVName());
+        pvs.put(MEASURE_ORBIT_ONCE_PV,getMeasureOrbitOncePVName());
+        pvs.put(START_CORRECTING_ORBIT_PV,getStartCorrectingOrbitPVName());
+        pvs.put(STOP_CORRECTING_ORBIT_PV,getStopCorrectingOrbitPVName());
+        pvs.put(CORRECT_ORBIT_ONCE_PV,getCorrectOrbitOncePVName());
+        pvs.put(MEASURE_ORM_PV,getMeasureOrmPVName());
         return pvs;
     }
 
@@ -519,8 +487,7 @@ public final class Preferences {
      * @param name the name of the preference
      * @param defaultValue the default value to use if the preference is not defined
      * @param mainFile if true the property value will be read from the pvs properties file, if false the Eclipse
-     *                 preference service is used
-     *
+     *        preference service is used
      * @return the preference.
      */
     private String getString(final String name, final String defaultValue, boolean pvsFile) {
@@ -532,16 +499,14 @@ public final class Preferences {
                     properties.load(stream);
                     stream.close();
                 } catch (IOException e) {
-                    OrbitCorrectionService.LOGGER.log(Level.SEVERE,
-                            "Could not load the PVs properties file.", e);
+                    OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the PVs properties file.",e);
                 }
             }
-            return Preferences.getInstance().properties.getProperty(name, defaultValue);
+            return Preferences.getInstance().properties.getProperty(name,defaultValue);
         } else {
             final IPreferencesService service = Platform.getPreferencesService();
             if (service == null) return defaultValue;
-
-            return service.getString(OrbitCorrectionService.PLUGIN_ID, name, defaultValue, null).trim();
+            return service.getString(OrbitCorrectionPlugin.PLUGIN_ID,name,defaultValue,null).trim();
         }
     }
 
@@ -549,17 +514,16 @@ public final class Preferences {
      * Retrieves a file url located in the workspace.
      *
      * @param fileName the file name to open, relative to workspace root
-     *
      * @return the file url.
      * @throws PreferencesException if the file could not be loaded
      */
     private static URL getWorkspaceFile(String fileName) throws PreferencesException {
         Location loc = Platform.getInstanceLocation();
-        File file = new File(new File(loc.getURL().getFile()), fileName);
+        File file = new File(new File(loc.getURL().getFile()),fileName);
         try {
             return file.toURI().toURL();
         } catch (MalformedURLException e) {
-            throw new PreferencesException("Could not load file " + fileName + ".", e);
+            throw new PreferencesException("Could not load file " + fileName + ".",e);
         }
     }
 }

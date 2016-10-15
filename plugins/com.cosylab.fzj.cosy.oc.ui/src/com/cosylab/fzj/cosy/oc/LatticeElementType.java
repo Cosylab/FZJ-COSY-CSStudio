@@ -33,7 +33,6 @@ public enum LatticeElementType {
      * Returns lattice element type with the given name.
      *
      * @param elementTypeName lattice element type name
-     *
      * @return lattice element with the given name.
      */
     public static LatticeElementType getElementType(String elementTypeName) {

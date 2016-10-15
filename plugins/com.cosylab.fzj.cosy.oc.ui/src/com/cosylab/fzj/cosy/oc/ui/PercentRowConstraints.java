@@ -7,7 +7,6 @@ import javafx.scene.layout.RowConstraints;
  * percentage value.
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
- *
  */
 public class PercentRowConstraints extends RowConstraints {
 
@@ -34,5 +33,4 @@ public class PercentRowConstraints extends RowConstraints {
     public PercentRowConstraints(double percent) {
         setPercentHeight(percent);
     }
-
 }

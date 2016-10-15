@@ -8,7 +8,6 @@ import javafx.scene.control.Tooltip;
  * box.
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
- *
  */
 public class TooltipCheckBox extends CheckBox {
 
