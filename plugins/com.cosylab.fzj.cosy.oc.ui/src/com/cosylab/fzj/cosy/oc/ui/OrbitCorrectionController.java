@@ -532,6 +532,7 @@ public class OrbitCorrectionController {
      * @param type series type
      */
     private void updateOrbit(double[] values, SeriesType type) {
+        if (values.length == 0) return;
         Function<BPM,DoubleProperty> property;
         if (type == SeriesType.HORIZONTAL_ORBIT) {
             property = bpm -> bpm.horizontalOrbitProperty();
@@ -557,6 +558,7 @@ public class OrbitCorrectionController {
      * @param type element type
      */
     private void updateCorrectors(double[] values, LatticeElementType type) {
+        if (values.length == 0) return;
         Function<Corrector,DoubleProperty> property;
         if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
             property = c -> c.horizontalCorrectionProperty();

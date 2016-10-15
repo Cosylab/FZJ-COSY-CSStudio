@@ -5,6 +5,7 @@
          point="org.eclipse.ui.perspectives">
       <perspective
             class="com.cosylab.fzj.cosy.oc.ui.Perspective"
+            icon="icons/chart.png"
             id="com.cosylab.fzj.cosy.oc.ui.perspective"
             name="Orbit Correction">
       </perspective>
@@ -35,6 +36,7 @@
             allowMultiple="false"
             category="org.csstudio"
             class="com.cosylab.fzj.cosy.oc.ui.OrbitCorrectionView"
+            icon="icons/chart.png"
             id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
             name="Orbit Correction"
             restorable="true">
