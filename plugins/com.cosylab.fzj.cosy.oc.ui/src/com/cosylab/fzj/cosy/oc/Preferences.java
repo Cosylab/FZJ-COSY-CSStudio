@@ -38,9 +38,9 @@ public final class Preferences {
     public static final String HORIZONTAL_CORRECTOR_MRAD_PV = "horizontal_corrector_mrad_pv";
     /** Vertical correctors (mrad) PV key. */
     public static final String VERTICAL_CORRECTOR_MRAD_PV = "vertical_corrector_mrad_pv";
-    /** Horizontal correctors (ma) PV key. */
+    /** Horizontal correctors (mA) PV key. */
     public static final String HORIZONTAL_CORRECTOR_MA_PV = "horizontal_corrector_ma_pv";
-    /** Vertical correctors (ma) PV key. */
+    /** Vertical correctors (mA) PV key. */
     public static final String VERTICAL_CORRECTOR_MA_PV = "vertical_corrector_ma_pv";
     /** Horizontal orbit statistic PV key. */
     public static final String HORIZONTAL_ORBIT_STATISTIC_PV = "horizontal_orbit_statistic_pv";
