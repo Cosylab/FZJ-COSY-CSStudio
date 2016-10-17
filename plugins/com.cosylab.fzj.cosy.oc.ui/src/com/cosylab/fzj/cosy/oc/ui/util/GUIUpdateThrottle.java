@@ -1,5 +1,7 @@
 package com.cosylab.fzj.cosy.oc.ui.util;
 
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import com.cosylab.fzj.cosy.oc.OrbitCorrectionPlugin;
@@ -16,7 +18,7 @@ import com.cosylab.fzj.cosy.oc.OrbitCorrectionPlugin;
  *
  * @author Kay Kasemir
  */
-public abstract class GUIUpdateThrottle extends Thread {
+public class GUIUpdateThrottle extends Thread {
     /** Delay in milliseconds for the initial update after trigger */
     private final long initialMillis;
 
@@ -30,6 +32,8 @@ public abstract class GUIUpdateThrottle extends Thread {
     private volatile boolean run = true;
 
     private final Object mutex = new Object();
+    
+    private final Optional<Consumer<Void>> consumer;
 
     /**
      * Initialise
@@ -37,10 +41,11 @@ public abstract class GUIUpdateThrottle extends Thread {
      * @param initialMillis Delay [ms] for the initial update after trigger
      * @param suppressionMillis Delay [ms] for the suppression of a burst of events
      */
-    public GUIUpdateThrottle(final long initialMillis, final long suppressionMillis) {
+    public GUIUpdateThrottle(final long initialMillis, final long suppressionMillis, final Consumer<Void> consumer) {
         super("Orbit Correction GUI Update"); //$NON-NLS-1$
         this.initialMillis = initialMillis;
         this.suppressionMillis = suppressionMillis;
+        this.consumer = Optional.ofNullable(consumer);
         setDaemon(true);
     }
 
@@ -85,13 +90,25 @@ public abstract class GUIUpdateThrottle extends Thread {
     }
 
     /**
-     * To be implemented by derived class: Throttled event notification
+     * Calls accept on the {@link Consumer} provided via the constructor. If the consumer was not given, nothing
+     * happens.
      */
-    protected abstract void fire();
+    protected void fire() {
+        consumer.ifPresent(c -> c.accept(null));
+    }
 
     /** Tell thread to quit, but don't wait for that to happen */
     public void dispose() {
         run = false;
         trigger();
+    }
+    
+    /**
+     * Returns true if the thread is alive and running.
+     * 
+     * @return true if alive and running or false if no longer alive or requested to stop.
+     */
+    public boolean isRunning() {
+        return run && isAlive();
     }
 }

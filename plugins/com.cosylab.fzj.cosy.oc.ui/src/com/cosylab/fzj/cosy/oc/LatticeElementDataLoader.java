@@ -17,7 +17,9 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
-public class LatticeElementDataLoader {
+public final class LatticeElementDataLoader {
+    
+    private LatticeElementDataLoader() {}
 
     private static final int NAME_INDEX = 0;
     private static final int POSITION_INDEX = 1;
@@ -29,7 +31,7 @@ public class LatticeElementDataLoader {
      *
      * @return loaded list of all lattice elements.
      */
-    public List<LatticeElementData> loadLatticeElements() {
+    public static List<LatticeElementData> loadLatticeElements() {
         List<LatticeElementData> elements = new ArrayList<>();
         try {
             URL bpmsFile = Preferences.getInstance().getBpmsFile();
@@ -52,7 +54,7 @@ public class LatticeElementDataLoader {
      * @param fileContent content of the bpms file
      * @return list of all bpms.
      */
-    private List<LatticeElementData> getBpms(List<String> fileContent) {
+    private static List<LatticeElementData> getBpms(List<String> fileContent) {
         List<LatticeElementData> bpms = new ArrayList<>();
         fileContent.forEach(line -> {
             String[] splitLine = line.split(DATA_DELIMITER);
@@ -78,7 +80,7 @@ public class LatticeElementDataLoader {
      * @param fileContent content of the correctors file
      * @return list of all correctors.
      */
-    private List<LatticeElementData> getCorrectors(List<String> fileContent) {
+    private static List<LatticeElementData> getCorrectors(List<String> fileContent) {
         List<LatticeElementData> correctors = new ArrayList<>();
         fileContent.forEach(line -> {
             String[] splitLine = line.split(DATA_DELIMITER);
@@ -107,7 +109,7 @@ public class LatticeElementDataLoader {
      * @return the list of trimmed lines.
      * @throws IOException if exception while reading the file occurs.
      */
-    private List<String> getFileContent(URL filePath) throws IOException {
+    private static List<String> getFileContent(URL filePath) throws IOException {
         try (Stream<String> fileStream = Files.lines(Paths.get(new File(filePath.getFile()).getPath()))) {
             Pattern matchSpaces = Pattern.compile("\\s+");
             Pattern matchQuotes = Pattern.compile("\"");
@@ -124,7 +126,7 @@ public class LatticeElementDataLoader {
      * @param line string to check
      * @return <code>true</code> if string defines lattice element, otherwise <code>false</code>.
      */
-    private boolean isElementLine(String line) {
+    private static boolean isElementLine(String line) {
         return line != null && !line.isEmpty() && line.charAt(0) != '@' && line.charAt(0) != '*'
                 && line.charAt(0) != '$';
     }

@@ -1,12 +1,13 @@
 package com.cosylab.fzj.cosy.oc.ui;
 
+import static java.util.Optional.ofNullable;
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.csstudio.ui.fx.util.FXMessageDialog;
 import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 
@@ -524,8 +525,7 @@ public class OrbitCorrectionView extends FXViewPart {
         messageLog.setMinSize(0,0);
         messageLog.setMaxSize(Integer.MAX_VALUE,Integer.MAX_VALUE);
         controller.messageLogProperty().addListener((o, v, n) -> {
-            //FIXME this is not OK, because it piles up all strings 
-            messageLogTextArea.appendText(n);
+            messageLogTextArea.setText(n);
             messageLogTextArea.setScrollTop(Double.MAX_VALUE);
         });
         return new BorderedTitledPane("Message Log",messageLog);
@@ -556,12 +556,8 @@ public class OrbitCorrectionView extends FXViewPart {
         startOrbitCorrectionButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button exportCurrentOrbitButton = new MultiLineButton("Export Current Orbit");
         exportCurrentOrbitButton.setWrapText(true);
-        exportCurrentOrbitButton.setOnAction(e -> {
-            final File file = fileChooser.showSaveDialog(scene.getWindow());
-            if (file != null) {
-                controller.exportCurrentOrbit(file);
-            }
-        });
+        exportCurrentOrbitButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
+                .ifPresent(file -> controller.exportCurrentOrbit(file)));
         Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
         stopMeasuringOrbitButton.setWrapText(true);
         stopMeasuringOrbitButton.setOnAction(e -> controller.stopMeasuringOrbit());
@@ -579,6 +575,10 @@ public class OrbitCorrectionView extends FXViewPart {
         Button advancedButton = new MultiLineButton("Advanced...");
         advancedButton.setWrapText(true);
         // TODO implement advanced button action
+        advancedButton.setOnAction(e -> {
+            FXMessageDialog.openInformation(getSite().getShell(),"Advanced Features",
+                    "Advanced Features coming soon to theaters near you!");    
+        });
         setFullResizable(startMeasuringOrbitButton,measureOrbitOnceButton,startOrbitCorrectionButton,
                 exportCurrentOrbitButton,stopMeasuringOrbitButton,correctOrbitOnceButton,stopOrbitCorrectionButton,
                 advancedButton);
@@ -614,20 +614,12 @@ public class OrbitCorrectionView extends FXViewPart {
         goldenOrbitControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
         final StringProperty status = controller.statusProperty();
         Button uploadButton = new Button("Upload");
-        uploadButton.setOnAction(e -> {
-            final File file = fileChooser.showOpenDialog(scene.getWindow());
-            if (file != null) {
-                controller.uploadGoldenOrbit(file);
-            }
-        });
+        uploadButton.setOnAction(e -> ofNullable(fileChooser.showOpenDialog(scene.getWindow()))
+                .ifPresent(file -> controller.uploadGoldenOrbit(file)));
         uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button downloadButton = new Button("Download");
-        downloadButton.setOnAction(e -> {
-            final File file = fileChooser.showSaveDialog(scene.getWindow());
-            if (file != null) {
-                controller.downloadGoldenOrbit(file);
-            }
-        });
+        downloadButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
+                .ifPresent(file -> controller.downloadGoldenOrbit(file)));
         downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button useCurrentButton = new Button("Use current");
         useCurrentButton.setOnAction(e -> controller.useCurrent());
@@ -650,20 +642,12 @@ public class OrbitCorrectionView extends FXViewPart {
         responseMatrixControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
         final StringProperty status = controller.statusProperty();
         Button downloadButton = new Button("Download");
-        downloadButton.setOnAction(e -> {
-            final File file = fileChooser.showSaveDialog(scene.getWindow());
-            if (file != null) {
-                controller.downloadResponseMatrix(file);
-            }
-        });
+        downloadButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
+                .ifPresent(file -> controller.downloadResponseMatrix(file)));
         downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button uploadButton = new Button("Upload");
-        uploadButton.setOnAction(e -> {
-            final File file = fileChooser.showOpenDialog(scene.getWindow());
-            if (file != null) {
-                controller.uploadResponseMatrix(file);
-            }
-        });
+        uploadButton.setOnAction(e -> ofNullable(fileChooser.showOpenDialog(scene.getWindow()))
+                .ifPresent(file -> controller.uploadResponseMatrix(file)));
         uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button measureButton = new Button("Measure");
         measureButton.setOnAction(e -> controller.measure());
