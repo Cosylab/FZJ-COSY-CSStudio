@@ -8,6 +8,7 @@ import static org.diirt.datasource.ExpressionLanguage.channel;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -385,7 +386,7 @@ public class OrbitCorrectionController {
         }
         final VNumberArray value = (VNumberArray)ormPV.value;
         nonUIexecutor.execute(() -> {
-            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()))) {
+            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()),StandardCharsets.UTF_8)) {
                 if (value != null) {
                     StringBuilder sb = new StringBuilder(n * m * 15);
                     ListNumber data = value.getData();
@@ -708,7 +709,7 @@ public class OrbitCorrectionController {
             String xWeights = xWeightsPV != null ? getStringValue(xWeightsPV.value) : EMPTY_STRING;
             String yOrbit = yOrbitPV != null ? getStringValue(yOrbitPV.value) : EMPTY_STRING;
             String yWeights = yWeightsPV != null ? getStringValue(yWeightsPV.value) : EMPTY_STRING;
-            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()))) {
+            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()),StandardCharsets.UTF_8)) {
                 writer.write(xOrbit);
                 writer.write('\n');
                 writer.write(xWeights);
