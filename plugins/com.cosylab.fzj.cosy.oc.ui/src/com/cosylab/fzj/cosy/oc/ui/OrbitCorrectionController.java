@@ -40,6 +40,7 @@ import org.diirt.datasource.PVWriter;
 import org.diirt.datasource.PVWriterEvent;
 import org.diirt.datasource.PVWriterListener;
 import org.diirt.util.array.ArrayDouble;
+import org.diirt.util.array.IteratorNumber;
 import org.diirt.util.array.ListNumber;
 import org.diirt.vtype.Alarm;
 import org.diirt.vtype.AlarmSeverity;
@@ -136,7 +137,7 @@ public class OrbitCorrectionController {
             if (!reader.isClosed()) {
                 reader.close();
             }
-            synchronized(this) {
+            synchronized (this) {
                 if (!writer.isClosed()) {
                     writer.close();
                 }
@@ -151,19 +152,18 @@ public class OrbitCorrectionController {
     private final Map<String,OrbitCorrectionResultsEntry> correctionResultsEntries = new LinkedHashMap<>(4);
     private final List<BPM> bpms = new ArrayList<>();
     private final List<Corrector> correctors = new ArrayList<>();
-    
     private final LinkedList<String> messages = new LinkedList<>();
     private static final int MAX_MESSAGES = 200;
     private final DateFormat MESSAGE_FORMAT = new SimpleDateFormat("HH:mm:ss");
-    
-    private final ExecutorService nonUIexecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, 
+    private final ExecutorService nonUIexecutor = new ThreadPoolExecutor(1,1,0L,TimeUnit.SECONDS,
             new LinkedBlockingQueue<>()) {
+
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
             if (r instanceof Future<?>) {
                 if (((Future<?>)r).isDone()) {
                     try {
-                        ((Future<?>)r).get(1, TimeUnit.MILLISECONDS);
+                        ((Future<?>)r).get(1,TimeUnit.MILLISECONDS);
                     } catch (ExecutionException e) {
                         t = e.getCause();
                     } catch (CancellationException | InterruptedException | TimeoutException e) {
@@ -172,12 +172,12 @@ public class OrbitCorrectionController {
                 }
             }
             if (t != null) {
-                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE, "Execution Error", t);
+                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Execution Error",t);
             }
         }
     };
     private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20,UPDATE_RATE,
-            v -> nonUIexecutor.execute(() -> update()));
+            v -> UI_EXECUTOR.execute(() -> update()));
 
     /**
      * Constructs a new controller for the orbit correction view.
@@ -519,45 +519,41 @@ public class OrbitCorrectionController {
         if (!throttle.isRunning()) return;
         ofNullable(pvs.get(pvKey)).ifPresent(pv -> writeData(pv,empty(),successMessage,failureMessage));
     }
-        
+
     /**
      * Method which updates PV values.
      */
     private void update() {
         if (!throttle.isRunning()) return;
         ofNullable(pvs.get(Preferences.HORIZONTAL_ORBIT_PV))
-                .ifPresent(pv -> updateOrbit(getWaveformValues(pv.value),SeriesType.HORIZONTAL_ORBIT));
+                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.HORIZONTAL_ORBIT));
         ofNullable(pvs.get(Preferences.VERTICAL_ORBIT_PV))
-                .ifPresent(pv -> updateOrbit(getWaveformValues(pv.value),SeriesType.VERTICAL_ORBIT));
+                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.VERTICAL_ORBIT));
         ofNullable(pvs.get(Preferences.GOLDEN_HORIZONTAL_ORBIT_PV))
-                .ifPresent(pv -> updateOrbit(getWaveformValues(pv.value),SeriesType.GOLDEN_HORIZONTAL_ORBIT));
+                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.GOLDEN_HORIZONTAL_ORBIT));
         ofNullable(pvs.get(Preferences.GOLDEN_VERTICAL_ORBIT_PV))
-                .ifPresent(pv -> updateOrbit(getWaveformValues(pv.value),SeriesType.GOLDEN_VERTICAL_ORBIT));
+                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.GOLDEN_VERTICAL_ORBIT));
         if (mradProperty.get()) {
-            ofNullable(pvs.get(Preferences.HORIZONTAL_CORRECTOR_MRAD_PV)).ifPresent(
-                    pv -> updateCorrectors(getWaveformValues(pv.value),LatticeElementType.HORIZONTAL_CORRECTOR));
-            ofNullable(pvs.get(Preferences.VERTICAL_CORRECTOR_MRAD_PV)).ifPresent(
-                    pv -> updateCorrectors(getWaveformValues(pv.value),LatticeElementType.VERTICAL_CORRECTOR));
+            ofNullable(pvs.get(Preferences.HORIZONTAL_CORRECTOR_MRAD_PV))
+                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+            ofNullable(pvs.get(Preferences.VERTICAL_CORRECTOR_MRAD_PV))
+                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
         } else {
-            ofNullable(pvs.get(Preferences.HORIZONTAL_CORRECTOR_MA_PV)).ifPresent(
-                    pv -> updateCorrectors(getWaveformValues(pv.value),LatticeElementType.HORIZONTAL_CORRECTOR));
-            ofNullable(pvs.get(Preferences.VERTICAL_CORRECTOR_MA_PV)).ifPresent(
-                    pv -> updateCorrectors(getWaveformValues(pv.value),LatticeElementType.VERTICAL_CORRECTOR));
+            ofNullable(pvs.get(Preferences.HORIZONTAL_CORRECTOR_MA_PV))
+                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+            ofNullable(pvs.get(Preferences.VERTICAL_CORRECTOR_MA_PV))
+                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
         }
         ofNullable(pvs.get(Preferences.OPERATION_STATUS_PV)).filter(pv -> pv.value instanceof VEnum)
                 .ifPresent(pv -> statusProperty.set(((VEnum)pv.value).getValue()));
         ofNullable(pvs.get(Preferences.HORIZONTAL_ORBIT_STATISTIC_PV))
-                .ifPresent(pv -> updateOrbitCorrectionResults(getWaveformValues(pv.value),
-                        Preferences.HORIZONTAL_ORBIT_STATISTIC_PV));
+                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.HORIZONTAL_ORBIT_STATISTIC_PV));
         ofNullable(pvs.get(Preferences.VERTICAL_ORBIT_STATISTIC_PV))
-                .ifPresent(pv -> updateOrbitCorrectionResults(getWaveformValues(pv.value),
-                        Preferences.VERTICAL_ORBIT_STATISTIC_PV));
-        ofNullable(pvs.get(Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV))
-                .ifPresent(pv -> updateOrbitCorrectionResults(getWaveformValues(pv.value),
-                        Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV));
+                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.VERTICAL_ORBIT_STATISTIC_PV));
+        ofNullable(pvs.get(Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV)).ifPresent(
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.GOLDEN_HORIZONTAL_ORBIT_STATISTIC_PV));
         ofNullable(pvs.get(Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV))
-                .ifPresent(pv -> updateOrbitCorrectionResults(getWaveformValues(pv.value),
-                        Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV));
+                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.GOLDEN_VERTICAL_ORBIT_STATISTIC_PV));
     }
 
     /**
@@ -566,11 +562,13 @@ public class OrbitCorrectionController {
      * @param values new values
      * @param type series type
      */
-    private void updateOrbit(final double[] values, SeriesType type) {
-        if (values.length == 0) return;
+    private void updateOrbit(final VType value, SeriesType type) {
+        if (!(value instanceof VNumberArray)) return;
+        final ListNumber va = ((VNumberArray)value).getData();
+        if (va.size() == 0) return;
         Function<BPM,DoubleProperty> property;
-        switch(type) {
-            case HORIZONTAL_ORBIT: 
+        switch (type) {
+            case HORIZONTAL_ORBIT:
                 property = bpm -> bpm.horizontalOrbitProperty();
                 break;
             case VERTICAL_ORBIT:
@@ -585,12 +583,8 @@ public class OrbitCorrectionController {
             default:
                 return;
         }
-        UI_EXECUTOR.execute(() -> {
-            int valueCounter = 0;
-            for (BPM bpm : bpms) {
-                property.apply(bpm).set(values[valueCounter++]);
-            }
-        });
+        final IteratorNumber it = va.iterator();
+        bpms.stream().map(bpm -> property.apply(bpm)).forEach(p -> p.set(it.nextDouble()));
     }
 
     /**
@@ -599,8 +593,10 @@ public class OrbitCorrectionController {
      * @param values new correctors values
      * @param type element type
      */
-    private void updateCorrectors(final double[] values, final LatticeElementType type) {
-        if (values.length == 0) return;
+    private void updateCorrectors(final VType value, final LatticeElementType type) {
+        if (!(value instanceof VNumberArray)) return;
+        final ListNumber va = ((VNumberArray)value).getData();
+        if (va.size() == 0) return;
         Function<Corrector,DoubleProperty> property;
         if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
             property = c -> c.horizontalCorrectionProperty();
@@ -609,15 +605,9 @@ public class OrbitCorrectionController {
         } else {
             return;
         }
-        UI_EXECUTOR.execute(() -> {
-            int valueCounter = 0;
-            for (Corrector corrector : correctors) {
-                if (corrector.getElementData().getType() == type) {
-                    property.apply(corrector).set(values[valueCounter++]);
-                    valueCounter++;
-                }
-            }
-        });
+        final IteratorNumber it = va.iterator();
+        correctors.stream().filter(c -> c.getElementData().getType() == type).map(c -> property.apply(c))
+                .forEach(p -> p.set(it.nextDouble()));
     }
 
     /**
@@ -626,15 +616,17 @@ public class OrbitCorrectionController {
      * @param pvKey the key identifying which orbit the results are for
      * @param values new values
      */
-    private void updateOrbitCorrectionResults(double[] values, String pvKey) {
-        if (values.length < 5) return;
-        UI_EXECUTOR.execute(() -> ofNullable(correctionResultsEntries.get(pvKey)).ifPresent(entry -> {
-            entry.minProperty().set(values[0]);
-            entry.maxProperty().set(values[1]);
-            entry.avgProperty().set(values[2]);
-            entry.rmsProperty().set(values[3]);
-            entry.stdProperty().set(values[4]);
-        }));
+    private void updateOrbitCorrectionResults(VType value, String pvKey) {
+        if (!(value instanceof VNumberArray)) return;
+        ListNumber va = ((VNumberArray)value).getData();
+        if (va.size() < 5) return;
+        ofNullable(correctionResultsEntries.get(pvKey)).ifPresent(entry -> {
+            entry.minProperty().set(va.getDouble(0));
+            entry.maxProperty().set(va.getDouble(1));
+            entry.avgProperty().set(va.getDouble(2));
+            entry.rmsProperty().set(va.getDouble(3));
+            entry.stdProperty().set(va.getDouble(4));
+        });
     }
 
     /**
@@ -648,7 +640,7 @@ public class OrbitCorrectionController {
     private void writeData(PV pv, Optional<VType> data, String successMessage, String failureMessage) {
         nonUIexecutor.execute(() -> {
             PVWriterListener<?> pvListener = new PVWriterListener<PV>() {
-    
+
                 @Override
                 public void pvChanged(PVWriterEvent<PV> w) {
                     if (w.isWriteSucceeded()) {
@@ -663,7 +655,7 @@ public class OrbitCorrectionController {
                     w.getPvWriter().removePVWriterListener(this);
                 }
             };
-            synchronized(pv) {
+            synchronized (pv) {
                 pv.writer.addPVWriterListener(pvListener);
                 if (data.isPresent()) {
                     pv.writer.write(((VNumberArray)data.get()).getData());
@@ -718,36 +710,17 @@ public class OrbitCorrectionController {
             String yWeights = yWeightsPV != null ? getStringValue(yWeightsPV.value) : EMPTY_STRING;
             try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()))) {
                 writer.write(xOrbit);
-                writer.newLine();
+                writer.write('\n');
                 writer.write(xWeights);
-                writer.newLine();
+                writer.write('\n');
                 writer.write(yOrbit);
-                writer.newLine();
+                writer.write('\n');
                 writer.write(yWeights);
                 writeToLog(successMessage,false,empty());
             } catch (Exception e) {
                 writeToLog(failureMessage,true,of(e));
             }
         });
-    }
-
-    /**
-     * Transforms the given {@link VType} to a double array.
-     * 
-     * @param value the value
-     * @return a list of double values for the given value.
-     */
-    private static double[] getWaveformValues(VType value) {
-        if (value instanceof VNumberArray) {
-            ListNumber data = ((VNumberArray)value).getData();
-            int size = data.size();
-            double[] values = new double[size];
-            for (int i = 0; i < size; i++) {
-                values[i] = data.getDouble(i);
-            }
-            return values;
-        }
-        return new double[0];
     }
 
     /**
@@ -783,9 +756,9 @@ public class OrbitCorrectionController {
             OrbitCorrectionPlugin.LOGGER.log(Level.FINE,message);
         }
         final StringBuilder sb;
-        synchronized(messages) {
-            messages.add(String.format("%s: %s",MESSAGE_FORMAT.format(new Date()), message));
-            while(messages.size() > MAX_MESSAGES) {
+        synchronized (messages) {
+            messages.add(String.format("%s: %s",MESSAGE_FORMAT.format(new Date()),message));
+            while (messages.size() > MAX_MESSAGES) {
                 messages.removeFirst();
             }
             sb = new StringBuilder(messages.size() * 100);
