@@ -1,12 +1,15 @@
 package com.cosylab.fzj.cosy.oc;
 
+import java.util.Arrays;
+
 /**
  * <code>LatticeElementType</code> represents the lattice element type with the name.
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
 public enum LatticeElementType {
-    BPM("bpm"),
+    HORIZONTAL_BPM("bpmh"),
+    VERTICAL_BPM("bpmv"),
     HORIZONTAL_CORRECTOR("horizontal"),
     VERTICAL_CORRECTOR("vertical"),
     HORIZONTAL_VERTICAL_CORRECTOR("horizontal/vertical");
@@ -30,21 +33,22 @@ public enum LatticeElementType {
     }
 
     /**
+     * Returns true if this type represents a BPM or false if it represents a corrector.
+     *
+     * @return true if this is bpm or false if corrector
+     */
+    public boolean isBPM() {
+        return this == HORIZONTAL_BPM || this == VERTICAL_BPM;
+    }
+
+    /**
      * Returns lattice element type with the given name.
      *
      * @param elementTypeName lattice element type name
      * @return lattice element with the given name.
      */
     public static LatticeElementType getElementType(String elementTypeName) {
-        if (BPM.getElementTypeName().equals(elementTypeName)) {
-            return BPM;
-        } else if (HORIZONTAL_CORRECTOR.getElementTypeName().equals(elementTypeName)) {
-            return HORIZONTAL_CORRECTOR;
-        } else if (VERTICAL_CORRECTOR.getElementTypeName().equals(elementTypeName)) {
-            return VERTICAL_CORRECTOR;
-        } else if (HORIZONTAL_VERTICAL_CORRECTOR.getElementTypeName().equals(elementTypeName)) {
-            return LatticeElementType.HORIZONTAL_VERTICAL_CORRECTOR;
-        }
-        return null;
+        return Arrays.stream(values()).filter(v -> v.getElementTypeName().equals(elementTypeName)).findFirst()
+                .orElse(null);
     }
 }

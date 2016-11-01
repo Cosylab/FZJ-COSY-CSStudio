@@ -1,7 +1,9 @@
 package com.cosylab.fzj.cosy.oc;
 
+import java.util.Objects;
+
 /**
- * <code>LatticeElementData</code> represents the lattice element data read from the file.
+ * <code>LatticeElementData</code> represents the initial lattice element data for a single element.
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
@@ -43,5 +45,28 @@ public class LatticeElementData {
      */
     public LatticeElementType getType() {
         return type;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(name,position,type);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        LatticeElementData other = (LatticeElementData)obj;
+        return Objects.equals(name,other.name) && Objects.equals(type,other.type)
+                && Double.doubleToLongBits(position) == Double.doubleToLongBits(other.position);
     }
 }

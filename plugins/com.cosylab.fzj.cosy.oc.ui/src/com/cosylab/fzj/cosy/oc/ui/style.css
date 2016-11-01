@@ -25,7 +25,6 @@
 	-fx-padding: 20 10 10 10;	
 }
 
-.axis-tick-mark, 
 .axis-minor-tick-mark, 
 .chart-vertical-zero-line {
     -fx-stroke: transparent;

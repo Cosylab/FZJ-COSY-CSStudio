@@ -20,8 +20,11 @@ import javafx.scene.text.Text;
 /**
  * <code>MultiLineButton</code> is an extension of the javafx {@link Button} which displays the text in multiple lines.
  * The text is split by spaces (individual words are never split) and is shown in as little lines as possible. If the
- * width of the button is smaller than the width of individual line that line is split into two lines and the second
- * line is concatenated with the next one. The process is repeated until all text is displayed.
+ * width of the button is smaller than the width of individual line that line is split into two lines (by space) and the
+ * second line is concatenated with the next one. The process is repeated until all text is displayed. If a single word
+ * is longer than the width of the button, default javafx mechanisms are used (which usually means replacing the off
+ * component text with three dots). The maximum number of rows is always limited to the number of words. If all lines
+ * do not fit into the button height, tough luck.
  *
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
  */

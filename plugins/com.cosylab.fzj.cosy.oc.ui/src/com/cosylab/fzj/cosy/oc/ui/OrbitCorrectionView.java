@@ -3,9 +3,11 @@ package com.cosylab.fzj.cosy.oc.ui;
 import static java.util.Optional.ofNullable;
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.csstudio.ui.fx.util.FXMessageDialog;
 import org.csstudio.ui.fx.util.StaticTextArea;
@@ -13,9 +15,7 @@ import org.eclipse.fx.ui.workbench3.FXViewPart;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
-import com.cosylab.fzj.cosy.oc.ui.model.ChartType;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
-import com.cosylab.fzj.cosy.oc.ui.model.OperationStatus;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 
 import javafx.beans.property.DoubleProperty;
@@ -38,6 +38,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -45,6 +46,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.util.StringConverter;
 
 /**
  * <code>OrbitCorrectionView</code> is an {@link FXViewPart} implementation for displaying and controlling orbit
@@ -55,6 +57,35 @@ import javafx.stage.FileChooser.ExtensionFilter;
  */
 public class OrbitCorrectionView extends FXViewPart {
 
+    private static enum ChartType {
+        ORBIT, CORRECTIONS, LATTICE
+    }
+
+    private static enum OperationStatus {
+        IDLE, MEASURING_ORBIT, CORRECTING_ORBIT, CORRECTING_ORM
+    }
+
+    private static StringConverter<Number> TICK_LABEL_FORMATTER = new StringConverter<Number>() {
+
+        private final DecimalFormat format = new DecimalFormat("###");
+
+        @Override
+        public Number fromString(String string) {
+            return Double.NaN;
+        }
+        @Override
+        public String toString(Number object) {
+            double val = object.doubleValue();
+            if (val < 0 || val > 184) {
+                return "";
+            } else {
+                return format.format(val);
+            }
+        }
+    };
+
+    private CheckBox hOrbitCheckBox, vOrbitCheckBox, hGoldenOrbitCheckBox, vGoldenOrbitCheckBox, hCorrectorsCheckBox,
+            vCorrectorsCheckBox, bpmLatticeCheckBox, hCorrectorsLatticeCheckBox, vCorrectorsLatticeCheckBox;
     private LineChart<Number,Number> orbitChart;
     private CorrectionsChart<Number,Number> correctionsChart;
     private LineChart<Number,Number> latticeChart;
@@ -71,7 +102,7 @@ public class OrbitCorrectionView extends FXViewPart {
     public OrbitCorrectionView() {
         fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(0,new ExtensionFilter("All Files","*.*"));
-        controller = new OrbitCorrectionController();
+        controller = new OrbitCorrectionController(this::recreateAllCharts);
     }
 
     /*
@@ -82,6 +113,7 @@ public class OrbitCorrectionView extends FXViewPart {
     protected Scene createFxScene() {
         scene = new Scene(createContentPane());
         scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
+        Arrays.stream(LatticeElementType.values()).forEach(this::recreateAllCharts);
         return scene;
     }
 
@@ -145,7 +177,12 @@ public class OrbitCorrectionView extends FXViewPart {
         charts.add(createVerticalAxis(orbitChart,"Position [mm]"),0,0);
         charts.add(orbitNode,1,0);
         charts.add(orbitLegendNode,2,0);
-        charts.add(createVerticalAxis(correctionsChart,"Kick Angle [mrad]"),0,1);
+        charts.add(createVerticalAxis(correctionsChart,
+                controller.mradProperty().get() ? "Kick Angle [mrad]" : "Kick Strength [mA]"),0,1);
+        controller.mradProperty().addListener((a, o, n) -> {
+            GridPane pane = (GridPane)charts.getChildren().get(3);
+            ((NumberAxis)pane.getChildren().get(0)).setLabel(n ? "Kick Angle [mrad]" : "Kick Strength [mA]");
+        });
         charts.add(correctionNode,1,1);
         charts.add(correctionLegendNode,2,1);
         charts.add(latticeNode,1,2);
@@ -161,37 +198,37 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private void configureChartSynchronisation() {
         // synchronise the lower and upper bounds of all three charts
-        ((SpecialNumberAxis)orbitChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
+        ((NumberAxis)orbitChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
             correctionsZoom.doHorizontalZoom(n.doubleValue(),
-                    ((SpecialNumberAxis)orbitChart.getXAxis()).getUpperBound());
-            latticeZoom.doHorizontalZoom(n.doubleValue(),((SpecialNumberAxis)orbitChart.getXAxis()).getUpperBound());
+                    ((NumberAxis)orbitChart.getXAxis()).getUpperBound());
+            latticeZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)orbitChart.getXAxis()).getUpperBound());
         });
-        ((SpecialNumberAxis)correctionsChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
+        ((NumberAxis)correctionsChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
             orbitZoom.doHorizontalZoom(n.doubleValue(),
-                    ((SpecialNumberAxis)correctionsChart.getXAxis()).getUpperBound());
+                    ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
             latticeZoom.doHorizontalZoom(n.doubleValue(),
-                    ((SpecialNumberAxis)correctionsChart.getXAxis()).getUpperBound());
+                    ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
         });
-        ((SpecialNumberAxis)latticeChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
+        ((NumberAxis)latticeChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
             correctionsZoom.doHorizontalZoom(n.doubleValue(),
-                    ((SpecialNumberAxis)latticeChart.getXAxis()).getUpperBound());
-            orbitZoom.doHorizontalZoom(n.doubleValue(),((SpecialNumberAxis)latticeChart.getXAxis()).getUpperBound());
+                    ((NumberAxis)latticeChart.getXAxis()).getUpperBound());
+            orbitZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)latticeChart.getXAxis()).getUpperBound());
         });
-        ((SpecialNumberAxis)orbitChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(((SpecialNumberAxis)orbitChart.getXAxis()).getLowerBound(),
+        ((NumberAxis)orbitChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
+            correctionsZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),
                     n.doubleValue());
-            latticeZoom.doHorizontalZoom(((SpecialNumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
+            latticeZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
         });
-        ((SpecialNumberAxis)correctionsChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            orbitZoom.doHorizontalZoom(((SpecialNumberAxis)correctionsChart.getXAxis()).getLowerBound(),
+        ((NumberAxis)correctionsChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
+            orbitZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),
                     n.doubleValue());
-            latticeZoom.doHorizontalZoom(((SpecialNumberAxis)correctionsChart.getXAxis()).getLowerBound(),
+            latticeZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),
                     n.doubleValue());
         });
-        ((SpecialNumberAxis)latticeChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(((SpecialNumberAxis)latticeChart.getXAxis()).getLowerBound(),
+        ((NumberAxis)latticeChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
+            correctionsZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),
                     n.doubleValue());
-            orbitZoom.doHorizontalZoom(((SpecialNumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
+            orbitZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
         });
         ChangeListener<Boolean> zoomListener = (a, o, n) -> {
             // whenever default zoom is called, call it on all three charts
@@ -220,6 +257,9 @@ public class OrbitCorrectionView extends FXViewPart {
         axis.upperBoundProperty().bind(((NumberAxis)chart.getYAxis()).upperBoundProperty());
         axis.lowerBoundProperty().bind(((NumberAxis)chart.getYAxis()).lowerBoundProperty());
         axis.tickUnitProperty().bind(((NumberAxis)chart.getYAxis()).tickUnitProperty());
+        axis.upperBoundProperty().addListener((a, o, n) -> axis.layout());
+        axis.lowerBoundProperty().addListener((a, o, n) -> axis.layout());
+        axis.tickUnitProperty().addListener((a, o, n) -> axis.layout());
         axis.setLabel(label);
         axis.setTickMarkVisible(true);
         axis.setMinorTickVisible(false);
@@ -234,11 +274,53 @@ public class OrbitCorrectionView extends FXViewPart {
         return axisPane;
     }
 
+    private void recreateAllCharts(LatticeElementType type) {
+        if (scene == null) {
+            return;
+        }
+        if (type == LatticeElementType.HORIZONTAL_BPM) {
+            if (hOrbitCheckBox.isSelected()) {
+                addSeries(ChartType.ORBIT,SeriesType.HORIZONTAL_ORBIT,false);
+            }
+            if (hGoldenOrbitCheckBox.isSelected()) {
+                addSeries(ChartType.ORBIT,SeriesType.GOLDEN_HORIZONTAL_ORBIT,false);
+            }
+            if (bpmLatticeCheckBox.isSelected()) {
+                addSeries(ChartType.LATTICE,SeriesType.BPM,false);
+            }
+        } else if (type == LatticeElementType.VERTICAL_BPM) {
+            if (vOrbitCheckBox.isSelected()) {
+                addSeries(ChartType.ORBIT,SeriesType.VERTICAL_ORBIT,false);
+            }
+            if (vGoldenOrbitCheckBox.isSelected()) {
+                addSeries(ChartType.ORBIT,SeriesType.GOLDEN_VERTICAL_ORBIT,false);
+            }
+            if (bpmLatticeCheckBox.isSelected()) {
+                addSeries(ChartType.LATTICE,SeriesType.BPM,false);
+            }
+        } else if (type == LatticeElementType.HORIZONTAL_CORRECTOR) {
+            if (hCorrectorsCheckBox.isSelected()) {
+                addSeries(ChartType.CORRECTIONS,SeriesType.HORIZONTAL_CORRECTORS_CORRECTION,false);
+            }
+            if (hCorrectorsCheckBox.isSelected()) {
+                addSeries(ChartType.LATTICE,SeriesType.HORIZONTAL_CORRECTORS,false);
+            }
+        } else if (type == LatticeElementType.VERTICAL_CORRECTOR) {
+            if (vCorrectorsCheckBox.isSelected()) {
+                addSeries(ChartType.CORRECTIONS,SeriesType.VERTICAL_CORRECTORS_CORRECTION,false);
+            }
+            if (vCorrectorsCheckBox.isSelected()) {
+                addSeries(ChartType.LATTICE,SeriesType.VERTICAL_CORRECTORS,false);
+            }
+        }
+    }
+
     /**
      * @return region with configured orbit chart.
      */
     private Region createOrbitChart() {
-        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5,185,5);
+        ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
+        xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
@@ -267,7 +349,8 @@ public class OrbitCorrectionView extends FXViewPart {
      * @return region with configured corrections chart.
      */
     private Region createCorrectionsChart() {
-        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5,185,5);
+        ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
+        xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
@@ -294,7 +377,8 @@ public class OrbitCorrectionView extends FXViewPart {
      * @return region with configured lattice chart.
      */
     private Region createLatticeChart() {
-        ValueAxis<Number> xAxis = new SpecialNumberAxis(-5,185,5);
+        ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
+        xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         NumberAxis yAxis = new NumberAxis(-50,50,10);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
@@ -325,7 +409,7 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane legend = new GridPane();
         legend.setVgap(5);
         legend.setPadding(new Insets(10,0,0,0));
-        CheckBox hOrbitCheckBox = new TooltipCheckBox("Horizontal Orbit");
+        hOrbitCheckBox = new TooltipCheckBox("Horizontal Orbit");
         hOrbitCheckBox.setSelected(true);
         hOrbitCheckBox.setOnAction(e -> {
             if (hOrbitCheckBox.isSelected()) {
@@ -335,7 +419,7 @@ public class OrbitCorrectionView extends FXViewPart {
             }
         });
         hOrbitCheckBox.getStyleClass().add("horizontal-check-box");
-        CheckBox vOrbitCheckBox = new TooltipCheckBox("Vertical Orbit");
+        vOrbitCheckBox = new TooltipCheckBox("Vertical Orbit");
         vOrbitCheckBox.setSelected(true);
         vOrbitCheckBox.setOnAction(e -> {
             if (vOrbitCheckBox.isSelected()) {
@@ -345,7 +429,7 @@ public class OrbitCorrectionView extends FXViewPart {
             }
         });
         vOrbitCheckBox.getStyleClass().add("vertical-check-box");
-        CheckBox hGoldenOrbitCheckBox = new TooltipCheckBox("Golden Horizontal Orbit");
+        hGoldenOrbitCheckBox = new TooltipCheckBox("Golden Horizontal Orbit");
         hGoldenOrbitCheckBox.setSelected(true);
         hGoldenOrbitCheckBox.setOnAction(e -> {
             if (hGoldenOrbitCheckBox.isSelected()) {
@@ -355,7 +439,7 @@ public class OrbitCorrectionView extends FXViewPart {
             }
         });
         hGoldenOrbitCheckBox.getStyleClass().add("golden-horizontal-check-box");
-        CheckBox vGoldenOrbitCheckBox = new TooltipCheckBox("Golden Vertical Orbit");
+        vGoldenOrbitCheckBox = new TooltipCheckBox("Golden Vertical Orbit");
         vGoldenOrbitCheckBox.setSelected(true);
         vGoldenOrbitCheckBox.setOnAction(e -> {
             if (vGoldenOrbitCheckBox.isSelected()) {
@@ -384,28 +468,28 @@ public class OrbitCorrectionView extends FXViewPart {
         legend.setVgap(10);
         GridPane checkBoxes = new GridPane();
         checkBoxes.setVgap(5);
-        CheckBox hCheckBox = new TooltipCheckBox("Horizontal Correctors");
-        hCheckBox.setSelected(true);
-        hCheckBox.setOnAction(e -> {
-            if (hCheckBox.isSelected()) {
+        hCorrectorsCheckBox = new TooltipCheckBox("Horizontal Correctors");
+        hCorrectorsCheckBox.setSelected(true);
+        hCorrectorsCheckBox.setOnAction(e -> {
+            if (hCorrectorsCheckBox.isSelected()) {
                 addSeries(ChartType.CORRECTIONS,SeriesType.HORIZONTAL_CORRECTORS_CORRECTION,false);
             } else {
                 removeSeries(ChartType.CORRECTIONS,SeriesType.HORIZONTAL_CORRECTORS_CORRECTION);
             }
         });
-        hCheckBox.getStyleClass().add("horizontal-check-box");
-        CheckBox vCheckBox = new TooltipCheckBox("Vertical Correctors");
-        vCheckBox.setSelected(true);
-        vCheckBox.setOnAction(e -> {
-            if (vCheckBox.isSelected()) {
+        hCorrectorsCheckBox.getStyleClass().add("horizontal-check-box");
+        vCorrectorsCheckBox = new TooltipCheckBox("Vertical Correctors");
+        vCorrectorsCheckBox.setSelected(true);
+        vCorrectorsCheckBox.setOnAction(e -> {
+            if (vCorrectorsCheckBox.isSelected()) {
                 addSeries(ChartType.CORRECTIONS,SeriesType.VERTICAL_CORRECTORS_CORRECTION,false);
             } else {
                 removeSeries(ChartType.CORRECTIONS,SeriesType.VERTICAL_CORRECTORS_CORRECTION);
             }
         });
-        vCheckBox.getStyleClass().add("vertical-check-box");
-        checkBoxes.add(hCheckBox,0,0);
-        checkBoxes.add(vCheckBox,0,1);
+        vCorrectorsCheckBox.getStyleClass().add("vertical-check-box");
+        checkBoxes.add(hCorrectorsCheckBox,0,0);
+        checkBoxes.add(vCorrectorsCheckBox,0,1);
         GridPane radioButtons = new GridPane();
         radioButtons.setVgap(5);
         RadioButton mradRadioButton = new RadioButton("mrad");
@@ -433,39 +517,39 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane legend = new GridPane();
         legend.setPadding(new Insets(10,0,0,0));
         legend.setVgap(5);
-        CheckBox bpmCheckBox = new TooltipCheckBox("BPMs");
-        bpmCheckBox.setSelected(true);
-        bpmCheckBox.setOnAction(e -> {
-            if (bpmCheckBox.isSelected()) {
+        bpmLatticeCheckBox = new TooltipCheckBox("BPMs");
+        bpmLatticeCheckBox.setSelected(true);
+        bpmLatticeCheckBox.setOnAction(e -> {
+            if (bpmLatticeCheckBox.isSelected()) {
                 addSeries(ChartType.LATTICE,SeriesType.BPM,false);
             } else {
                 removeSeries(ChartType.LATTICE,SeriesType.BPM);
             }
         });
-        bpmCheckBox.getStyleClass().add("bpm-check-box");
-        CheckBox hCheckBox = new TooltipCheckBox("Horizontal Correctors");
-        hCheckBox.setSelected(true);
-        hCheckBox.setOnAction(e -> {
-            if (hCheckBox.isSelected()) {
+        bpmLatticeCheckBox.getStyleClass().add("bpm-check-box");
+        hCorrectorsLatticeCheckBox = new TooltipCheckBox("Horizontal Correctors");
+        hCorrectorsLatticeCheckBox.setSelected(true);
+        hCorrectorsLatticeCheckBox.setOnAction(e -> {
+            if (hCorrectorsLatticeCheckBox.isSelected()) {
                 addSeries(ChartType.LATTICE,SeriesType.HORIZONTAL_CORRECTORS,false);
             } else {
                 removeSeries(ChartType.LATTICE,SeriesType.HORIZONTAL_CORRECTORS);
             }
         });
-        hCheckBox.getStyleClass().add("horizontal-check-box");
-        CheckBox vCheckBox = new TooltipCheckBox("Vertical Correctors");
-        vCheckBox.setSelected(true);
-        vCheckBox.setOnAction(e -> {
-            if (vCheckBox.isSelected()) {
+        hCorrectorsLatticeCheckBox.getStyleClass().add("horizontal-check-box");
+        vCorrectorsLatticeCheckBox = new TooltipCheckBox("Vertical Correctors");
+        vCorrectorsLatticeCheckBox.setSelected(true);
+        vCorrectorsLatticeCheckBox.setOnAction(e -> {
+            if (vCorrectorsLatticeCheckBox.isSelected()) {
                 addSeries(ChartType.LATTICE,SeriesType.VERTICAL_CORRECTORS,false);
             } else {
                 removeSeries(ChartType.LATTICE,SeriesType.VERTICAL_CORRECTORS);
             }
         });
-        vCheckBox.getStyleClass().add("vertical-check-box");
-        legend.add(bpmCheckBox,0,0);
-        legend.add(hCheckBox,0,1);
-        legend.add(vCheckBox,0,2);
+        vCorrectorsLatticeCheckBox.getStyleClass().add("vertical-check-box");
+        legend.add(bpmLatticeCheckBox,0,0);
+        legend.add(hCorrectorsLatticeCheckBox,0,1);
+        legend.add(vCorrectorsLatticeCheckBox,0,2);
         legend.setMinHeight(0);
         legend.setMinWidth(0);
         legend.setMaxWidth(Integer.MAX_VALUE);
@@ -481,7 +565,7 @@ public class OrbitCorrectionView extends FXViewPart {
         controls.setHgap(10);
         controls.setVgap(10);
         controls.setPadding(new Insets(10,10,0,64));
-        controls.getColumnConstraints().setAll(new PercentColumnConstraints(40),new PercentColumnConstraints(16),
+        controls.getColumnConstraints().setAll(new PercentColumnConstraints(36),new PercentColumnConstraints(20),
                 new ColumnConstraints(0,150,150),new ColumnConstraints());
         Node correctionResults = createCorrectionResults();
         Node orbitCorrectionControl = createOrbitCorrectionControls();
@@ -577,7 +661,7 @@ public class OrbitCorrectionView extends FXViewPart {
         // TODO implement advanced button action
         advancedButton.setOnAction(e -> {
             FXMessageDialog.openInformation(getSite().getShell(),"Advanced Features",
-                    "Advanced Features coming soon to theaters near you!");    
+                    "Advanced Features coming soon to theaters near you!");
         });
         setFullResizable(startMeasuringOrbitButton,measureOrbitOnceButton,startOrbitCorrectionButton,
                 exportCurrentOrbitButton,stopMeasuringOrbitButton,correctOrbitOnceButton,stopOrbitCorrectionButton,
@@ -643,14 +727,14 @@ public class OrbitCorrectionView extends FXViewPart {
         final StringProperty status = controller.statusProperty();
         Button downloadButton = new Button("Download");
         downloadButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
-                .ifPresent(file -> controller.downloadResponseMatrix(file)));
+                .ifPresent(file -> controller.downloadOrbitResponseMatrix(file)));
         downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button uploadButton = new Button("Upload");
         uploadButton.setOnAction(e -> ofNullable(fileChooser.showOpenDialog(scene.getWindow()))
-                .ifPresent(file -> controller.uploadResponseMatrix(file)));
+                .ifPresent(file -> controller.uploadOrbitResponseMatrix(file)));
         uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button measureButton = new Button("Measure");
-        measureButton.setOnAction(e -> controller.measure());
+        measureButton.setOnAction(e -> controller.measureOrbitResponseMatrix());
         measureButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         setFullResizable(uploadButton,downloadButton,measureButton);
         responseMatrixControl.add(uploadButton,0,0);
@@ -726,62 +810,93 @@ public class OrbitCorrectionView extends FXViewPart {
     /**
      * @param chartType chart type
      * @param seriesType series type
-     *
      * @return data from the given chart type
      */
-    private ObservableList<Data<Number, Number>> getData(ChartType chartType, SeriesType seriesType) {
+    private ObservableList<Data<Number,Number>> getData(ChartType chartType, SeriesType seriesType) {
         ObservableList<Data<Number,Number>> data = FXCollections.observableArrayList();
         if (chartType == ChartType.ORBIT) {
             final Function<BPM,DoubleProperty> property;
+            List<BPM> bpms;
             if (seriesType == SeriesType.VERTICAL_ORBIT) {
-                property = bpm -> bpm.verticalOrbitProperty();
+                property = bpm -> bpm.positionProperty();
+                bpms = controller.getVerticalBPMs();
             } else if (seriesType == SeriesType.HORIZONTAL_ORBIT) {
-                property = bpm -> bpm.horizontalOrbitProperty();
+                property = bpm -> bpm.positionProperty();
+                bpms = controller.getHorizontalBPMs();
             } else if (seriesType == SeriesType.GOLDEN_VERTICAL_ORBIT) {
-                property = bpm -> bpm.goldenVerticalOrbitProperty();
+                property = bpm -> bpm.goldenPositionProperty();
+                bpms = controller.getVerticalBPMs();
             } else if (seriesType == SeriesType.GOLDEN_HORIZONTAL_ORBIT) {
-                property = bpm -> bpm.goldenHorizontalOrbitProperty();
+                property = bpm -> bpm.goldenPositionProperty();
+                bpms = controller.getHorizontalBPMs();
             } else {
                 return data;
             }
-            controller.getBpms().forEach(bpm -> {
+            bpms.stream().filter(bpm -> bpm.enabledProperty().get()).forEach(bpm -> {
                 Data<Number,Number> dataPoint = new Data<>();
-                dataPoint.setXValue(bpm.getElementData().getPosition());
+                dataPoint.XValueProperty().bind(bpm.locationProperty());
                 dataPoint.YValueProperty().bind(property.apply(bpm));
+                dataPoint.nodeProperty().addListener((a, o, n) -> {
+                    if (n != null) {
+                        Tooltip.install(n,new Tooltip(bpm.nameProperty().get()));
+                    }
+                });
                 data.add(dataPoint);
             });
         } else if (chartType == ChartType.CORRECTIONS) {
-            Function<Corrector,DoubleProperty> property;
-            Predicate<Corrector> filter;
+            List<Corrector> correctors;
             if (seriesType == SeriesType.HORIZONTAL_CORRECTORS_CORRECTION) {
-                property = c -> c.horizontalCorrectionProperty();
-                filter = c -> c.getElementData().getType() == LatticeElementType.HORIZONTAL_CORRECTOR;
+                correctors = controller.getHorizontalCorrectors();
             } else if (seriesType == SeriesType.VERTICAL_CORRECTORS_CORRECTION) {
-                property = c -> c.verticalCorrectionProperty();
-                filter = c -> c.getElementData().getType() == LatticeElementType.VERTICAL_CORRECTOR;
+                correctors = controller.getVerticalCorrectors();
             } else {
                 return data;
             }
-            controller.getCorrectors().stream().filter(filter).forEach(corrector -> {
+            correctors.stream().filter(corrector -> corrector.enabledProperty().get()).forEach(corrector -> {
                 Data<Number,Number> dataPoint = new Data<>();
-                dataPoint.setXValue(corrector.getElementData().getPosition());
-                dataPoint.YValueProperty().bind(property.apply(corrector));
+                dataPoint.XValueProperty().bind(corrector.locationProperty());
+                dataPoint.YValueProperty().bind(corrector.correctionProperty());
+                dataPoint.nodeProperty().addListener((a, o, n) -> {
+                    if (n != null) {
+                        Tooltip.install(n,new Tooltip(corrector.nameProperty().get()));
+                    }
+                });
                 data.add(dataPoint);
             });
         } else if (chartType == ChartType.LATTICE) {
             if (seriesType == SeriesType.BPM) {
-                controller.getBpms().forEach(bpm -> data.add(new Data<>(bpm.getElementData().getPosition(),0d)));
+                List<BPM> allBPMs = new ArrayList<>();
+                allBPMs.addAll(controller.getVerticalBPMs());
+                allBPMs.addAll(controller.getHorizontalBPMs());
+                allBPMs.stream().filter(bpm -> bpm.enabledProperty().get()).sorted().forEach(bpm -> {
+                    Data<Number,Number> dataPoint = new Data<>(bpm.locationProperty().get(),0d);
+                    dataPoint.XValueProperty().bind(bpm.locationProperty());
+                    dataPoint.nodeProperty().addListener((a, o, n) -> {
+                        if (n != null) {
+                            Tooltip.install(n,new Tooltip(bpm.nameProperty().get()));
+                        }
+                    });
+                    data.add(dataPoint);
+                });
             } else {
-                Predicate<Corrector> filter;
+                List<Corrector> correctors;
                 if (seriesType == SeriesType.HORIZONTAL_CORRECTORS) {
-                    filter = c -> c.getElementData().getType() == LatticeElementType.HORIZONTAL_CORRECTOR;
+                    correctors = controller.getHorizontalCorrectors();
                 } else if (seriesType == SeriesType.VERTICAL_CORRECTORS) {
-                    filter = c -> c.getElementData().getType() == LatticeElementType.VERTICAL_CORRECTOR;
+                    correctors = controller.getVerticalCorrectors();
                 } else {
                     return data;
                 }
-                controller.getCorrectors().stream().filter(filter)
-                        .forEach(corrector -> data.add(new Data<>(corrector.getElementData().getPosition(),0)));
+                correctors.stream().filter(corrector -> corrector.enabledProperty().get()).forEach(corrector -> {
+                    Data<Number,Number> dataPoint = new Data<>(corrector.locationProperty().get(),0);
+                    dataPoint.XValueProperty().bind(corrector.locationProperty());
+                    dataPoint.nodeProperty().addListener((a, o, n) -> {
+                        if (n != null) {
+                            Tooltip.install(n,new Tooltip(corrector.nameProperty().get()));
+                        }
+                    });
+                    data.add(dataPoint);
+                });
             }
         }
         return data;

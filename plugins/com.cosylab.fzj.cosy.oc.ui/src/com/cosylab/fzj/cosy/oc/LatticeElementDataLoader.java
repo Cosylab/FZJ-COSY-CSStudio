@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
 public final class LatticeElementDataLoader {
-    
+
     private LatticeElementDataLoader() {}
 
     private static final int NAME_INDEX = 0;
@@ -30,7 +30,10 @@ public final class LatticeElementDataLoader {
      * Loads and returns list of all lattice elements.
      *
      * @return loaded list of all lattice elements.
+     *
+     * @deprecated read the lattice info from the PVs
      */
+    @Deprecated
     public static List<LatticeElementData> loadLatticeElements() {
         List<LatticeElementData> elements = new ArrayList<>();
         try {
@@ -63,7 +66,9 @@ public final class LatticeElementDataLoader {
                     String name = splitLine[NAME_INDEX];
                     double position = Double.parseDouble(splitLine[POSITION_INDEX]);
                     if (name != null && !name.isEmpty()) {
-                        bpms.add(new LatticeElementData(name,position,LatticeElementType.BPM));
+                        bpms.add(new LatticeElementData(name,position,
+                                Character.toUpperCase(name.charAt(name.length() - 1)) == 'H'
+                                        ? LatticeElementType.HORIZONTAL_BPM : LatticeElementType.VERTICAL_BPM));
                     }
                 } catch (NumberFormatException e) {
                     OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,

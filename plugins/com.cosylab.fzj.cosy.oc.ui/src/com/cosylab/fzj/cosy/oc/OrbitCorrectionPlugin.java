@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 public class OrbitCorrectionPlugin {
 
     /** Plug-in ID */
-    public static final String PLUGIN_ID = "com.cosylab.fzj.cosy.oc.ui";
+    public static final String PLUGIN_ID = "com.cosylab.fzj.cosy.oc";
     /** The common logger */
     public static final Logger LOGGER = Logger.getLogger(OrbitCorrectionPlugin.class.getName());
 }

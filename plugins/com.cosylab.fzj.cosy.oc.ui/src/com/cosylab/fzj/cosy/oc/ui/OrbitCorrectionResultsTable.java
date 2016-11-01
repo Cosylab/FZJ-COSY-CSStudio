@@ -16,6 +16,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResultsEntry> {
 
     private static class Column extends TableColumn<OrbitCorrectionResultsEntry,String> {
+
         Column(String title, String property) {
             super(title);
             setCellValueFactory(new PropertyValueFactory<>(property));

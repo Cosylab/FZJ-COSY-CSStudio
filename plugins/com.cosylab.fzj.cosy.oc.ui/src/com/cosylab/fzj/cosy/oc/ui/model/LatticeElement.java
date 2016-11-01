@@ -1,30 +1,114 @@
 package com.cosylab.fzj.cosy.oc.ui.model;
 
+import java.util.Objects;
+
 import com.cosylab.fzj.cosy.oc.LatticeElementData;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 /**
- * <code>LatticeElement</code> represents the lattice element.
+ * <code>LatticeElement</code> represents a single element in the accelerator lattice. This can be either a corrector
+ * magnet or a beam position monitor. The natural order of the elements is defined by their position in the lattice. The
+ * elements with position closer to the beginning of the accelerator are smaller than the ones that are further away.
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
- *
  */
-public class LatticeElement {
+public abstract class LatticeElement implements Comparable<LatticeElement> {
 
-    private LatticeElementData elementData;
+    private final BooleanProperty enabled = new SimpleBooleanProperty(this,"enabled",true);
+    private final StringProperty name = new SimpleStringProperty(this,"name","");
+    private final DoubleProperty location = new SimpleDoubleProperty(this,"location",0d);
+    private final LatticeElementData elementData;
 
     /**
-     * Constructs the lattice element with the lattice element data.
+     * Constructs the lattice element for the lattice element data. The parameter describes the initial values for this
+     * element, which are later used only by equals and hash code methods. If the name or the location is changed via
+     * the properties, the encapsulated element is not updated.
      *
      * @param elementData the lattice element data
      */
     public LatticeElement(LatticeElementData elementData) {
         this.elementData = elementData;
+        this.locationProperty().set(this.elementData.getPosition());
+        this.nameProperty().set(this.elementData.getName());
     }
 
     /**
-     * @return the lattice element data.
+     * Returns the lattice element data that this element was constructed from.
+     *
+     * @return lattice element data
      */
     public LatticeElementData getElementData() {
         return elementData;
+    }
+
+    /**
+     * Returns the property providing the name of this element.
+     *
+     * @return name property
+     */
+    public StringProperty nameProperty() {
+        return name;
+    }
+
+    /**
+     * Returns the property providing the location of this element along the z axis.
+     *
+     * @return location property
+     */
+    public DoubleProperty locationProperty() {
+        return location;
+    }
+
+    /**
+     * Returns the property providing the enable state value (true for enable and false for disabled).
+     *
+     * @return property providing the enabled state
+     */
+    public BooleanProperty enabledProperty() {
+        return enabled;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    @Override
+    public int compareTo(LatticeElement o) {
+        int c = Double.compare(locationProperty().get(),o.locationProperty().get());
+        if (c == 0) {
+            c = nameProperty().get().compareTo(o.nameProperty().get());
+        }
+        if (c == 0) {
+            c = elementData.getType().compareTo(o.elementData.getType());
+        }
+        return c;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(elementData.getName(),elementData.getPosition(),elementData.getType());
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        LatticeElement other = (LatticeElement)obj;
+        return Objects.equals(elementData,other.elementData);
     }
 }

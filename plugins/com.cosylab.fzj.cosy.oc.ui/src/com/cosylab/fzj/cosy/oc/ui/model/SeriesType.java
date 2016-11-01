@@ -1,7 +1,8 @@
 package com.cosylab.fzj.cosy.oc.ui.model;
 
 /**
- * <code>SeriesType</code> represents the type of the series with the index and name.
+ * <code>SeriesType</code> represents all possible series plotted on any of the charts in the orbit correction view.
+ * Each series is identified by an index and a human readable name.
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  *
@@ -32,14 +33,18 @@ public enum SeriesType {
     }
 
     /**
-     * @return the series index.
+     * Returns the unique series index. The index defines the index of the series in the chart dataset.
+     *
+     * @return series index
      */
     public int getSeriesIndex() {
         return seriesIndex;
     }
 
     /**
-     * @return the series name.
+     * Returns the human readable series name.
+     *
+     * @return series name
      */
     public String getSeriesName() {
         return seriesName;

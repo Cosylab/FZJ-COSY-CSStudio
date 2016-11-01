@@ -6,18 +6,14 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 
 /**
- * <code>Corrector</code> represents the corrector in the lattice. It is extended from the <code>LatticeElement</code>
- * and provides properties for providing horizontal correction, vertical correction or horizontal/vertical correction
- * values.
+ * <code>Corrector</code> represents s single corrector in the accelerator lattice. Corrector is identified by its
+ * LatticeElementData and has a single value (correction kick).
  *
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
- *
  */
 public class Corrector extends LatticeElement {
 
-    private DoubleProperty horizontalCorrection = new SimpleDoubleProperty(this, "horizontalCorrection");
-    private DoubleProperty verticalCorrection = new SimpleDoubleProperty(this, "verticalCorrection");
-    private DoubleProperty horizontalVerticalCorrection = new SimpleDoubleProperty(this, "horizontalVerticalCorrection");
+    private final DoubleProperty correction = new SimpleDoubleProperty(this,"correction",0);
 
     /**
      * Constructs the new corrector with the given lattice element data.
@@ -29,23 +25,11 @@ public class Corrector extends LatticeElement {
     }
 
     /**
-     * @return the property providing the horizontal correction value.
+     * Returns the property providing the correction kick value that will be displayed on chart (either in mrad or mA).
+     *
+     * @return property providing the correction kick value
      */
-    public DoubleProperty horizontalCorrectionProperty() {
-        return horizontalCorrection;
-    }
-
-    /**
-     * @return the property providing the vertical correction value.
-     */
-    public DoubleProperty verticalCorrectionProperty() {
-        return verticalCorrection;
-    }
-
-    /**
-     * @return the property providing the horizontal/vertical value.
-     */
-    public DoubleProperty horizontalVerticalCorrectionProperty() {
-        return horizontalVerticalCorrection;
+    public DoubleProperty correctionProperty() {
+        return correction;
     }
 }
