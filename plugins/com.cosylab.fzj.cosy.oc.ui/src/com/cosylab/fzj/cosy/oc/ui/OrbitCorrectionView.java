@@ -14,6 +14,7 @@ import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
+import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
@@ -735,7 +736,8 @@ public class OrbitCorrectionView extends FXViewPart {
         uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button measureButton = new Button("Measure");
         measureButton.setOnAction(e -> controller.measureOrbitResponseMatrix());
-        measureButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+//        measureButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+        measureButton.disableProperty().set(!Preferences.getInstance().getMeasureORMCommand().isPresent());
         setFullResizable(uploadButton,downloadButton,measureButton);
         responseMatrixControl.add(uploadButton,0,0);
         responseMatrixControl.add(downloadButton,1,0);
