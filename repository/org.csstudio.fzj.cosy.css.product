@@ -16,7 +16,9 @@ The FZJ-COSY distribution is based on the 4.3.x version of the community CS-Stud
    </configIni>
 
    <launcherArgs>
-      <programArgs>-pluginCustomization
+      <programArgs>--launcher.GTK_version
+2
+-pluginCustomization
 plugin_customization.ini
 --launcher.defaultAction
 openFile
@@ -27,6 +29,7 @@ openFile
 -Dorg.apache.commons.logging.simplelog.defaultlog=fatal
 -Dorg.osgi.framework.bundle.parent=ext
 -Dosgi.framework.extensions=org.eclipse.fx.osgi
+-Dorg.eclipse.swt.browser.DefaultType=mozilla
       </vmArgs>
    </launcherArgs>
 
@@ -57,7 +60,6 @@ openFile
    <vm>
    </vm>
 
-
    <plugins>
    </plugins>
 
@@ -79,7 +81,7 @@ openFile
       <feature id="org.csstudio.fzj.cosy.svn.feature"/>
       <feature id="org.csstudio.archive.reader.appliance.feature"/>
       <feature id="org.csstudio.archive.diirt.datasource.feature"/>
-      <feature id="com.cosylab.fzj.cosy.oc.feature" />
+      <feature id="com.cosylab.fzj.cosy.oc.feature"/>
    </features>
 
    <configurations>
