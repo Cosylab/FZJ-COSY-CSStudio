@@ -10,5 +10,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.csstudio.startup,
  org.csstudio.utility.product,
  org.eclipse.e4.ui.model.workbench,
- org.csstudio.security
+ org.csstudio.security,
+ org.eclipse.team.ui;bundle-version="3.7.200",
+ org.eclipse.compare;bundle-version="3.5.600"
 Bundle-ActivationPolicy: lazy
