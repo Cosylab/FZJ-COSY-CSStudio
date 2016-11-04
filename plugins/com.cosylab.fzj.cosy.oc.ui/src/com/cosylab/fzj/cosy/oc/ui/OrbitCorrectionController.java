@@ -880,14 +880,30 @@ public class OrbitCorrectionController {
             default:
                 return;
         }
-        if (bpms.size() != va.size()) {
-            writeToLog("The number of position values does not match the number of bpms.",true,empty());
-            return;
-        }
-        final IteratorNumber it = va.iterator();
-        //no parallelism, we are on the UI thread (mapping could be parallel, but the number of elements is small)
+
         synchronized (bpms) {
-            bpms.forEach(bpm -> property.apply(bpm).set(it.nextDouble()));
+            long enabledCount = bpms.stream().filter(b -> b.enabledProperty().get()).count();
+            final IteratorNumber it = va.iterator();
+            //no parallelism, we are on the ui thread
+            if (enabledCount == va.size()) {
+                bpms.stream().filter(b -> b.enabledProperty().get()).forEach(b -> property.apply(b).set(it.nextDouble()));
+            } else if (bpms.size() == va.size()) {
+                bpms.forEach(b -> property.apply(b).set(it.nextDouble()));
+            } else if (bpms.size() > va.size()) {
+                writeToLog(
+                        String.format("The number of %s values (%d) does not match the number of enabled bpms (%d/%d).",
+                                type.getSeriesName(),va.size(),enabledCount,bpms.size()),
+                        false,empty());
+                int i = 0;
+                while (it.hasNext()) {
+                    property.apply(bpms.get(i++)).set(it.nextDouble());
+                }
+            } else {
+                writeToLog(
+                        String.format("The number of %s values (%d) does not match the number of enabled bpms (%d/%d).",
+                                type.getSeriesName(),va.size(),enabledCount,bpms.size()),
+                        true,empty());
+            }
         }
     }
 
@@ -909,14 +925,27 @@ public class OrbitCorrectionController {
         } else {
             return;
         }
-        if (correctors.size() != va.size()) {
-            writeToLog("The number of corrector kick values does not match the number of correctors.",true,empty());
-            return;
-        }
-        final IteratorNumber it = va.iterator();
-        //no parallelism, we are on the ui thread
         synchronized (correctors) {
-            correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()));
+            long enabledCount = correctors.stream().filter(c -> c.enabledProperty().get()).count();
+            final IteratorNumber it = va.iterator();
+            //no parallelism, we are on the ui thread
+            if (enabledCount == va.size()) {
+                correctors.stream().filter(c -> c.enabledProperty().get()).forEach(c -> c.correctionProperty().set(it.nextDouble()));
+            } else if (correctors.size() == va.size()) {
+                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()));
+            } else if (correctors.size() > va.size()) {
+                writeToLog(String.format(
+                        "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
+                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),false,empty());
+                int i = 0;
+                while (it.hasNext()) {
+                    correctors.get(i++).correctionProperty().set(it.nextDouble());
+                }
+            } else {
+                writeToLog(String.format(
+                        "The number of %s kick values (%d) does not match the number of correctors (%d/%d).",
+                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),true,empty());
+            }
         }
     }
 
