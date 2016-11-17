@@ -7,7 +7,7 @@
       plugin="com.cosylab.fzj.cosy.oc">
 
    <description>
-      [Enter Feature Description here.]
+      The feature provides the plugins required by the orbit correction GUI.
    </description>
 
    <copyright>

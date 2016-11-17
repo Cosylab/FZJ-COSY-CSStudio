@@ -6,8 +6,8 @@
       provider-name="Cosylab"
       plugin="org.csstudio.fzj.cosy.css.product.branding">
 
-   <description url="http://www.example.com/description">
-      [Enter Feature Description here.]
+   <description>
+      This feature combines the core eclipse plugin that are needed to compose the CS-Studio.
    </description>
 
    <copyright url="http://www.example.com/copyright">

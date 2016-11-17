@@ -23,5 +23,6 @@
     <module>org.csstudio.fzj.cosy.opibuilder.feature</module>
     <module>org.csstudio.fzj.cosy.product.configuration.feature</module>
     <module>org.csstudio.fzj.cosy.svn.feature</module>
+    <module>org.csstudio.fzj.cosy.vtype.pv.feature</module>
   </modules>
 </project>

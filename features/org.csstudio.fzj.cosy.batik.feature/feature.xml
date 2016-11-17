@@ -6,8 +6,8 @@
       provider-name="Cosylab"
       plugin="org.csstudio.fzj.cosy.css.product.branding">
 
-   <description url="http://www.example.com/description">
-      [Enter Feature Description here.]
+   <description>
+      org.csstudio.fzj.cosy.batik.feature provides the plugins related to batik image manipulation. This feature only provdes the neccessary libraries and does not contribute any functionality to the RCP.
    </description>
 
    <copyright url="http://www.example.com/copyright">

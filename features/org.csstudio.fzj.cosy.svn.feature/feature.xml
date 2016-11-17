@@ -5,16 +5,16 @@
       version="1.0.0.qualifier"
       provider-name="Cosylab">
 
-   <description url="http://controlsystemstudio.github.io/">
-      CS-Studio Product Configuration.
+   <description>
+      The feature combines the plugins that are required to use SVN from the Control System Studio.
    </description>
 
-   <copyright url="http://controlsystemstudio.github.io/">
-      Use is subject to license.
+   <copyright url="http://www.example.com/copyright">
+      [Enter License Description here.]
    </copyright>
 
-   <license url="http://www.eclipse.org/legal/epl-v10.html">
-      Eclipse Public License.
+   <license url="http://www.example.com/license">
+      [Enter License Description here.]
    </license>
 
    <includes
