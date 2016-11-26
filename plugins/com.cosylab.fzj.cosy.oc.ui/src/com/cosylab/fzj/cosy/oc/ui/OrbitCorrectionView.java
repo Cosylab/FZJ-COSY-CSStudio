@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import org.csstudio.ui.fx.util.FXMessageDialog;
 import org.csstudio.ui.fx.util.StaticTextArea;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 
@@ -18,6 +17,9 @@ import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
+import com.cosylab.fzj.cosy.oc.ui.util.BorderedTitledPane;
+import com.cosylab.fzj.cosy.oc.ui.util.MultiLineButton;
+import com.cosylab.fzj.cosy.oc.ui.util.TooltipCheckBox;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.StringProperty;
@@ -66,7 +68,7 @@ public class OrbitCorrectionView extends FXViewPart {
         IDLE, MEASURING_ORBIT, CORRECTING_ORBIT, CORRECTING_ORM
     }
 
-    private static StringConverter<Number> TICK_LABEL_FORMATTER = new StringConverter<Number>() {
+    static StringConverter<Number> TICK_LABEL_FORMATTER = new StringConverter<Number>() {
 
         private final DecimalFormat format = new DecimalFormat("###");
 
@@ -74,6 +76,7 @@ public class OrbitCorrectionView extends FXViewPart {
         public Number fromString(String string) {
             return Double.NaN;
         }
+
         @Override
         public String toString(Number object) {
             double val = object.doubleValue();
@@ -84,18 +87,16 @@ public class OrbitCorrectionView extends FXViewPart {
             }
         }
     };
-
     private CheckBox hOrbitCheckBox, vOrbitCheckBox, hGoldenOrbitCheckBox, vGoldenOrbitCheckBox, hCorrectorsCheckBox,
             vCorrectorsCheckBox, bpmLatticeCheckBox, hCorrectorsLatticeCheckBox, vCorrectorsLatticeCheckBox;
-    private LineChart<Number,Number> orbitChart;
+    private LineChart<Number,Number> orbitChart, latticeChart;
     private CorrectionsChart<Number,Number> correctionsChart;
-    private LineChart<Number,Number> latticeChart;
-    private ZoomableLineChart orbitZoom;
-    private ZoomableLineChart correctionsZoom;
-    private ZoomableLineChart latticeZoom;
+    private ZoomableLineChart orbitZoom, correctionsZoom, latticeZoom;
     private OrbitCorrectionController controller;
     private FileChooser fileChooser;
     private Scene scene;
+    private AdvancedDialog advancedDialog;
+    private AdvancedGoldenOrbitDialog advancedGoldernOrbitDialog;
 
     /**
      * Constructs new orbit correction view.
@@ -103,7 +104,8 @@ public class OrbitCorrectionView extends FXViewPart {
     public OrbitCorrectionView() {
         fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(0,new ExtensionFilter("All Files","*.*"));
-        controller = new OrbitCorrectionController(this::recreateAllCharts);
+        controller = new OrbitCorrectionController();
+        controller.addLaticeUpdateCallback(this::recreateAllCharts);
     }
 
     /*
@@ -200,35 +202,27 @@ public class OrbitCorrectionView extends FXViewPart {
     private void configureChartSynchronisation() {
         // synchronise the lower and upper bounds of all three charts
         ((NumberAxis)orbitChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(n.doubleValue(),
-                    ((NumberAxis)orbitChart.getXAxis()).getUpperBound());
+            correctionsZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)orbitChart.getXAxis()).getUpperBound());
             latticeZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)orbitChart.getXAxis()).getUpperBound());
         });
         ((NumberAxis)correctionsChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
-            orbitZoom.doHorizontalZoom(n.doubleValue(),
-                    ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
-            latticeZoom.doHorizontalZoom(n.doubleValue(),
-                    ((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
+            orbitZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
+            latticeZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)correctionsChart.getXAxis()).getUpperBound());
         });
         ((NumberAxis)latticeChart.getXAxis()).lowerBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(n.doubleValue(),
-                    ((NumberAxis)latticeChart.getXAxis()).getUpperBound());
+            correctionsZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)latticeChart.getXAxis()).getUpperBound());
             orbitZoom.doHorizontalZoom(n.doubleValue(),((NumberAxis)latticeChart.getXAxis()).getUpperBound());
         });
         ((NumberAxis)orbitChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),
-                    n.doubleValue());
+            correctionsZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
             latticeZoom.doHorizontalZoom(((NumberAxis)orbitChart.getXAxis()).getLowerBound(),n.doubleValue());
         });
         ((NumberAxis)correctionsChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            orbitZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),
-                    n.doubleValue());
-            latticeZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),
-                    n.doubleValue());
+            orbitZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),n.doubleValue());
+            latticeZoom.doHorizontalZoom(((NumberAxis)correctionsChart.getXAxis()).getLowerBound(),n.doubleValue());
         });
         ((NumberAxis)latticeChart.getXAxis()).upperBoundProperty().addListener((a, o, n) -> {
-            correctionsZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),
-                    n.doubleValue());
+            correctionsZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
             orbitZoom.doHorizontalZoom(((NumberAxis)latticeChart.getXAxis()).getLowerBound(),n.doubleValue());
         });
         ChangeListener<Boolean> zoomListener = (a, o, n) -> {
@@ -566,7 +560,7 @@ public class OrbitCorrectionView extends FXViewPart {
         controls.setHgap(10);
         controls.setVgap(10);
         controls.setPadding(new Insets(10,10,0,64));
-        controls.getColumnConstraints().setAll(new PercentColumnConstraints(36),new PercentColumnConstraints(20),
+        controls.getColumnConstraints().setAll(new PercentColumnConstraints(36),new PercentColumnConstraints(14),
                 new ColumnConstraints(0,150,150),new ColumnConstraints());
         Node correctionResults = createCorrectionResults();
         Node orbitCorrectionControl = createOrbitCorrectionControls();
@@ -659,11 +653,7 @@ public class OrbitCorrectionView extends FXViewPart {
                 .bind(status.isNotEqualTo(OperationStatus.CORRECTING_ORBIT.toString()));
         Button advancedButton = new MultiLineButton("Advanced...");
         advancedButton.setWrapText(true);
-        // TODO implement advanced button action
-        advancedButton.setOnAction(e -> {
-            FXMessageDialog.openInformation(getSite().getShell(),"Advanced Features",
-                    "Advanced Features coming soon to theaters near you!");
-        });
+        advancedButton.setOnAction(e -> getAdvancedDialog().open());
         setFullResizable(startMeasuringOrbitButton,measureOrbitOnceButton,startOrbitCorrectionButton,
                 exportCurrentOrbitButton,stopMeasuringOrbitButton,correctOrbitOnceButton,stopOrbitCorrectionButton,
                 advancedButton);
@@ -676,6 +666,20 @@ public class OrbitCorrectionView extends FXViewPart {
         orbitCorrectionControl.add(stopOrbitCorrectionButton,2,1);
         orbitCorrectionControl.add(advancedButton,3,1);
         return new BorderedTitledPane("Orbit Correction Control",orbitCorrectionControl);
+    }
+
+    private AdvancedDialog getAdvancedDialog() {
+        if (advancedDialog == null) {
+            advancedDialog = new AdvancedDialog(getViewSite().getShell(),controller);
+        }
+        return advancedDialog;
+    }
+
+    private AdvancedGoldenOrbitDialog getAdvancedGoldenOrbitDialog() {
+        if (advancedGoldernOrbitDialog == null) {
+            advancedGoldernOrbitDialog = new AdvancedGoldenOrbitDialog(getViewSite().getShell(),controller);
+        }
+        return advancedGoldernOrbitDialog;
     }
 
     /**
@@ -696,23 +700,19 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane goldenOrbitControl = new GridPane();
         goldenOrbitControl.setHgap(10);
         goldenOrbitControl.setVgap(10);
-        goldenOrbitControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
+        goldenOrbitControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(2));
         final StringProperty status = controller.statusProperty();
-        Button uploadButton = new Button("Upload");
-        uploadButton.setOnAction(e -> ofNullable(fileChooser.showOpenDialog(scene.getWindow()))
-                .ifPresent(file -> controller.uploadGoldenOrbit(file)));
-        uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
-        Button downloadButton = new Button("Download");
-        downloadButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
-                .ifPresent(file -> controller.downloadGoldenOrbit(file)));
-        downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button useCurrentButton = new Button("Use current");
+        useCurrentButton.setTooltip(new Tooltip("Use current orbit as the new golden orbit"));
         useCurrentButton.setOnAction(e -> controller.useCurrent());
         useCurrentButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
-        setFullResizable(uploadButton,downloadButton,useCurrentButton);
-        goldenOrbitControl.add(uploadButton,0,0);
-        goldenOrbitControl.add(downloadButton,1,0);
-        goldenOrbitControl.add(useCurrentButton,2,0);
+        Button advancedButton = new Button("Advanced...");
+        advancedButton.setTooltip(new Tooltip("Show advance golden orbit features"));
+        advancedButton.setOnAction(e -> getAdvancedGoldenOrbitDialog().open());
+        advancedButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+        setFullResizable(useCurrentButton,advancedButton);
+        goldenOrbitControl.add(useCurrentButton,0,0);
+        goldenOrbitControl.add(advancedButton,1,0);
         return new BorderedTitledPane("Golden Orbit",goldenOrbitControl);
     }
 
@@ -724,24 +724,12 @@ public class OrbitCorrectionView extends FXViewPart {
         responseMatrixControl.setHgap(10);
         responseMatrixControl.setVgap(10);
         responseMatrixControl.setPadding(new Insets(0,10,0,10));
-        responseMatrixControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(3));
-        final StringProperty status = controller.statusProperty();
-        Button downloadButton = new Button("Download");
-        downloadButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
-                .ifPresent(file -> controller.downloadOrbitResponseMatrix(file)));
-        downloadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
-        Button uploadButton = new Button("Upload");
-        uploadButton.setOnAction(e -> ofNullable(fileChooser.showOpenDialog(scene.getWindow()))
-                .ifPresent(file -> controller.uploadOrbitResponseMatrix(file)));
-        uploadButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+        responseMatrixControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(1));
         Button measureButton = new Button("Measure");
         measureButton.setOnAction(e -> controller.measureOrbitResponseMatrix());
-//        measureButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         measureButton.disableProperty().set(!Preferences.getInstance().getMeasureORMCommand().isPresent());
-        setFullResizable(uploadButton,downloadButton,measureButton);
-        responseMatrixControl.add(uploadButton,0,0);
-        responseMatrixControl.add(downloadButton,1,0);
-        responseMatrixControl.add(measureButton,2,0);
+        setFullResizable(measureButton);
+        responseMatrixControl.add(measureButton,0,0);
         return new BorderedTitledPane("Response Matrix",responseMatrixControl);
     }
 

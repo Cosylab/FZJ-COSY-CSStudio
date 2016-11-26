@@ -20,9 +20,11 @@ import javafx.beans.property.StringProperty;
  */
 public abstract class LatticeElement implements Comparable<LatticeElement> {
 
+    private final BooleanProperty enabledWish = new SimpleBooleanProperty(this,"enabledWish",true);
     private final BooleanProperty enabled = new SimpleBooleanProperty(this,"enabled",true);
     private final StringProperty name = new SimpleStringProperty(this,"name","");
     private final DoubleProperty location = new SimpleDoubleProperty(this,"location",0d);
+    private final BooleanProperty enableDifferent = new SimpleBooleanProperty(this,"enableDifferent",false);
     private final LatticeElementData elementData;
 
     /**
@@ -36,6 +38,7 @@ public abstract class LatticeElement implements Comparable<LatticeElement> {
         this.elementData = elementData;
         this.locationProperty().set(this.elementData.getPosition());
         this.nameProperty().set(this.elementData.getName());
+        enableDifferent.bind(enabled.isNotEqualTo(enabledWish));
     }
 
     /**
@@ -72,6 +75,32 @@ public abstract class LatticeElement implements Comparable<LatticeElement> {
      */
     public BooleanProperty enabledProperty() {
         return enabled;
+    }
+
+    /**
+     * Returns the property providing the enable state value (true for enable and false for disabled). This property is
+     * to be used by the UI when the user wants to enable or disable the element
+     *
+     * @return property providing the enabled state
+     */
+    public BooleanProperty enabledWishProperty() {
+        return enabledWish;
+    }
+
+    /**
+     * Returns the property which defines whether the enabled state and enabled wish state are equal or different.
+     *
+     * @return property providing the XOR between enabled and enabled wish
+     */
+    public BooleanProperty enableDifferentProperty() {
+        return enableDifferent;
+    }
+
+    /**
+     * Refreshes the state by writing the enable value to enable wish property.
+     */
+    public void refresh() {
+        enabledWish.set(enabled.get());
     }
 
     /*

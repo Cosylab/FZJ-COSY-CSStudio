@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 
 /**
- * 
+ *
  * <code>ITERApplication</code> is an extension of the default CSS application that suppresses a specific exception
  * printout made by third party plugins. It also hides the splash screen during the workspace prompt.
  *

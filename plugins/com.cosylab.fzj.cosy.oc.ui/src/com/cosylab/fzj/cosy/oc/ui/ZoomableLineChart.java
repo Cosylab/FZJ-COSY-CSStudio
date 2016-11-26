@@ -68,15 +68,24 @@ public class ZoomableLineChart extends StackPane {
         Bounds xAxisBounds = xAxis.getLayoutBounds();
         Bounds yAxisBounds = yAxis.getLayoutBounds();
         Insets padding = chart.getPadding();
-        if (x > bounds.getMaxX() - padding.getRight() - 1) x = bounds.getMaxX() - padding.getRight() - 1;
-        if (xAxis.isTickLabelsVisible()) {
-            if (y > yAxisBounds.getMaxY() - 2) y = yAxisBounds.getMaxY() - 2;
-        } else {
-            if (y > bounds.getMaxY() - xAxisBounds.getMaxY() - 1) y = bounds.getMaxY() - xAxisBounds.getMaxY() - 1;
+        if (x > bounds.getMaxX() - padding.getRight() - 1) {
+            x = bounds.getMaxX() - padding.getRight() - 1;
         }
-        if (x < yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft())
+        if (xAxis.isTickLabelsVisible() && !verticalZoom) {
+            if (y > yAxisBounds.getMaxY() - 2) {
+                y = yAxisBounds.getMaxY() - 2;
+            }
+        } else {
+            if (y > bounds.getMaxY() - xAxisBounds.getMaxY() - 1) {
+                y = bounds.getMaxY() - xAxisBounds.getMaxY() - 1;
+            }
+        }
+        if (x < yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft()){
             x = yAxisBounds.getMaxX() + yAxis.getTickLabelGap() + padding.getLeft();
-        if (y < padding.getTop() + 1) y = padding.getTop() + 1;
+        }
+        if (y < padding.getTop() + 1) {
+            y = padding.getTop() + 1;
+        }
         return new double[]{x,y};
     }
 

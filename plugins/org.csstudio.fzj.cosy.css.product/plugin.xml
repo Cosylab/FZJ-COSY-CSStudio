@@ -8,10 +8,10 @@
       <product
             application="org.csstudio.fzj.cosy.application"
             description="CS-Studio for FZJ-COSY"
-            name="CSS">
+            name="css">
          <property
                name="appName"
-               value="CSS">
+               value="css">
          </property>
          <property
                name="aboutImage"
@@ -54,7 +54,7 @@
    <extension
          point="org.eclipse.core.runtime.applications"
          id="org.csstudio.fzj.cosy.application"
-         name="CSS">
+         name="css">
       <application>
          <run
                class="org.csstudio.fzj.cosy.css.product.FZJCOSYApplication">
@@ -128,5 +128,12 @@
             isEqualityPattern="true"
             pattern="org.eclipse.ui.ide/org.eclipse.ui.navigator.ProjectExplorer">
       </activityPatternBinding>
+   </extension>
+   <extension
+         point="org.eclipse.core.contenttype.contentTypes">
+      <file-association
+            content-type="org.csstudio.iter.xmleditor.content.opi"
+            file-extensions="opi">
+      </file-association>
    </extension>
 </plugin>

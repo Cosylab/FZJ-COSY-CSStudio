@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,16 +50,13 @@ import org.diirt.datasource.PVWriter;
 import org.diirt.datasource.PVWriterEvent;
 import org.diirt.datasource.PVWriterListener;
 import org.diirt.util.array.ArrayDouble;
+import org.diirt.util.array.ArrayInt;
 import org.diirt.util.array.IteratorNumber;
 import org.diirt.util.array.ListNumber;
-import org.diirt.vtype.Alarm;
-import org.diirt.vtype.AlarmSeverity;
-import org.diirt.vtype.Time;
 import org.diirt.vtype.VEnum;
 import org.diirt.vtype.VNumberArray;
 import org.diirt.vtype.VStringArray;
 import org.diirt.vtype.VType;
-import org.diirt.vtype.ValueFactory;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementData;
 import com.cosylab.fzj.cosy.oc.LatticeElementDataLoader;
@@ -109,10 +109,14 @@ public class OrbitCorrectionController {
     private static final String MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE = "Error occured while sending correct orbit once command.";
     private static final String MSG_EXPORT_CURRENT_ORBIT_SUCCESS = "Current orbit was successfully exported.";
     private static final String MSG_EXPORT_CURRENT_ORBIT_FAILURE = "Error occured while exporting current orbit.";
-    private static final String MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS = "Golden orbit was successfully uploaded.";
-    private static final String MSG_UPLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while uploading golden orbit.";
+    private static final String MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS = "%s golden orbit was successfully uploaded.";
+    private static final String MSG_UPLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while uploading %s golden orbit.";
+    @Deprecated
     private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS = "Golden orbit was successfully downloaded.";
+    @Deprecated
     private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while downloading golden orbit.";
+    private static final String MSG_UPDATE_ONOFF_SUCCESS = "Successfully enabled/disabled %s.";
+    private static final String MSG_UPDATE_ONOFF_FAILURE = "Error enabling/disabling %s.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_SUCCESS = "Golden horizontal orbit was successfully updated to current.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_FAILURE = "Error occured while updating golden horizontal orbit to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_SUCCESS = "Golden vertical orbit was successfully updated to current.";
@@ -128,8 +132,8 @@ public class OrbitCorrectionController {
 
         AtomicBoolean startedTriggering = new AtomicBoolean(false);
 
-        SlowPV(PVReader<VType> reader) {
-            super(reader,null);
+        SlowPV(PVReader<VType> reader, PVWriter<Object> writer) {
+            super(reader,writer);
         }
 
         @Override
@@ -217,7 +221,7 @@ public class OrbitCorrectionController {
         }
     }
 
-    private final BooleanProperty mradProperty = new SimpleBooleanProperty(true);
+    private final BooleanProperty mradProperty = new SimpleBooleanProperty(false);
     private final StringProperty messageLogProperty = new SimpleStringProperty(EMPTY_STRING);
     private final StringProperty statusProperty = new SimpleStringProperty();
     private final Map<String,PV> pvs = new HashMap<>();
@@ -228,7 +232,8 @@ public class OrbitCorrectionController {
     private final List<Corrector> horizontalCorrectors = new ArrayList<>();
     private final List<Corrector> verticalCorrectors = new ArrayList<>();
     private final LinkedList<String> messages = new LinkedList<>();
-    private final Consumer<LatticeElementType> latticeUpdateCallback;
+    private final List<Consumer<LatticeElementType>> latticeUpdateCallbacks = new CopyOnWriteArrayList<>();
+    private final List<Consumer<SeriesType>> goldenOrbitCallbacks = new CopyOnWriteArrayList<>();
     private static final int MAX_MESSAGES = 200;
     private final DateFormat MESSAGE_FORMAT = new SimpleDateFormat("HH:mm:ss");
     private final ExecutorService nonUIexecutor = new ThreadPoolExecutor(1,1,0L,TimeUnit.SECONDS,
@@ -257,17 +262,51 @@ public class OrbitCorrectionController {
 
     /**
      * Constructs a new controller for the orbit correction view.
-     *
-     * @param latticeUpdateCallback the callback which is notified whenever the lattice is updated; the parameter
-     *        specifies which type of elements were updated
      */
-    public OrbitCorrectionController(Consumer<LatticeElementType> latticeUpdateCallback) {
-        this.latticeUpdateCallback = latticeUpdateCallback;
+    public OrbitCorrectionController() {
         createCorrectionResultsEntries();
         loadLatticeElements();
         nonUIexecutor.execute(() -> connectPVs(Preferences.getInstance().getPVNames(),pvs,true));
         nonUIexecutor.execute(() -> throttle.start());
         mradProperty.addListener(e -> throttle.trigger());
+    }
+
+    /**
+     * Add a callback listener, which is notified when the lattice is updated. The parameter specifies which type of
+     * elements were updated.
+     *
+     * @param consumer the listener
+     */
+    public void addLaticeUpdateCallback(Consumer<LatticeElementType> consumer) {
+        latticeUpdateCallbacks.add(consumer);
+    }
+
+    /**
+     * Remove a callback listener.
+     *
+     * @param consumer the listener to remove
+     */
+    public void removeLaticeUpdateCallback(Consumer<LatticeElementType> consumer) {
+        latticeUpdateCallbacks.remove(consumer);
+    }
+
+    /**
+     * Add a callback listener, which is notified when the lattice is updated. The parameter specifies which type of
+     * elements were updated.
+     *
+     * @param consumer the listener
+     */
+    public void addGoldenOrbitUpdateCallback(Consumer<SeriesType> consumer) {
+        goldenOrbitCallbacks.add(consumer);
+    }
+
+    /**
+     * Remove a callback listener.
+     *
+     * @param consumer the listener to remove
+     */
+    public void removeGoldernOrbitUpdateCallback(Consumer<SeriesType> consumer) {
+        goldenOrbitCallbacks.remove(consumer);
     }
 
     /**
@@ -412,10 +451,29 @@ public class OrbitCorrectionController {
     }
 
     /**
+     * Update the golden orbit as it is defined by the golden position wish property on each BPM.
+     */
+    public void updateGoldenOrbit() {
+        ToDoubleFunction<BPM> mapper = bpm -> bpm.goldenPositionWishProperty().get();
+        final ArrayDouble horizontal = new ArrayDouble(getHorizontalBPMs().stream().mapToDouble(mapper).toArray());
+        final ArrayDouble vertical = new ArrayDouble(getVerticalBPMs().stream().mapToDouble(mapper).toArray());
+        nonUIexecutor.execute(() -> {
+            ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT)).ifPresent(
+                    pv -> writeData(pv,horizontal,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Horizontal"),
+                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"horizontal")));
+            ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
+                    .ifPresent(pv -> writeData(pv,vertical,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Vertical"),
+                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"vertical")));
+        });
+    }
+
+    /**
      * Uploads new golden horizontal and vertical orbit with weights from the given file.
      *
      * @param file file in which golden horizontal and vertical orbit with weights are written
+     * @deprecated replaced by direct PV control
      */
+    @Deprecated
     public void uploadGoldenOrbit(File file) {
         if (!throttle.isRunning()) return;
         nonUIexecutor.execute(() -> {
@@ -456,7 +514,9 @@ public class OrbitCorrectionController {
      * Downloads current golden horizontal and vertical orbit with weights into the given file.
      *
      * @param file destination file in which golden horizontal and vertical orbit with weights will be written
+     * @deprecated replaced by direct PV control
      */
+    @Deprecated
     public void downloadGoldenOrbit(File file) {
         writeOrbitToFile(file,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,Preferences.PV_VERTICAL_ORBIT_WEIGHTS,
                 MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS,MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE);
@@ -472,11 +532,11 @@ public class OrbitCorrectionController {
         final PV goldenHorizontalOrbit = pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT);
         final PV goldenVerticalOrbit = pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT);
         if (horizontalOrbit != null && goldenHorizontalOrbit != null) {
-            writeData(goldenHorizontalOrbit,of(horizontalOrbit.value),MSG_USE_CURRENT_HORIZONTAL_SUCCESS,
+            writeData(goldenHorizontalOrbit,horizontalOrbit.value,MSG_USE_CURRENT_HORIZONTAL_SUCCESS,
                     MSG_USE_CURRENT_HORIZONTAL_FAILURE);
         }
         if (verticalOrbit != null && goldenVerticalOrbit != null) {
-            writeData(goldenVerticalOrbit,of(verticalOrbit.value),MSG_USE_CURRENT_VERTICAL_SUCCESS,
+            writeData(goldenVerticalOrbit,verticalOrbit.value,MSG_USE_CURRENT_VERTICAL_SUCCESS,
                     MSG_USE_CURRENT_VERTICAL_FAILURE);
         }
         throttle.trigger();
@@ -486,7 +546,9 @@ public class OrbitCorrectionController {
      * Download orbit response matrix and save it to a file.
      *
      * @param file destination file in which to store the matrix
+     * @deprecated functionality removed for the time being.
      */
+    @Deprecated
     public void downloadOrbitResponseMatrix(File file) {
         if (!throttle.isRunning()) return;
         final PV ormPV = pvs.get(Preferences.PV_ORM);
@@ -522,7 +584,9 @@ public class OrbitCorrectionController {
      * Uploads response matrix provided by the given file.
      *
      * @param file source file to load the response matrix from
+     * @deprecated functionality removed for the time being.
      */
+    @Deprecated
     public void uploadOrbitResponseMatrix(File file) {
         if (!throttle.isRunning()) return;
         final PV ormPV = pvs.get(Preferences.PV_ORM);
@@ -601,6 +665,34 @@ public class OrbitCorrectionController {
         synchronized (list) {
             list.add(item);
         }
+    }
+
+    public void writeLatticeStatesToPV() {
+        ToIntFunction<LatticeElement> toInt = e -> e.enabledWishProperty().get() ? 1 : 0;
+        final int[] horizontalCorrectors = getHorizontalCorrectors().stream().mapToInt(toInt).toArray();
+        final int[] verticalCorrectors = getVerticalCorrectors().stream().mapToInt(toInt).toArray();
+        final int[] horizontalBPMs = getHorizontalBPMs().stream().mapToInt(toInt).toArray();
+        final int[] verticalBPMs = getVerticalBPMs().stream().mapToInt(toInt).toArray();
+        nonUIexecutor.execute(() -> {
+            ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
+                writeData(pv,new ArrayInt(horizontalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal BPMs"),
+                        String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal BPMs"));
+            });
+            ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).ifPresent(pv -> {
+                writeData(pv,new ArrayInt(verticalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical BPMs"),
+                        String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical BPMs"));
+            });
+            ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+                writeData(pv,new ArrayInt(horizontalCorrectors),
+                        String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal correctors"),
+                        String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal correctors"));
+            });
+            ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+                writeData(pv,new ArrayInt(verticalCorrectors),
+                        String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical correctors"),
+                        String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical correctors"));
+            });
+        });
     }
 
     /**
@@ -706,10 +798,9 @@ public class OrbitCorrectionController {
                     }
                 }
             }
-
             if (enable != null) {
                 ListNumber data = enable.getData();
-                synchronized(destination) {
+                synchronized (destination) {
                     if (data.size() == destination.size()) {
                         for (int i = data.size() - 1; i > -1; i--) {
                             destination.get(i).enabledProperty().set(data.getByte(i) == 1);
@@ -718,11 +809,9 @@ public class OrbitCorrectionController {
                     }
                 }
             }
-
             if (callback) {
-                latticeUpdateCallback.accept(type);
+                latticeUpdateCallbacks.forEach(c -> c.accept(type));
             }
-
         });
     }
 
@@ -790,7 +879,8 @@ public class OrbitCorrectionController {
                     PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
                     pv = new PV(reader,writer);
                 } else {
-                    pv = new SlowPV(reader);
+                    PVWriter<Object> writer = PVManager.write(channel(v)).timeout(Duration.ofMillis(2000)).async();
+                    pv = new SlowPV(reader,writer);
                 }
                 destination.put(k,pv);
             }
@@ -807,7 +897,7 @@ public class OrbitCorrectionController {
      */
     private void executeCommand(String pvKey, String successMessage, String failureMessage) {
         if (!throttle.isRunning()) return;
-        ofNullable(pvs.get(pvKey)).ifPresent(pv -> writeData(pv,empty(),successMessage,failureMessage));
+        ofNullable(pvs.get(pvKey)).ifPresent(pv -> writeData(pv,null,successMessage,failureMessage));
     }
 
     // Filter tests the PV if a new value has been received since the previous update. The filter is
@@ -860,6 +950,7 @@ public class OrbitCorrectionController {
         if (va.size() == 0) return;
         Function<BPM,DoubleProperty> property;
         List<BPM> bpms;
+        boolean callback = false;
         switch (type) {
             case HORIZONTAL_ORBIT:
                 property = bpm -> bpm.positionProperty();
@@ -872,21 +963,23 @@ public class OrbitCorrectionController {
             case GOLDEN_HORIZONTAL_ORBIT:
                 property = bpm -> bpm.goldenPositionProperty();
                 bpms = horizontalBPMs;
+                callback = true;
                 break;
             case GOLDEN_VERTICAL_ORBIT:
                 property = bpm -> bpm.goldenPositionProperty();
                 bpms = verticalBPMs;
+                callback = true;
                 break;
             default:
                 return;
         }
-
         synchronized (bpms) {
             long enabledCount = bpms.stream().filter(b -> b.enabledProperty().get()).count();
             final IteratorNumber it = va.iterator();
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
-                bpms.stream().filter(b -> b.enabledProperty().get()).forEach(b -> property.apply(b).set(it.nextDouble()));
+                bpms.stream().filter(b -> b.enabledProperty().get())
+                        .forEach(b -> property.apply(b).set(it.nextDouble()));
             } else if (bpms.size() == va.size()) {
                 bpms.forEach(b -> property.apply(b).set(it.nextDouble()));
             } else if (bpms.size() > va.size()) {
@@ -905,6 +998,10 @@ public class OrbitCorrectionController {
                         true,empty());
             }
         }
+        if (callback) {
+            goldenOrbitCallbacks.forEach(c -> c.accept(type));
+        }
+
     }
 
     /**
@@ -930,7 +1027,8 @@ public class OrbitCorrectionController {
             final IteratorNumber it = va.iterator();
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
-                correctors.stream().filter(c -> c.enabledProperty().get()).forEach(c -> c.correctionProperty().set(it.nextDouble()));
+                correctors.stream().filter(c -> c.enabledProperty().get())
+                        .forEach(c -> c.correctionProperty().set(it.nextDouble()));
             } else if (correctors.size() == va.size()) {
                 correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()));
             } else if (correctors.size() > va.size()) {
@@ -965,12 +1063,17 @@ public class OrbitCorrectionController {
             return;
         }
         ofNullable(correctionResultsEntries.get(pvKey)).ifPresent(entry -> {
-            entry.minProperty().set(va.getDouble(0));
-            entry.maxProperty().set(va.getDouble(1));
-            entry.avgProperty().set(va.getDouble(2));
-            entry.rmsProperty().set(va.getDouble(3));
-            entry.stdProperty().set(va.getDouble(4));
+            entry.minProperty().set(format(va.getDouble(0)));
+            entry.maxProperty().set(format(va.getDouble(1)));
+            entry.avgProperty().set(format(va.getDouble(2)));
+            entry.rmsProperty().set(format(va.getDouble(3)));
+            entry.stdProperty().set(format(va.getDouble(4)));
         });
+    }
+
+    private static double format(double value) {
+        //3 decimal points should be enough
+        return ((long)(value * 1000)) / 1000.;
     }
 
     /**
@@ -982,7 +1085,7 @@ public class OrbitCorrectionController {
      * @param successMessage message that is logged if write completed successfully
      * @param failureMessage message that is logged if write failed for any reason
      */
-    private void writeData(PV pv, Optional<VType> data, String successMessage, String failureMessage) {
+    private void writeData(PV pv, Object data, String successMessage, String failureMessage) {
         nonUIexecutor.execute(() -> {
             PVWriterListener<?> pvListener = new PVWriterListener<PV>() {
 
@@ -1002,8 +1105,10 @@ public class OrbitCorrectionController {
             };
             synchronized (pv) {
                 pv.writer.addPVWriterListener(pvListener);
-                if (data.isPresent()) {
-                    pv.writer.write(((VNumberArray)data.get()).getData());
+                if (data instanceof VNumberArray) {
+                    pv.writer.write(((VNumberArray)data).getData());
+                } else if (data != null) {
+                    pv.writer.write(data);
                 } else {
                     pv.writer.write(1);
                 }
@@ -1023,13 +1128,9 @@ public class OrbitCorrectionController {
         for (int i = 0; i < values.length; i++) {
             array[i] = Double.parseDouble(values[i].trim()); // throw exception if value is not double
         }
-        Alarm alarm = ValueFactory.newAlarm(AlarmSeverity.NONE,"USER DEFINED");
-        Time time = ValueFactory.timeNow();
-        ListNumber list = new ArrayDouble(array);
-        VNumberArray data = ValueFactory.newVNumberArray(list,alarm,time,(VNumberArray)pv.value);
         String successMessage = orbitName + " was successfully updated.";
         String failureMessage = "Error occured while updating " + orbitName + ".";
-        writeData(pv,of(data),successMessage,failureMessage);
+        writeData(pv,new ArrayDouble(array),successMessage,failureMessage);
     }
 
     /**
@@ -1096,6 +1197,7 @@ public class OrbitCorrectionController {
      * @param exception exception to log; if present, the log will always be an error type
      */
     private void writeToLog(String message, boolean error, Optional<Exception> exception) {
+        if (message == null) return;
         if (exception.isPresent()) {
             OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,message,exception.get());
         } else if (error) {

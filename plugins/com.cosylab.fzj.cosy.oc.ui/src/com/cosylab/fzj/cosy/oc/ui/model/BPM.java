@@ -2,7 +2,10 @@ package com.cosylab.fzj.cosy.oc.ui.model;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementData;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 
 /**
@@ -17,6 +20,8 @@ public class BPM extends LatticeElement {
 
     private final DoubleProperty position = new SimpleDoubleProperty(this, "position", 0);
     private final DoubleProperty goldenPosition = new SimpleDoubleProperty(this, "goldenPosition", 0);
+    private final DoubleProperty goldenPositionWish = new SimpleDoubleProperty(this, "goldenPositionWish", 0);
+    private final BooleanProperty goldenDifferent = new SimpleBooleanProperty(this, "goldenDifferent", false);
 
     /**
      * Constructs the new BPM with the given lattice element data.
@@ -25,6 +30,7 @@ public class BPM extends LatticeElement {
      */
     public BPM(LatticeElementData elementData) {
         super(elementData);
+        goldenDifferent.bind(goldenPosition.isNotEqualTo(goldenPositionWish));
     }
 
     /**
@@ -43,5 +49,31 @@ public class BPM extends LatticeElement {
      */
     public DoubleProperty goldenPositionProperty() {
         return goldenPosition;
+    }
+
+    /**
+     * Property providing the golden orbit position at this BPM.
+     *
+     * @return property providing the golden orbit position value
+     */
+    public DoubleProperty goldenPositionWishProperty() {
+        return goldenPositionWish;
+    }
+
+    /**
+     * Returns the property describing whether the wish and the actual golden orbit are different (true) or
+     * the same (false).
+     *
+     * @return true if actual and wished golden orbit differ or true if they are equal
+     */
+    public ReadOnlyBooleanProperty goldenDifferentProperty() {
+        return goldenDifferent;
+    }
+
+    /**
+     * Refresh the golden position wish to match the golden position.
+     */
+    public void refreshGolden() {
+        goldenPositionWish.set(goldenPosition.get());
     }
 }

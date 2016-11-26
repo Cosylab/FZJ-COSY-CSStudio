@@ -1,4 +1,4 @@
-package com.cosylab.fzj.cosy.oc.ui;
+package com.cosylab.fzj.cosy.oc.ui.util;
 
 import java.util.ArrayList;
 import java.util.List;

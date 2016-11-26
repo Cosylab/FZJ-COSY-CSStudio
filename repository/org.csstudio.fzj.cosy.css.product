@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="CSS" uid="org.csstudio.fzj.cosy.css" id="org.csstudio.fzj.cosy.css.product.product" application="org.csstudio.fzj.cosy.application" version="1.1.1.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="css" uid="org.csstudio.fzj.cosy.css" id="org.csstudio.fzj.cosy.css.product.product" application="org.csstudio.fzj.cosy.application" version="1.1.1.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="icons/about.png"/>
@@ -16,12 +16,14 @@ The FZJ-COSY distribution is based on the 4.3.x version of the community CS-Stud
    </configIni>
 
    <launcherArgs>
-      <programArgs>--launcher.GTK_version
-2
--pluginCustomization
+      <programArgs>-pluginCustomization
 plugin_customization.ini
 --launcher.defaultAction
 openFile
+--launcher.GTK_version
+2
+-name
+css
       </programArgs>
       <vmArgs>-Xmx1024m
 -Xms512m

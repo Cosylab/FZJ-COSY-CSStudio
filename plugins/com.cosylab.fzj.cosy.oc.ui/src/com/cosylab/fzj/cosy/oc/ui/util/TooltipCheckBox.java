@@ -1,4 +1,4 @@
-package com.cosylab.fzj.cosy.oc.ui;
+package com.cosylab.fzj.cosy.oc.ui.util;
 
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Tooltip;
