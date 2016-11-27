@@ -86,6 +86,7 @@ public final class Preferences {
     /** Vertical orbit weights PV provides the weights used in calculation of the vertical orbit corrections */
     public static final String PV_VERTICAL_ORBIT_WEIGHTS = "vertical_orbit_weights";
     /** Orbit response matrix provides the pv with the orbit response matrix in a single array */
+    @Deprecated
     public static final String PV_ORM = "orm";
     /** Operation status provides the current status of the orbit corrections ioc. */
     public static final String PV_OPERATION_STATUS = "operation_status";
@@ -101,6 +102,13 @@ public final class Preferences {
     public static final String PV_STOP_CORRECTING_ORBIT = "stop_correcting_orbit";
     /** Correct orbit once performs orbit correction once and stop */
     public static final String PV_CORRECT_ORBIT_ONCE = "correct_orbit_once";
+    /** SVD cutoff value for horizontal orbit correction */
+    public static final String PV_HORIZONTAL_CUTOFF = "horizontal_orbit_cutoff";
+    /** SVD cutoff value for vertical orbit correction */
+    public static final String PV_VERTICAL_CUTOFF = "vertical_orbit_cutoff";
+    /** Factor to multiply the values with when applying correction */
+    public static final String PV_CORRECTION_FRACTION = "correction_fraction";
+
 
     private Properties properties;
     private static Preferences instance;
@@ -296,6 +304,9 @@ public final class Preferences {
         pvs.put(PV_START_CORRECTING_ORBIT,getPVName(PV_START_CORRECTING_ORBIT));
         pvs.put(PV_STOP_CORRECTING_ORBIT,getPVName(PV_STOP_CORRECTING_ORBIT));
         pvs.put(PV_CORRECT_ORBIT_ONCE,getPVName(PV_CORRECT_ORBIT_ONCE));
+        pvs.put(PV_HORIZONTAL_CUTOFF,getPVName(PV_HORIZONTAL_CUTOFF));
+        pvs.put(PV_VERTICAL_CUTOFF,getPVName(PV_VERTICAL_CUTOFF));
+        pvs.put(PV_CORRECTION_FRACTION,getPVName(PV_CORRECTION_FRACTION));
         return pvs;
     }
 

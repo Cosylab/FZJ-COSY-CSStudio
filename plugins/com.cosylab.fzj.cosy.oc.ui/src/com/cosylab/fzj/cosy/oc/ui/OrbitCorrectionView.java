@@ -181,10 +181,10 @@ public class OrbitCorrectionView extends FXViewPart {
         charts.add(orbitNode,1,0);
         charts.add(orbitLegendNode,2,0);
         charts.add(createVerticalAxis(correctionsChart,
-                controller.mradProperty().get() ? "Kick Angle [mrad]" : "Kick Strength [mA]"),0,1);
+                controller.mradProperty().get() ? "Kick Angle [mrad]" : "Kick Strength [A]"),0,1);
         controller.mradProperty().addListener((a, o, n) -> {
             GridPane pane = (GridPane)charts.getChildren().get(3);
-            ((NumberAxis)pane.getChildren().get(0)).setLabel(n ? "Kick Angle [mrad]" : "Kick Strength [mA]");
+            ((NumberAxis)pane.getChildren().get(0)).setLabel(n ? "Kick Angle [mrad]" : "Kick Strength [A]");
         });
         charts.add(correctionNode,1,1);
         charts.add(correctionLegendNode,2,1);
@@ -316,6 +316,7 @@ public class OrbitCorrectionView extends FXViewPart {
     private Region createOrbitChart() {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
+        xAxis.setMinorTickCount(0);
         NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
@@ -345,6 +346,7 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private Region createCorrectionsChart() {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
+        xAxis.setMinorTickCount(0);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         NumberAxis yAxis = new NumberAxis();
         yAxis.setAnimated(false);
@@ -373,6 +375,7 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private Region createLatticeChart() {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
+        xAxis.setMinorTickCount(0);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         NumberAxis yAxis = new NumberAxis(-50,50,10);
         yAxis.setTickLabelsVisible(false);
@@ -487,14 +490,16 @@ public class OrbitCorrectionView extends FXViewPart {
         checkBoxes.add(vCorrectorsCheckBox,0,1);
         GridPane radioButtons = new GridPane();
         radioButtons.setVgap(5);
-        RadioButton mradRadioButton = new RadioButton("mrad");
+        RadioButton mradRadioButton = new RadioButton("Kick Andle [mrad]");
         mradRadioButton.setSelected(true);
-        RadioButton maRadioButton = new RadioButton("mA");
+        RadioButton maRadioButton = new RadioButton("Kick Strength [A]");
         ToggleGroup radioButtonsGroup = new ToggleGroup();
         mradRadioButton.setToggleGroup(radioButtonsGroup);
         maRadioButton.setToggleGroup(radioButtonsGroup);
         radioButtonsGroup.selectedToggleProperty()
                 .addListener(l -> controller.mradProperty().set(mradRadioButton.isSelected()));
+        mradRadioButton.setSelected(controller.mradProperty().get());
+        maRadioButton.setSelected(!controller.mradProperty().get());
         radioButtons.add(mradRadioButton,0,0);
         radioButtons.add(maRadioButton,0,1);
         legend.add(checkBoxes,0,0);

@@ -20,16 +20,22 @@ import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
 import com.cosylab.fzj.cosy.oc.ui.model.LatticeElement;
+import com.cosylab.fzj.cosy.oc.ui.util.BorderedTitledPane;
 
 import javafx.application.Platform;
+import javafx.beans.property.Property;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Background;
@@ -46,6 +52,51 @@ import javafx.scene.paint.Color;
  * @author <a href="mailto:jaka.bobnar@cosylab.com">Jaka Bobnar</a>
  */
 public class AdvancedDialog extends Dialog {
+
+    private static class CutOff extends GridPane implements ChangeListener<Number> {
+
+        private final Slider slider;
+        private final TextField field;
+        private final Property<Number> source;
+
+        CutOff(Property<Number> source, boolean percentage) {
+            this.source = source;
+            setHgap(5);
+            getColumnConstraints().setAll(new PercentColumnConstraints(90),new PercentColumnConstraints(10));
+            slider = new Slider();
+            slider.setMax(percentage ? 100 : 2);
+            slider.setMin(0);
+            slider.setSnapToTicks(false);
+            slider.setMajorTickUnit(percentage ? 10 : 0.2);
+            slider.setMinorTickCount(percentage ? 4 : 1);
+            slider.setShowTickLabels(true);
+            slider.setShowTickMarks(true);
+            slider.valueProperty().bindBidirectional(source);
+            slider.getStyleClass().add("slider-pointing");
+            field = new TextField();
+            field.setEditable(false);
+            add(slider,0,0);
+            add(field,1,0);
+            source.addListener(this);
+            setGridConstraints(field,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
+            setGridConstraints(slider,true,true,HPos.LEFT,VPos.CENTER,Priority.ALWAYS,Priority.ALWAYS);
+            changed(source,null,source.getValue());
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (newValue instanceof Integer) {
+                field.setText(String.valueOf(newValue));
+            } else {
+                field.setText(String.valueOf(((long)(newValue.doubleValue() * 1000)) / 1000.));
+            }
+        }
+
+        void dispose() {
+            slider.valueProperty().unbindBidirectional(source);
+            source.removeListener(this);
+        }
+    }
 
     private static class Table<T extends LatticeElement> extends TableView<T> {
 
@@ -108,8 +159,12 @@ public class AdvancedDialog extends Dialog {
     private Table<BPM> verticalBPMTable;
     private Table<Corrector> horizontalCorrectorTable;
     private Table<Corrector> verticalCorrectorTable;
+    private CutOff horizontalCutOff;
+    private CutOff verticalCutOff;
+    private CutOff correctionPercentage;
     private final Consumer<LatticeElementType> updater = this::update;
     private final Shell parent;
+
     /**
      * Constructs a new dialog.
      *
@@ -167,8 +222,10 @@ public class AdvancedDialog extends Dialog {
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        createButton(parent,IDialogConstants.SELECT_ALL_ID,"Apply",true);
-        createButton(parent,IDialogConstants.ABORT_ID,"Refresh",true);
+        createButton(parent,IDialogConstants.SELECT_ALL_ID,"Apply",true)
+                .setToolTipText("Apply BPMs and Correctors settings to the IOC");
+        createButton(parent,IDialogConstants.ABORT_ID,"Refresh",true)
+                .setToolTipText("Refresh the BPMs and Correctors settings from the IOC");
         createButton(parent,IDialogConstants.OK_ID,IDialogConstants.CLOSE_LABEL,true);
     }
 
@@ -201,8 +258,8 @@ public class AdvancedDialog extends Dialog {
     @Override
     protected Control createDialogArea(Composite parent) {
         Composite composite = (Composite)super.createDialogArea(parent);
-        parent.addDisposeListener(e -> controller.removeLaticeUpdateCallback(updater));
-        FXUtilities.createFXBridge(composite,c -> new Scene(new BorderPane(createFXContents(c))));
+        parent.addDisposeListener(e -> dispose());
+        FXUtilities.createFXBridge(composite,this::createScene);
         applyDialogFont(composite);
         controller.addLaticeUpdateCallback(updater);
         update(LatticeElementType.HORIZONTAL_BPM);
@@ -217,6 +274,19 @@ public class AdvancedDialog extends Dialog {
             getShell().setSize(p.x + 5,p.y);
         });
         return composite;
+    }
+
+    private Scene createScene(Composite parent) {
+        Scene scene = new Scene(new BorderPane(createFXContents(parent)));
+        scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
+        return scene;
+    }
+
+    private void dispose() {
+        controller.removeLaticeUpdateCallback(updater);
+        horizontalCutOff.dispose();
+        verticalCutOff.dispose();
+        correctionPercentage.dispose();
     }
 
     private Node createFXContents(Composite parent) {
@@ -236,22 +306,38 @@ public class AdvancedDialog extends Dialog {
         verticalBPMLabel.setStyle("-fx-font-weight: bold");
         horizontalCorrectorLabel.setStyle("-fx-font-weight: bold");
         verticalCorectorLabel.setStyle("-fx-font-weight: bold");
+        horizontalCutOff = new CutOff(controller.horizontalCutOffProperty(),false);
+        verticalCutOff = new CutOff(controller.verticalCutOffProperty(),false);
+        correctionPercentage = new CutOff(controller.correctionFactorProperty(),true);
+        BorderedTitledPane horizontalCutOffPane = new BorderedTitledPane("Horizontal SVD Cut Off",horizontalCutOff,
+                true);
+        BorderedTitledPane verticalCutOffPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,true);
+        BorderedTitledPane factorCutOffPane = new BorderedTitledPane("Correction Percentage Factor",
+                correctionPercentage,true);
+        int height = 60;
+        verticalCutOffPane.setMinHeight(height);
+        verticalCutOffPane.setMaxHeight(height);
+        horizontalCutOffPane.setMinHeight(height);
+        horizontalCutOffPane.setMaxHeight(height);
+        factorCutOffPane.setMinHeight(height);
+        factorCutOffPane.setMaxHeight(height);
         pane.add(horizontalBPMLabel,0,0);
-        pane.add(verticalBPMLabel,1,0);
-        pane.add(horizontalCorrectorLabel,2,0);
+        pane.add(horizontalCorrectorLabel,1,0);
+        pane.add(verticalBPMLabel,2,0);
         pane.add(verticalCorectorLabel,3,0);
         pane.add(horizontalBPMTable,0,1);
-        pane.add(verticalBPMTable,1,1);
-        pane.add(horizontalCorrectorTable,2,1);
+        pane.add(horizontalCorrectorTable,1,1);
+        pane.add(verticalBPMTable,2,1);
         pane.add(verticalCorrectorTable,3,1);
-        setGridConstraints(horizontalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
-        setGridConstraints(verticalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
-        setGridConstraints(horizontalCorrectorLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
-        setGridConstraints(verticalCorectorLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
-        setGridConstraints(horizontalBPMTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
-        setGridConstraints(verticalBPMTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
-        setGridConstraints(horizontalCorrectorTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
-        setGridConstraints(verticalCorrectorTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
+        pane.add(horizontalCutOffPane,0,2,2,1);
+        pane.add(verticalCutOffPane,2,2,2,1);
+        pane.add(factorCutOffPane,0,3,2,1);
+        Arrays.asList(horizontalBPMLabel,verticalBPMLabel,horizontalCorrectorLabel,verticalCorectorLabel)
+                .forEach(l -> setGridConstraints(l,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER));
+        Arrays.asList(horizontalBPMTable,verticalBPMTable,horizontalCorrectorTable,verticalCorrectorTable)
+                .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS));
+        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,factorCutOffPane)
+                .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.NEVER));
         return pane;
     }
 
@@ -262,12 +348,12 @@ public class AdvancedDialog extends Dialog {
     @Override
     protected Rectangle getConstrainedShellBounds(Rectangle preferredSize) {
         Rectangle r = super.getConstrainedShellBounds(preferredSize);
-        r.width = Math.max(r.width,900);
+        r.width = 1000;
         Rectangle parentR = parent.getBounds();
-        int cX = parentR.x + parentR.width/2;
-        int cY = parentR.y + parentR.height/2;
-        r.x = cX - r.width/2;
-        r.y = cY - r.height/2;
+        int cX = parentR.x + parentR.width / 2;
+        int cY = parentR.y + parentR.height / 2;
+        r.x = cX - r.width / 2;
+        r.y = cY - r.height / 2;
         r.x = r.x < 0 ? 0 : r.x;
         r.y = r.y < 0 ? 0 : r.y;
         return r;

@@ -30,10 +30,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -54,6 +57,7 @@ import org.diirt.util.array.ArrayInt;
 import org.diirt.util.array.IteratorNumber;
 import org.diirt.util.array.ListNumber;
 import org.diirt.vtype.VEnum;
+import org.diirt.vtype.VNumber;
 import org.diirt.vtype.VNumberArray;
 import org.diirt.vtype.VStringArray;
 import org.diirt.vtype.VType;
@@ -72,7 +76,10 @@ import com.cosylab.fzj.cosy.oc.ui.util.GUIUpdateThrottle;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -111,19 +118,27 @@ public class OrbitCorrectionController {
     private static final String MSG_EXPORT_CURRENT_ORBIT_FAILURE = "Error occured while exporting current orbit.";
     private static final String MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS = "%s golden orbit was successfully uploaded.";
     private static final String MSG_UPLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while uploading %s golden orbit.";
-    @Deprecated
-    private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS = "Golden orbit was successfully downloaded.";
-    @Deprecated
-    private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while downloading golden orbit.";
     private static final String MSG_UPDATE_ONOFF_SUCCESS = "Successfully enabled/disabled %s.";
     private static final String MSG_UPDATE_ONOFF_FAILURE = "Error enabling/disabling %s.";
+    private static final String MSG_CUTOFF_SUCCESS = "%s cutoff factor %f successfully written.";
+    private static final String MSG_CUTOFF_FAILURE = "Failed to write %s cutoff factor.";
+    private static final String MSG_CORRECTION_FACTOR_SUCCESS = "Correction factor %d successfully written.";
+    private static final String MSG_CORRECTION_FACTOR_FAILURE = "Failed to write correction factor.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_SUCCESS = "Golden horizontal orbit was successfully updated to current.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_FAILURE = "Error occured while updating golden horizontal orbit to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_SUCCESS = "Golden vertical orbit was successfully updated to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_FAILURE = "Error occured while updatind golden vertical orbit to current.";
+    @Deprecated
+    private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS = "Golden orbit was successfully downloaded.";
+    @Deprecated
+    private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while downloading golden orbit.";
+    @Deprecated
     private static final String MSG_UPLOAD_ORM_SUCCESS = "Orbit response matrix was successfully uploaded.";
+    @Deprecated
     private static final String MSG_UPLOAD_ORM_FAILURE = "Error occured while uploading orbit response matrix.";
+    @Deprecated
     private static final String MSG_DOWNLOAD_ORM_SUCCESS = "Orbit response matrix was successfully downloaded.";
+    @Deprecated
     private static final String MSG_DOWNLOAD_ORM_FAILURE = "Error occured while downloading orbit response matrix.";
     private static final String EMPTY_STRING = "";
     private static final char NEW_LINE = '\n';
@@ -221,9 +236,12 @@ public class OrbitCorrectionController {
         }
     }
 
-    private final BooleanProperty mradProperty = new SimpleBooleanProperty(false);
-    private final StringProperty messageLogProperty = new SimpleStringProperty(EMPTY_STRING);
-    private final StringProperty statusProperty = new SimpleStringProperty();
+    private DoubleProperty horizontalCutOffProperty;
+    private DoubleProperty verticalCutOffProperty;
+    private IntegerProperty correctionFactorProperty;
+    private final BooleanProperty mradProperty = new SimpleBooleanProperty(this,"mrad",false);
+    private final StringProperty messageLogProperty = new SimpleStringProperty(this,"messageLog",EMPTY_STRING);
+    private final StringProperty statusProperty = new SimpleStringProperty(this,"status",EMPTY_STRING);
     private final Map<String,PV> pvs = new HashMap<>();
     private final Map<String,PV> slowPVs = new HashMap<>();
     private final Map<String,OrbitCorrectionResultsEntry> correctionResultsEntries = new LinkedHashMap<>(4);
@@ -235,27 +253,36 @@ public class OrbitCorrectionController {
     private final List<Consumer<LatticeElementType>> latticeUpdateCallbacks = new CopyOnWriteArrayList<>();
     private final List<Consumer<SeriesType>> goldenOrbitCallbacks = new CopyOnWriteArrayList<>();
     private static final int MAX_MESSAGES = 200;
-    private final DateFormat MESSAGE_FORMAT = new SimpleDateFormat("HH:mm:ss");
+    private static final DateFormat MESSAGE_FORMAT = new SimpleDateFormat("HH:mm:ss");
+    private static final BiConsumer<Runnable,Throwable> AFTER_EXECUTE = (r, t) -> {
+        if (r instanceof Future<?>) {
+            if (((Future<?>)r).isDone()) {
+                try {
+                    ((Future<?>)r).get(1,TimeUnit.MILLISECONDS);
+                } catch (ExecutionException e) {
+                    t = e.getCause();
+                } catch (CancellationException | InterruptedException | TimeoutException e) {
+                    //ignore
+                }
+            }
+        }
+        if (t != null) {
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Execution Error",t);
+        }
+    };
     private final ExecutorService nonUIexecutor = new ThreadPoolExecutor(1,1,0L,TimeUnit.SECONDS,
             new LinkedBlockingQueue<>()) {
 
         @Override
         protected void afterExecute(Runnable r, Throwable t) {
-            if (r instanceof Future<?>) {
-                if (((Future<?>)r).isDone()) {
-                    try {
-                        ((Future<?>)r).get(1,TimeUnit.MILLISECONDS);
-                    } catch (ExecutionException e) {
-                        t = e.getCause();
-                    } catch (CancellationException | InterruptedException | TimeoutException e) {
-                        //ignore
-                    }
-                }
-            }
-            if (t != null) {
-                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Execution Error",t);
-            }
+            AFTER_EXECUTE.accept(r,t);
         }
+    };
+    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(1) {
+
+        protected void afterExecute(Runnable r, Throwable t) {
+            AFTER_EXECUTE.accept(r,t);
+        };
     };
     private final GUIUpdateThrottle throttle = new GUIUpdateThrottle(20,UPDATE_RATE,
             v -> UI_EXECUTOR.execute(() -> update()));
@@ -392,6 +419,69 @@ public class OrbitCorrectionController {
     }
 
     /**
+     * Returns the property that stores the current SVD cut off value for horizontal correction.
+     *
+     * @return horizontal correction SVD cut off value
+     */
+    public DoubleProperty horizontalCutOffProperty() {
+        if (horizontalCutOffProperty == null) {
+            horizontalCutOffProperty = new SimpleDoubleProperty(this,"horizontalCutoff",0);
+            horizontalCutOffProperty.addListener((a, o, n) -> {
+                getNumberPV.apply(Preferences.PV_HORIZONTAL_CUTOFF).ifPresent(pv -> {
+                    if (Double.compare(n.doubleValue(),((VNumber)pv.value).getValue().doubleValue()) != 0) {
+                        writeData(pv,n.doubleValue(),String.format(MSG_CUTOFF_SUCCESS,"Horizontal",n.doubleValue()),
+                                String.format(MSG_CUTOFF_FAILURE,"horizontal"),1);
+                    }
+                });
+            });
+        }
+        return horizontalCutOffProperty;
+    }
+
+    /**
+     * Returns the property that stores the current SVD cut off value for vertical correction.
+     *
+     * @return vertical correction SVD cut off value
+     */
+    public DoubleProperty verticalCutOffProperty() {
+        if (verticalCutOffProperty == null) {
+            verticalCutOffProperty = new SimpleDoubleProperty(this,"verticalCutoff",0);
+            verticalCutOffProperty.addListener((a, o, n) -> {
+                getNumberPV.apply(Preferences.PV_VERTICAL_CUTOFF).ifPresent(pv -> {
+                    if (Double.compare(n.doubleValue(),((VNumber)pv.value).getValue().doubleValue()) != 0) {
+                        writeData(pv,n.doubleValue(),String.format(MSG_CUTOFF_SUCCESS,"Vertical",n.doubleValue()),
+                                String.format(MSG_CUTOFF_FAILURE,"vertical"),2);
+                    }
+                });
+            });
+        }
+        return verticalCutOffProperty;
+    }
+
+    /**
+     * Returns the property that stores the current factor used when apply the correction. The correcting values are
+     * calculated and then multiplied by this factor to only apply 10, 20, 30 etc. percent. This property returns the
+     * factor in percentage between 0 and 100.
+     *
+     * @return the correction factor property
+     */
+    public IntegerProperty correctionFactorProperty() {
+        if (correctionFactorProperty == null) {
+            correctionFactorProperty = new SimpleIntegerProperty(this,"correctionFactor",0);
+            correctionFactorProperty.addListener((a, o, n) -> {
+                getNumberPV.apply(Preferences.PV_CORRECTION_FRACTION).ifPresent(pv -> {
+                    if (n.intValue() != (int)(100 * ((VNumber)pv.value).getValue().doubleValue())) {
+                        writeData(pv,n.doubleValue() / 100.,
+                                String.format(MSG_CORRECTION_FACTOR_SUCCESS,n.intValue()),
+                                MSG_CORRECTION_FACTOR_FAILURE,3);
+                    }
+                });
+            });
+        }
+        return correctionFactorProperty;
+    }
+
+    /**
      * Calls command which starts measuring orbit and updating horizontal and vertical orbit periodically.
      */
     public void startMeasuringOrbit() {
@@ -457,14 +547,12 @@ public class OrbitCorrectionController {
         ToDoubleFunction<BPM> mapper = bpm -> bpm.goldenPositionWishProperty().get();
         final ArrayDouble horizontal = new ArrayDouble(getHorizontalBPMs().stream().mapToDouble(mapper).toArray());
         final ArrayDouble vertical = new ArrayDouble(getVerticalBPMs().stream().mapToDouble(mapper).toArray());
-        nonUIexecutor.execute(() -> {
-            ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT)).ifPresent(
-                    pv -> writeData(pv,horizontal,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Horizontal"),
-                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"horizontal")));
-            ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
-                    .ifPresent(pv -> writeData(pv,vertical,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Vertical"),
-                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"vertical")));
-        });
+        ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT))
+                .ifPresent(pv -> writeData(pv,horizontal,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Horizontal"),
+                        String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"horizontal"),4));
+        ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
+                .ifPresent(pv -> writeData(pv,vertical,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Vertical"),
+                        String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"vertical"),5));
     }
 
     /**
@@ -489,16 +577,16 @@ public class OrbitCorrectionController {
                     String[] values = line.split(" ");
                     if (lineCounter == 1) {
                         ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Horizontal Orbit"));
+                                .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Horizontal Orbit",0));
                     } else if (lineCounter == 2) {
                         ofNullable(pvs.get(Preferences.PV_HORIZONTAL_ORBIT_WEIGHTS))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Horizontal Orbit Weights"));
+                                .ifPresent(pv -> convertAndWriteData(pv,values,"Horizontal Orbit Weights",0));
                     } else if (lineCounter == 3) {
                         ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Vertical Orbit"));
+                                .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Vertical Orbit",0));
                     } else if (lineCounter == 4) {
                         ofNullable(pvs.get(Preferences.PV_VERTICAL_ORBIT_WEIGHTS))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Vertical Orbit Weights"));
+                                .ifPresent(pv -> convertAndWriteData(pv,values,"Vertical Orbit Weights",0));
                     } else {
                         break;
                     }
@@ -533,11 +621,11 @@ public class OrbitCorrectionController {
         final PV goldenVerticalOrbit = pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT);
         if (horizontalOrbit != null && goldenHorizontalOrbit != null) {
             writeData(goldenHorizontalOrbit,horizontalOrbit.value,MSG_USE_CURRENT_HORIZONTAL_SUCCESS,
-                    MSG_USE_CURRENT_HORIZONTAL_FAILURE);
+                    MSG_USE_CURRENT_HORIZONTAL_FAILURE,0);
         }
         if (verticalOrbit != null && goldenVerticalOrbit != null) {
             writeData(goldenVerticalOrbit,verticalOrbit.value,MSG_USE_CURRENT_VERTICAL_SUCCESS,
-                    MSG_USE_CURRENT_VERTICAL_FAILURE);
+                    MSG_USE_CURRENT_VERTICAL_FAILURE,0);
         }
         throttle.trigger();
     }
@@ -610,7 +698,7 @@ public class OrbitCorrectionController {
                     sb.append(line).append(' ');
                 }
                 String[] waveform = sb.toString().split(" ");
-                convertAndWriteData(ormPV,waveform,"Orbit response matrix");
+                convertAndWriteData(ormPV,waveform,"Orbit response matrix",0);
                 writeToLog(MSG_UPLOAD_ORM_SUCCESS,false,empty());
             } catch (Exception e) {
                 writeToLog(MSG_UPLOAD_ORM_FAILURE,true,of(e));
@@ -652,6 +740,7 @@ public class OrbitCorrectionController {
             clearList(horizontalCorrectors);
             clearList(verticalCorrectors);
             nonUIexecutor.shutdownNow();
+            scheduler.shutdownNow();
         });
     }
 
@@ -673,25 +762,22 @@ public class OrbitCorrectionController {
         final int[] verticalCorrectors = getVerticalCorrectors().stream().mapToInt(toInt).toArray();
         final int[] horizontalBPMs = getHorizontalBPMs().stream().mapToInt(toInt).toArray();
         final int[] verticalBPMs = getVerticalBPMs().stream().mapToInt(toInt).toArray();
-        nonUIexecutor.execute(() -> {
-            ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
-                writeData(pv,new ArrayInt(horizontalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal BPMs"),
-                        String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal BPMs"));
-            });
-            ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).ifPresent(pv -> {
-                writeData(pv,new ArrayInt(verticalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical BPMs"),
-                        String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical BPMs"));
-            });
-            ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
-                writeData(pv,new ArrayInt(horizontalCorrectors),
-                        String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal correctors"),
-                        String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal correctors"));
-            });
-            ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
-                writeData(pv,new ArrayInt(verticalCorrectors),
-                        String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical correctors"),
-                        String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical correctors"));
-            });
+        ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
+            writeData(pv,new ArrayInt(horizontalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal BPMs"),
+                    String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal BPMs"),5);
+        });
+        ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).ifPresent(pv -> {
+            writeData(pv,new ArrayInt(verticalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical BPMs"),
+                    String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical BPMs"),6);
+        });
+        ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+            writeData(pv,new ArrayInt(horizontalCorrectors),
+                    String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal correctors"),
+                    String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal correctors"),7);
+        });
+        ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+            writeData(pv,new ArrayInt(verticalCorrectors),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical correctors"),
+                    String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical correctors"),8);
         });
     }
 
@@ -816,42 +902,21 @@ public class OrbitCorrectionController {
     }
 
     private void updateLattice() {
-        VStringArray hbpmNames = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_NAMES)).filter(HAS_VALUE_FILTER)
-                .filter(pv -> pv.value instanceof VStringArray).map(pv -> (VStringArray)pv.value).orElse(null);
-        VStringArray vbpmNames = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_NAMES)).filter(HAS_VALUE_FILTER)
-                .filter(pv -> pv.value instanceof VStringArray).map(pv -> (VStringArray)pv.value).orElse(null);
-        VNumberArray hbpmPositions = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_POSITIONS))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray vbpmPositions = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_POSITIONS))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray hbpmEnable = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray vbpmEnable = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).filter(HAS_VALUE_FILTER)
-                .filter(pv -> pv.value instanceof VNumberArray).map(pv -> (VNumberArray)pv.value).orElse(null);
+        VStringArray hbpmNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_BPM_NAMES);
+        VStringArray vbpmNames = getSlowPVString.apply(Preferences.PV_VERTICAL_BPM_NAMES);
+        VNumberArray hbpmPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_BPM_POSITIONS);
+        VNumberArray vbpmPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_BPM_POSITIONS);
+        VNumberArray hbpmEnable = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_BPM_ENABLED);
+        VNumberArray vbpmEnable = getSlowPVNumber.apply(Preferences.PV_VERTICAL_BPM_ENABLED);
         handleLatticeUpdate(hbpmNames,hbpmPositions,hbpmEnable,horizontalBPMs,LatticeElementType.HORIZONTAL_BPM,
                 BPM::new);
         handleLatticeUpdate(vbpmNames,vbpmPositions,vbpmEnable,verticalBPMs,LatticeElementType.VERTICAL_BPM,BPM::new);
-        VStringArray hCorrNames = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_NAMES))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VStringArray)
-                .map(pv -> (VStringArray)pv.value).orElse(null);
-        VStringArray vCorrNames = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_NAMES))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VStringArray)
-                .map(pv -> (VStringArray)pv.value).orElse(null);
-        VNumberArray hCorrPositions = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_POSITIONS))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray vCorrPositions = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_POSITIONS))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray hCorrEnable = ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
-        VNumberArray vCorrEnable = ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED))
-                .filter(HAS_VALUE_FILTER).filter(pv -> pv.value instanceof VNumberArray)
-                .map(pv -> (VNumberArray)pv.value).orElse(null);
+        VStringArray hCorrNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_CORRECTOR_NAMES);
+        VStringArray vCorrNames = getSlowPVString.apply(Preferences.PV_VERTICAL_CORRECTOR_NAMES);
+        VNumberArray hCorrPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_CORRECTOR_POSITIONS);
+        VNumberArray vCorrPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_CORRECTOR_POSITIONS);
+        VNumberArray hCorrEnable = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
+        VNumberArray vCorrEnable = getSlowPVNumber.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
         handleLatticeUpdate(hCorrNames,hCorrPositions,hCorrEnable,horizontalCorrectors,
                 LatticeElementType.HORIZONTAL_CORRECTOR,Corrector::new);
         handleLatticeUpdate(vCorrNames,vCorrPositions,vCorrEnable,verticalCorrectors,
@@ -897,45 +962,58 @@ public class OrbitCorrectionController {
      */
     private void executeCommand(String pvKey, String successMessage, String failureMessage) {
         if (!throttle.isRunning()) return;
-        ofNullable(pvs.get(pvKey)).ifPresent(pv -> writeData(pv,null,successMessage,failureMessage));
+        ofNullable(pvs.get(pvKey)).ifPresent(pv -> writeData(pv,null,successMessage,failureMessage,0));
     }
 
     // Filter tests the PV if a new value has been received since the previous update. The filter is
     // used to eliminate unnecessary updates (if the value has not changed nothing should happen)
     private static final Predicate<PV> HAS_VALUE_FILTER = pv -> pv.hasNewValue.compareAndSet(true,false);
+    private final Function<String,Optional<PV>> getPV = s -> ofNullable(pvs.get(s)).filter(HAS_VALUE_FILTER);
+    private final Function<String,Optional<PV>> getNumberPV = s -> ofNullable(pvs.get(s))
+            .filter(pv -> pv.value instanceof VNumber);
+    private final BiConsumer<String,Consumer<PV>> handlePV = (s, f) -> getPV.apply(s).ifPresent(f);
+    private final Function<String,Optional<PV>> getSlowPV = s -> ofNullable(slowPVs.get(s)).filter(HAS_VALUE_FILTER);
+    private final Function<String,VNumberArray> getSlowPVNumber = s -> getSlowPV.apply(s)
+            .filter(pv -> pv.value instanceof VNumberArray).map(pv -> (VNumberArray)pv.value).orElse(null);
+    private final Function<String,VStringArray> getSlowPVString = s -> getSlowPV.apply(s)
+            .filter(pv -> pv.value instanceof VStringArray).map(pv -> (VStringArray)pv.value).orElse(null);
 
     private void update() {
         if (!throttle.isRunning()) return;
         //only update those structures that actually received a new pv value
-        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_ORBIT)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.HORIZONTAL_ORBIT));
-        ofNullable(pvs.get(Preferences.PV_VERTICAL_ORBIT)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.VERTICAL_ORBIT));
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.GOLDEN_HORIZONTAL_ORBIT));
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbit(pv.value,SeriesType.GOLDEN_VERTICAL_ORBIT));
+        handlePV.accept(Preferences.PV_HORIZONTAL_ORBIT,pv -> updateOrbit(pv.value,SeriesType.HORIZONTAL_ORBIT));
+        handlePV.accept(Preferences.PV_VERTICAL_ORBIT,pv -> updateOrbit(pv.value,SeriesType.VERTICAL_ORBIT));
+        handlePV.accept(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.GOLDEN_HORIZONTAL_ORBIT));
+        handlePV.accept(Preferences.PV_GOLDEN_VERTICAL_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.GOLDEN_VERTICAL_ORBIT));
         if (mradProperty.get()) {
-            ofNullable(pvs.get(Preferences.PV_HORIZONTAL_CORRECTOR_MRAD)).filter(HAS_VALUE_FILTER)
-                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
-            ofNullable(pvs.get(Preferences.PV_VERTICAL_CORRECTOR_MRAD)).filter(HAS_VALUE_FILTER)
-                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
+            handlePV.accept(Preferences.PV_HORIZONTAL_CORRECTOR_MRAD,
+                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+            handlePV.accept(Preferences.PV_VERTICAL_CORRECTOR_MRAD,
+                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
         } else {
-            ofNullable(pvs.get(Preferences.PV_HORIZONTAL_CORRECTOR_MA)).filter(HAS_VALUE_FILTER)
-                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
-            ofNullable(pvs.get(Preferences.PV_VERTICAL_CORRECTOR_MA)).filter(HAS_VALUE_FILTER)
-                    .ifPresent(pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
+            handlePV.accept(Preferences.PV_HORIZONTAL_CORRECTOR_MA,
+                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+            handlePV.accept(Preferences.PV_VERTICAL_CORRECTOR_MA,
+                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
         }
-        ofNullable(pvs.get(Preferences.PV_OPERATION_STATUS)).filter(pv -> pv.value instanceof VEnum)
-                .filter(HAS_VALUE_FILTER).ifPresent(pv -> statusProperty.set(((VEnum)pv.value).getValue()));
-        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_ORBIT_STATISTIC)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_HORIZONTAL_ORBIT_STATISTIC));
-        ofNullable(pvs.get(Preferences.PV_VERTICAL_ORBIT_STATISTIC)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_VERTICAL_ORBIT_STATISTIC));
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC)).filter(HAS_VALUE_FILTER).ifPresent(
+        getPV.apply(Preferences.PV_OPERATION_STATUS).filter(pv -> pv.value instanceof VEnum)
+                .ifPresent(pv -> statusProperty.set(((VEnum)pv.value).getValue()));
+        handlePV.accept(Preferences.PV_HORIZONTAL_ORBIT_STATISTIC,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_HORIZONTAL_ORBIT_STATISTIC));
+        handlePV.accept(Preferences.PV_VERTICAL_ORBIT_STATISTIC,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_VERTICAL_ORBIT_STATISTIC));
+        handlePV.accept(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,
                 pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC));
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC)).filter(HAS_VALUE_FILTER)
-                .ifPresent(pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC));
+        handlePV.accept(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC));
+        getPV.apply(Preferences.PV_HORIZONTAL_CUTOFF).filter(pv -> pv.value instanceof VNumber)
+                .ifPresent(pv -> horizontalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
+        getPV.apply(Preferences.PV_VERTICAL_CUTOFF).filter(pv -> pv.value instanceof VNumber)
+                .ifPresent(pv -> verticalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
+        getPV.apply(Preferences.PV_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber).ifPresent(
+                pv -> correctionFactorProperty().set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
     }
 
     /**
@@ -1001,7 +1079,6 @@ public class OrbitCorrectionController {
         if (callback) {
             goldenOrbitCallbacks.forEach(c -> c.accept(type));
         }
-
     }
 
     /**
@@ -1028,16 +1105,16 @@ public class OrbitCorrectionController {
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
                 correctors.stream().filter(c -> c.enabledProperty().get())
-                        .forEach(c -> c.correctionProperty().set(it.nextDouble()));
+                        .forEach(c -> c.correctionProperty().set(it.nextDouble()/1000.));
             } else if (correctors.size() == va.size()) {
-                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()));
+                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()/1000.));
             } else if (correctors.size() > va.size()) {
                 writeToLog(String.format(
                         "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
                         type.getElementTypeName(),va.size(),enabledCount,correctors.size()),false,empty());
                 int i = 0;
                 while (it.hasNext()) {
-                    correctors.get(i++).correctionProperty().set(it.nextDouble());
+                    correctors.get(i++).correctionProperty().set(it.nextDouble()/1000.);
                 }
             } else {
                 writeToLog(String.format(
@@ -1071,6 +1148,12 @@ public class OrbitCorrectionController {
         });
     }
 
+    /**
+     * Format the value to be displayed in the orbit corrections statistics. The value is formatted to 3 decimal places.
+     *
+     * @param value the value to format
+     * @return formatted value
+     */
     private static double format(double value) {
         //3 decimal points should be enough
         return ((long)(value * 1000)) / 1000.;
@@ -1084,9 +1167,10 @@ public class OrbitCorrectionController {
      * @param data data to be written, if present
      * @param successMessage message that is logged if write completed successfully
      * @param failureMessage message that is logged if write failed for any reason
+     * @param id the id of the execution, which makes sure that executions are not piled up
      */
-    private void writeData(PV pv, Object data, String successMessage, String failureMessage) {
-        nonUIexecutor.execute(() -> {
+    private void writeData(PV pv, Object data, String successMessage, String failureMessage, int id) {
+        Runnable r = () -> {
             PVWriterListener<?> pvListener = new PVWriterListener<PV>() {
 
                 @Override
@@ -1113,8 +1197,16 @@ public class OrbitCorrectionController {
                     pv.writer.write(1);
                 }
             }
-        });
+        };
+        if (id == 0) {
+            nonUIexecutor.execute(r);
+        } else {
+            //this is always on UI thread
+            ofNullable(tasks.get(id)).ifPresent(f -> f.cancel(false));
+            tasks.put(id,scheduler.schedule(r,300,TimeUnit.MILLISECONDS));
+        }
     }
+    private Map<Integer,Future<?>> tasks = new HashMap<>();
 
     /**
      * Converts data from the string array and writes it into PV.
@@ -1123,14 +1215,14 @@ public class OrbitCorrectionController {
      * @param values new values
      * @param orbitName the orbit name (used for logging only)
      */
-    private void convertAndWriteData(PV pv, String[] values, String orbitName) {
+    private void convertAndWriteData(PV pv, String[] values, String orbitName, int id) {
         double[] array = new double[values.length];
         for (int i = 0; i < values.length; i++) {
             array[i] = Double.parseDouble(values[i].trim()); // throw exception if value is not double
         }
         String successMessage = orbitName + " was successfully updated.";
         String failureMessage = "Error occured while updating " + orbitName + ".";
-        writeData(pv,new ArrayDouble(array),successMessage,failureMessage);
+        writeData(pv,new ArrayDouble(array),successMessage,failureMessage,0);
     }
 
     /**
