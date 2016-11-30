@@ -747,11 +747,11 @@ public class OrbitCorrectionView extends FXViewPart {
         engineeringScreensControl.setVgap(10);
         engineeringScreensControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
         Button bpmControlButton = new MultiLineButton("BPM Control");
-        bpmControlButton.setDisable(true);
-        // TODO open OPI file
+        bpmControlButton.setDisable(!Preferences.getInstance().getBPMOPIFile().isPresent());
+        bpmControlButton.setOnAction(e -> controller.openEngineeringScreen(true));
         Button correctorsControlButton = new MultiLineButton("Correctors Control");
-        correctorsControlButton.setDisable(true);
-        // TODO open OPI file
+        correctorsControlButton.setDisable(!Preferences.getInstance().getCorrectorOPIFile().isPresent());
+        correctorsControlButton.setOnAction(e -> controller.openEngineeringScreen(false));
         setFullResizable(bpmControlButton,correctorsControlButton);
         engineeringScreensControl.add(bpmControlButton,0,0);
         engineeringScreensControl.add(correctorsControlButton,0,1);

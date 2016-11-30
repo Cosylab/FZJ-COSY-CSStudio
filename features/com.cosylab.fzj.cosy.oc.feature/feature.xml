@@ -18,6 +18,11 @@
       [Enter License Description here.]
    </license>
 
+   <requires>
+      <import plugin="org.csstudio.ui.fx.util"/>
+      <import plugin="org.csstudio.openfile"/>
+   </requires>
+
    <plugin
          id="com.cosylab.fzj.cosy.oc"
          download-size="0"

@@ -32,7 +32,8 @@ public final class Preferences {
     private static final String MEASURE_ORM_COMMAND = "measureORM.command";
     private static final String LOAD_SETTINGS_FROM_FILES = "loadLatticeFromFiles";
     private static final String OC_DEVICE_MACRO = "ocDeviceMacro";
-
+    private static final String BPM_OPI = "bpm_opi";
+    private static final String CORRECTOR_OPI = "corrector_opi";
     /** Horizontal BPM names PV provides the names of all horizontal BPMS */
     public static final String PV_HORIZONTAL_BPM_NAMES = "horizontal_bpm_names";
     /** Horizontal BPM positions provides the locations of all horizontal BPMs along z axis */
@@ -107,9 +108,7 @@ public final class Preferences {
     /** SVD cutoff value for vertical orbit correction */
     public static final String PV_VERTICAL_CUTOFF = "vertical_orbit_cutoff";
     /** Factor to multiply the values with when applying correction */
-    public static final String PV_CORRECTION_FRACTION = "correction_fraction";
-
-
+    public static final String PV_CORRECTION_FRACTION = "correction_factor";
     private Properties properties;
     private static Preferences instance;
 
@@ -133,11 +132,33 @@ public final class Preferences {
      * @return the shell command
      */
     public Optional<String> getMeasureORMCommand() {
+        return getSetting(MEASURE_ORM_COMMAND,"Could not load the measure command.");
+    }
+
+    /**
+     * Returns the name of the engineering screen for bpms.
+     *
+     * @return the bpms opi file name if it exits
+     */
+    public Optional<String> getBPMOPIFile() {
+        return getSetting(BPM_OPI,"Could not load the BPM engineering opi file name.");
+    }
+
+    /**
+     * Returns the name of the engineering screen for correctors.
+     *
+     * @return the correctors opi file name if it exits
+     */
+    public Optional<String> getCorrectorOPIFile() {
+        return getSetting(CORRECTOR_OPI,"Could not load the corrector engineering opi file name.");
+    }
+
+    private Optional<String> getSetting(String setting, String message) {
         try {
-            String s = getString(MEASURE_ORM_COMMAND,"",false);
+            String s = getString(setting,"",false);
             return s == null || s.trim().isEmpty() ? Optional.empty() : Optional.of(s);
         } catch (Exception e) {
-            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load the measure command.",e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,message,e);
             return Optional.empty();
         }
     }
@@ -232,8 +253,8 @@ public final class Preferences {
         }
     }
 
-    private Pattern NO_MACRO_PATTERN = Pattern.compile("$(DEVICE):", Pattern.LITERAL);
-    private Pattern MACRO_PATTERN = Pattern.compile("$(DEVICE)", Pattern.LITERAL);
+    private static Pattern NO_MACRO_PATTERN = Pattern.compile("$(DEVICE):",Pattern.LITERAL);
+    private static Pattern MACRO_PATTERN = Pattern.compile("$(DEVICE)",Pattern.LITERAL);
 
     private String expandDeviceMacro(String pvName) {
         if (pvName == null) {
@@ -245,7 +266,6 @@ public final class Preferences {
         } catch (Exception e) {
             OrbitCorrectionPlugin.LOGGER.log(Level.WARNING,"Could not load the device macro.",e);
         }
-
         if (macro.isEmpty()) {
             return NO_MACRO_PATTERN.matcher(pvName).replaceAll("");
         } else {

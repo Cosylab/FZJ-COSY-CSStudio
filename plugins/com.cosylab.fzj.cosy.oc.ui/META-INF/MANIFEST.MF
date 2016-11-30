@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Orbit Correction UI
 Bundle-SymbolicName: com.cosylab.fzj.cosy.oc;singleton:=true
-Bundle-Version: 1.1.0.qualifier
+Bundle-Version: 1.2.0.qualifier
 Bundle-Vendor: COSYLAB
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.ui,
@@ -10,5 +10,6 @@ Require-Bundle: org.eclipse.ui,
  org.diirt.datasource,
  org.diirt.vtype,
  org.csstudio.ui.fx.util;bundle-version="1.0.0",
- org.diirt.util
+ org.diirt.util,
+ org.csstudio.openfile;bundle-version="3.2.0"
 Import-Package: javafx.scene.chart

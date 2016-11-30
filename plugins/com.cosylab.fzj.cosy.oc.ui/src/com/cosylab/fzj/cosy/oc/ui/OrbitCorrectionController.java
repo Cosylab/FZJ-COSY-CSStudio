@@ -46,6 +46,7 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.csstudio.openfile.DisplayUtil;
 import org.diirt.datasource.PVManager;
 import org.diirt.datasource.PVReader;
 import org.diirt.datasource.PVReaderEvent;
@@ -471,8 +472,7 @@ public class OrbitCorrectionController {
             correctionFactorProperty.addListener((a, o, n) -> {
                 getNumberPV.apply(Preferences.PV_CORRECTION_FRACTION).ifPresent(pv -> {
                     if (n.intValue() != (int)(100 * ((VNumber)pv.value).getValue().doubleValue())) {
-                        writeData(pv,n.doubleValue() / 100.,
-                                String.format(MSG_CORRECTION_FACTOR_SUCCESS,n.intValue()),
+                        writeData(pv,n.doubleValue() / 100.,String.format(MSG_CORRECTION_FACTOR_SUCCESS,n.intValue()),
                                 MSG_CORRECTION_FACTOR_FAILURE,3);
                     }
                 });
@@ -717,6 +717,29 @@ public class OrbitCorrectionController {
                 OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Error starting command " + c,e);
             }
         }));
+    }
+
+    /**
+     * Opens the engineering OPI screen for BPMs or correctors if the appropriate property is defined in the
+     * preferences.
+     *
+     * @param forBPM true if the BPM engineering screens should open or false if corrector screen should open
+     */
+    public void openEngineeringScreen(boolean forBPM) {
+        Optional<String> opi;
+        if (forBPM) {
+            opi = Preferences.getInstance().getBPMOPIFile();
+        } else {
+            opi = Preferences.getInstance().getCorrectorOPIFile();
+        }
+        opi.ifPresent(path -> {
+            try {
+                DisplayUtil.getInstance().openDisplay(path,null);
+            } catch (Exception e) {
+                OrbitCorrectionPlugin.LOGGER.log(Level.WARNING,
+                        String.format("Could not open the %s engineering screen.",forBPM ? "BPMs" : "correctors"),e);
+            }
+        });
     }
 
     /**
@@ -1105,16 +1128,16 @@ public class OrbitCorrectionController {
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
                 correctors.stream().filter(c -> c.enabledProperty().get())
-                        .forEach(c -> c.correctionProperty().set(it.nextDouble()/1000.));
+                        .forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
             } else if (correctors.size() == va.size()) {
-                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble()/1000.));
+                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
             } else if (correctors.size() > va.size()) {
                 writeToLog(String.format(
                         "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
                         type.getElementTypeName(),va.size(),enabledCount,correctors.size()),false,empty());
                 int i = 0;
                 while (it.hasNext()) {
-                    correctors.get(i++).correctionProperty().set(it.nextDouble()/1000.);
+                    correctors.get(i++).correctionProperty().set(it.nextDouble() / 1000.);
                 }
             } else {
                 writeToLog(String.format(
@@ -1206,6 +1229,7 @@ public class OrbitCorrectionController {
             tasks.put(id,scheduler.schedule(r,300,TimeUnit.MILLISECONDS));
         }
     }
+
     private Map<Integer,Future<?>> tasks = new HashMap<>();
 
     /**
