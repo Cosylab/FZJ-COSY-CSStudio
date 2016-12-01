@@ -78,6 +78,7 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -95,7 +96,7 @@ public class OrbitCorrectionController {
     /** The rate at which the UI is updated */
     private static final long UPDATE_RATE = 500;
     /** Timeout how long we are willing to wait to receive the lattice data */
-    private static final long UPDATE_TIMEOUT = 15000L;
+    private static final long UPDATE_TIMEOUT = 10000L;
     private static final Executor UI_EXECUTOR = Platform::runLater;
     // Orbit correction results table row names
     private static final String TABLE_ENTRY_HORIZONTAL_ORBIT = "Horizontal Orbit";
@@ -165,6 +166,7 @@ public class OrbitCorrectionController {
             if (e.isExceptionChanged()) {
                 writeToLog("DIIRT Connection Error.",true,ofNullable(e.getPvReader().lastException()));
             }
+            connectionStateUpdate(e);
             synchronized (this) {
                 value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
                 hasNewValue.compareAndSet(false,value != null);
@@ -197,6 +199,7 @@ public class OrbitCorrectionController {
         //all actions on the value are atomic, therefore no need for synchronisation
         volatile VType value;
         AtomicBoolean hasNewValue = new AtomicBoolean(false);
+        AtomicBoolean connected = new AtomicBoolean(false);
 
         PV(PVReader<VType> reader, PVWriter<Object> writer) {
             this.reader = reader;
@@ -221,8 +224,21 @@ public class OrbitCorrectionController {
             if (e.isExceptionChanged()) {
                 writeToLog("DIIRT Connection Error.",true,ofNullable(e.getPvReader().lastException()));
             }
+            connectionStateUpdate(e);
             value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
             hasNewValue.set(true);
+        }
+
+        void connectionStateUpdate(PVReaderEvent<VType> e) {
+            connected.set(e.getPvReader().isConnected());
+            if (e.isConnectionChanged()) {
+                updateConnected();
+            }
+            if (!e.getPvReader().isConnected()) {
+                writeToLog(String.format("%s connection error.",e.getPvReader().getName()),true,empty());
+            } else if (e.isConnectionChanged()) {
+                writeToLog(String.format("%s connection recovered.",e.getPvReader().getName()),false,empty());
+            }
         }
 
         void dispose() {
@@ -240,6 +256,7 @@ public class OrbitCorrectionController {
     private DoubleProperty horizontalCutOffProperty;
     private DoubleProperty verticalCutOffProperty;
     private IntegerProperty correctionFactorProperty;
+    private final BooleanProperty allConnectedProperty = new SimpleBooleanProperty(this,"allConnected",false);
     private final BooleanProperty mradProperty = new SimpleBooleanProperty(this,"mrad",false);
     private final StringProperty messageLogProperty = new SimpleStringProperty(this,"messageLog",EMPTY_STRING);
     private final StringProperty statusProperty = new SimpleStringProperty(this,"status",EMPTY_STRING);
@@ -417,6 +434,24 @@ public class OrbitCorrectionController {
      */
     public StringProperty statusProperty() {
         return statusProperty;
+    }
+
+    /**
+     * Return the property which has a value true if all PVs are connected or false if at least one is disconnected.
+     *
+     * @return the all connected property
+     */
+    public ReadOnlyBooleanProperty allConnectedProperty() {
+        return allConnectedProperty;
+    }
+
+    private synchronized void updateConnected() {
+        boolean allConnected = pvs.values().stream().allMatch(pv -> pv.connected.get());
+        if (allConnected) {
+            allConnected = slowPVs.values().stream().allMatch(pv -> pv.connected.get());
+        }
+        final boolean update = allConnected;
+        UI_EXECUTOR.execute(() -> allConnectedProperty.set(update));
     }
 
     /**
@@ -826,6 +861,7 @@ public class OrbitCorrectionController {
                 connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
                 try {
                     long start = System.currentTimeMillis();
+                    writeToLog("Trying to read the lattice.",false,empty());
                     while (true) {
                         //check if there is a single value which has not yet received an update
                         //if there is one, wait a while, then check again
@@ -907,43 +943,56 @@ public class OrbitCorrectionController {
                     }
                 }
             }
-            if (enable != null) {
-                ListNumber data = enable.getData();
-                synchronized (destination) {
-                    if (data.size() == destination.size()) {
-                        for (int i = data.size() - 1; i > -1; i--) {
-                            destination.get(i).enabledProperty().set(data.getByte(i) == 1);
-                        }
-                        callback = true;
-                    }
-                }
-            }
-            if (callback) {
+            boolean called = handleEnableDisable(enable,destination,type);
+            if (callback && !called) {
                 latticeUpdateCallbacks.forEach(c -> c.accept(type));
             }
         });
     }
 
+    private <T extends LatticeElement> boolean handleEnableDisable(VNumberArray enable, List<T> destination,
+            LatticeElementType type) {
+        boolean callback = false;
+        if (enable != null) {
+            ListNumber data = enable.getData();
+            synchronized (destination) {
+                if (data.size() == destination.size()) {
+                    for (int i = data.size() - 1; i > -1; i--) {
+                        destination.get(i).enabledProperty().set(data.getByte(i) == 1);
+                    }
+                    callback = true;
+                }
+            }
+            if (callback) {
+                latticeUpdateCallbacks.forEach(c -> c.accept(type));
+            }
+        }
+        return callback;
+    }
+
     private void updateLattice() {
-        VStringArray hbpmNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_BPM_NAMES);
-        VStringArray vbpmNames = getSlowPVString.apply(Preferences.PV_VERTICAL_BPM_NAMES);
-        VNumberArray hbpmPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_BPM_POSITIONS);
-        VNumberArray vbpmPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_BPM_POSITIONS);
-        VNumberArray hbpmEnable = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_BPM_ENABLED);
-        VNumberArray vbpmEnable = getSlowPVNumber.apply(Preferences.PV_VERTICAL_BPM_ENABLED);
-        handleLatticeUpdate(hbpmNames,hbpmPositions,hbpmEnable,horizontalBPMs,LatticeElementType.HORIZONTAL_BPM,
-                BPM::new);
-        handleLatticeUpdate(vbpmNames,vbpmPositions,vbpmEnable,verticalBPMs,LatticeElementType.VERTICAL_BPM,BPM::new);
-        VStringArray hCorrNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_CORRECTOR_NAMES);
-        VStringArray vCorrNames = getSlowPVString.apply(Preferences.PV_VERTICAL_CORRECTOR_NAMES);
-        VNumberArray hCorrPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_CORRECTOR_POSITIONS);
-        VNumberArray vCorrPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_CORRECTOR_POSITIONS);
-        VNumberArray hCorrEnable = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
-        VNumberArray vCorrEnable = getSlowPVNumber.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
-        handleLatticeUpdate(hCorrNames,hCorrPositions,hCorrEnable,horizontalCorrectors,
-                LatticeElementType.HORIZONTAL_CORRECTOR,Corrector::new);
-        handleLatticeUpdate(vCorrNames,vCorrPositions,vCorrEnable,verticalCorrectors,
-                LatticeElementType.VERTICAL_CORRECTOR,Corrector::new);
+        if (slowPVs.values().stream().allMatch(pv -> ((SlowPV)pv).connected.get())) {
+            VStringArray hbpmNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_BPM_NAMES);
+            VNumberArray hbpmPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_BPM_POSITIONS);
+            VNumberArray hbpmEnable = getPVNumberArray.apply(Preferences.PV_HORIZONTAL_BPM_ENABLED);
+            handleLatticeUpdate(hbpmNames,hbpmPositions,hbpmEnable,horizontalBPMs,LatticeElementType.HORIZONTAL_BPM,
+                    BPM::new);
+            VStringArray vbpmNames = getSlowPVString.apply(Preferences.PV_VERTICAL_BPM_NAMES);
+            VNumberArray vbpmPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_BPM_POSITIONS);
+            VNumberArray vbpmEnable = getPVNumberArray.apply(Preferences.PV_VERTICAL_BPM_ENABLED);
+            handleLatticeUpdate(vbpmNames,vbpmPositions,vbpmEnable,verticalBPMs,LatticeElementType.VERTICAL_BPM,
+                    BPM::new);
+            VStringArray hCorrNames = getSlowPVString.apply(Preferences.PV_HORIZONTAL_CORRECTOR_NAMES);
+            VNumberArray hCorrPositions = getSlowPVNumber.apply(Preferences.PV_HORIZONTAL_CORRECTOR_POSITIONS);
+            VNumberArray hCorrEnable = getPVNumberArray.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
+            handleLatticeUpdate(hCorrNames,hCorrPositions,hCorrEnable,horizontalCorrectors,
+                    LatticeElementType.HORIZONTAL_CORRECTOR,Corrector::new);
+            VStringArray vCorrNames = getSlowPVString.apply(Preferences.PV_VERTICAL_CORRECTOR_NAMES);
+            VNumberArray vCorrPositions = getSlowPVNumber.apply(Preferences.PV_VERTICAL_CORRECTOR_POSITIONS);
+            VNumberArray vCorrEnable = getPVNumberArray.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
+            handleLatticeUpdate(vCorrNames,vCorrPositions,vCorrEnable,verticalCorrectors,
+                    LatticeElementType.VERTICAL_CORRECTOR,Corrector::new);
+        }
     }
 
     private void createCorrectionResultsEntries() {
@@ -994,8 +1043,12 @@ public class OrbitCorrectionController {
     private final Function<String,Optional<PV>> getPV = s -> ofNullable(pvs.get(s)).filter(HAS_VALUE_FILTER);
     private final Function<String,Optional<PV>> getNumberPV = s -> ofNullable(pvs.get(s))
             .filter(pv -> pv.value instanceof VNumber);
+    private final Function<String,VNumberArray> getPVNumberArray = s -> ofNullable(pvs.get(s))
+            .filter(pv -> pv.value instanceof VNumberArray).map(pv -> (VNumberArray)pv.value).orElse(null);
+    private final Function<String,VNumberArray> getPVNumberArrayFilter = s -> getPV.apply(s)
+            .filter(pv -> pv.value instanceof VNumberArray).map(pv -> (VNumberArray)pv.value).orElse(null);
     private final BiConsumer<String,Consumer<PV>> handlePV = (s, f) -> getPV.apply(s).ifPresent(f);
-    private final Function<String,Optional<PV>> getSlowPV = s -> ofNullable(slowPVs.get(s)).filter(HAS_VALUE_FILTER);
+    private final Function<String,Optional<PV>> getSlowPV = s -> ofNullable(slowPVs.get(s));
     private final Function<String,VNumberArray> getSlowPVNumber = s -> getSlowPV.apply(s)
             .filter(pv -> pv.value instanceof VNumberArray).map(pv -> (VNumberArray)pv.value).orElse(null);
     private final Function<String,VStringArray> getSlowPVString = s -> getSlowPV.apply(s)
@@ -1037,6 +1090,14 @@ public class OrbitCorrectionController {
                 .ifPresent(pv -> verticalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
         getPV.apply(Preferences.PV_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber).ifPresent(
                 pv -> correctionFactorProperty().set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
+        VNumberArray vCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
+        handleEnableDisable(vCorrEnable,verticalCorrectors,LatticeElementType.VERTICAL_CORRECTOR);
+        VNumberArray hCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
+        handleEnableDisable(hCorrEnable,horizontalCorrectors,LatticeElementType.HORIZONTAL_CORRECTOR);
+        VNumberArray vBPMEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_BPM_ENABLED);
+        handleEnableDisable(vBPMEnable,verticalBPMs,LatticeElementType.VERTICAL_BPM);
+        VNumberArray hBPMEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
+        handleEnableDisable(hBPMEnable,horizontalBPMs,LatticeElementType.HORIZONTAL_BPM);
     }
 
     /**

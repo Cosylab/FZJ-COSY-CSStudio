@@ -33,6 +33,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Side;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -44,6 +45,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.effect.SepiaTone;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -169,8 +171,11 @@ public class OrbitCorrectionView extends FXViewPart {
     /**
      * @return grid pane with charts and controls.
      */
-    private GridPane createContentPane() {
+    private Parent createContentPane() {
         GridPane contentPane = new GridPane();
+        controller.allConnectedProperty()
+                .addListener((a, o, n) -> contentPane.setEffect(n ? null : new SepiaTone(1.0)));
+        contentPane.setEffect(controller.allConnectedProperty().get() ? null : new SepiaTone(1.0));
         contentPane.getStyleClass().add("root");
         contentPane.getRowConstraints().addAll(new RowConstraints(),
                 new RowConstraints(310,Region.USE_COMPUTED_SIZE,310));
@@ -187,7 +192,7 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private GridPane createCharts() {
         GridPane charts = new GridPane();
-        String s = System.getProperty("os.name", "nix").toLowerCase();
+        String s = System.getProperty("os.name","nix").toLowerCase();
         final int c = s.contains("win") ? 180 : 230;
         charts.getColumnConstraints().setAll(new ColumnConstraints(50,Region.USE_COMPUTED_SIZE,50),
                 new ColumnConstraints(),new ColumnConstraints(c,Region.USE_COMPUTED_SIZE,c));
@@ -757,7 +762,7 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane responseMatrixControl = new GridPane();
         responseMatrixControl.setHgap(10);
         responseMatrixControl.setVgap(10);
-        responseMatrixControl.setPadding(new Insets(0,10,0,10));
+        responseMatrixControl.setPadding(new Insets(0,0,0,0));
         responseMatrixControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(1));
         Button measureButton = new Button("Measure");
         measureButton.setOnAction(e -> controller.measureOrbitResponseMatrix());
