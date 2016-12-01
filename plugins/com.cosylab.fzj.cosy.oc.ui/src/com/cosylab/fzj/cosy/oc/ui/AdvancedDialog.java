@@ -4,6 +4,7 @@ import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.csstudio.ui.fx.util.FXUtilities;
@@ -27,6 +28,7 @@ import javafx.beans.property.Property;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -62,7 +64,7 @@ public class AdvancedDialog extends Dialog {
         CutOff(Property<Number> source, boolean percentage) {
             this.source = source;
             setHgap(5);
-            getColumnConstraints().setAll(new PercentColumnConstraints(90),new PercentColumnConstraints(10));
+            getColumnConstraints().setAll(new PercentColumnConstraints(85),new PercentColumnConstraints(15));
             slider = new Slider();
             slider.setMax(percentage ? 100 : 2);
             slider.setMin(0);
@@ -224,8 +226,8 @@ public class AdvancedDialog extends Dialog {
     protected void createButtonsForButtonBar(Composite parent) {
         createButton(parent,IDialogConstants.SELECT_ALL_ID,"Apply",true)
                 .setToolTipText("Apply BPMs and Correctors settings to the IOC");
-        createButton(parent,IDialogConstants.ABORT_ID,"Refresh",true)
-                .setToolTipText("Refresh the BPMs and Correctors settings from the IOC");
+        createButton(parent,IDialogConstants.ABORT_ID,"Restore",true)
+                .setToolTipText("Restore the BPMs and Correctors settings from the IOC");
         createButton(parent,IDialogConstants.OK_ID,IDialogConstants.CLOSE_LABEL,true);
     }
 
@@ -291,7 +293,8 @@ public class AdvancedDialog extends Dialog {
 
     private Node createFXContents(Composite parent) {
         GridPane pane = new GridPane();
-        pane.setStyle(FXUtilities.toBackgroundColorStyle(parent.getBackground()));
+        Optional<String> background = Optional.of(FXUtilities.toBackgroundColorStyle(parent.getBackground()));
+        pane.setStyle(background.get());
         pane.setHgap(20);
         pane.setVgap(10);
         horizontalBPMTable = new Table<>();
@@ -310,10 +313,11 @@ public class AdvancedDialog extends Dialog {
         verticalCutOff = new CutOff(controller.verticalCutOffProperty(),false);
         correctionPercentage = new CutOff(controller.correctionFactorProperty(),true);
         BorderedTitledPane horizontalCutOffPane = new BorderedTitledPane("Horizontal SVD Cut Off",horizontalCutOff,
-                true);
-        BorderedTitledPane verticalCutOffPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,true);
+                background);
+        BorderedTitledPane verticalCutOffPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,
+                background);
         BorderedTitledPane factorCutOffPane = new BorderedTitledPane("Correction Percentage Factor",
-                correctionPercentage,true);
+                correctionPercentage,background);
         int height = 60;
         verticalCutOffPane.setMinHeight(height);
         verticalCutOffPane.setMaxHeight(height);
@@ -338,6 +342,8 @@ public class AdvancedDialog extends Dialog {
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS));
         Arrays.asList(horizontalCutOffPane,verticalCutOffPane,factorCutOffPane)
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.NEVER));
+        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,factorCutOffPane)
+                .forEach(l -> GridPane.setMargin(l,new Insets(10,0,0,0)));
         return pane;
     }
 

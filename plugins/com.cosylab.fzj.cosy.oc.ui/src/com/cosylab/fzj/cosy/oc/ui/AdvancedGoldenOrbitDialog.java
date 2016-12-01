@@ -205,9 +205,12 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent) {
-        createButton(parent,IDialogConstants.SELECT_ALL_ID,"Apply",true);
-        createButton(parent,IDialogConstants.ABORT_ID,"Refresh",true);
-        createButton(parent,IDialogConstants.OK_ID,IDialogConstants.CLOSE_LABEL,true);
+        createButton(parent,IDialogConstants.SELECT_ALL_ID,"Apply",true)
+                .setToolTipText("Write the new golden orbit to the IOC");
+        createButton(parent,IDialogConstants.ABORT_ID,"Restore",true)
+                .setToolTipText("Restore the golden orbit from the IOC");
+        createButton(parent,IDialogConstants.OK_ID,IDialogConstants.CLOSE_LABEL,true)
+                .setToolTipText("Close this dialog");
     }
 
     /*
@@ -267,7 +270,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         GridPane pane = new GridPane();
         pane.setStyle(FXUtilities.toBackgroundColorStyle(parent.getBackground()));
         pane.setHgap(20);
-        pane.setVgap(2);
+        pane.setVgap(5);
         horizontalBPMTable = new Table();
         verticalBPMTable = new Table();
         Label horizontalBPMLabel = new Label("Horizontal Orbit");
@@ -358,7 +361,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
     @Override
     protected Rectangle getConstrainedShellBounds(Rectangle preferredSize) {
         Rectangle r = super.getConstrainedShellBounds(preferredSize);
-        r.width = Math.max(r.width,900);
+        r.width = Math.max(r.width,1000);
         Rectangle parentR = parent.getBounds();
         int cX = parentR.x + parentR.width / 2;
         int cY = parentR.y + parentR.height / 2;

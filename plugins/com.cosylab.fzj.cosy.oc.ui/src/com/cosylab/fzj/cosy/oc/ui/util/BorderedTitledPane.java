@@ -1,5 +1,7 @@
 package com.cosylab.fzj.cosy.oc.ui.util;
 
+import java.util.Optional;
+
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -13,7 +15,6 @@ import javafx.scene.layout.StackPane;
  */
 public class BorderedTitledPane extends StackPane {
 
-
     /**
      * Constructs a new bordered titled pane with given text as the title and the given content. The background is not
      * transparent.
@@ -22,24 +23,29 @@ public class BorderedTitledPane extends StackPane {
      * @param content the content to put the title on
      */
     public BorderedTitledPane(String title, Node content) {
-        this(title,content,false);
+        this(title,content,Optional.empty());
     }
+
     /**
-     * Constructs a new bordered titled pane with the given text as the title and the given content.
+     * Constructs a new bordered titled pane with the given text as the title and the given content. If the title
+     * background is provided the content pane becomes transparent and the title has the given background. If the title
+     * background is not provided, CSS defines the style entirely.
      *
      * @param title the bordered pane title
      * @param content the bordered pane content
-     * @param transparent true if the background should be transparent or false otherwise
+     * @param titleBackground the style to apply to the title
      */
-    public BorderedTitledPane(String title, Node content, boolean transparent) {
+    public BorderedTitledPane(String title, Node content, Optional<String> titleBackground) {
         StringBuilder sb = new StringBuilder(title.length() + 2).append(' ').append(title).append(' ');
         Label titleLabel = new Label(sb.toString());
-        titleLabel.getStyleClass().add(transparent ? "bordered-titled-title-transparent" : "bordered-titled-title");
+        titleLabel.getStyleClass().add("bordered-titled-title");
         StackPane contentPane = new StackPane();
-        content.getStyleClass().add("bordered-titled-content");
+        contentPane.getStyleClass().add("bordered-titled-content");
         contentPane.getChildren().add(content);
         StackPane.setAlignment(titleLabel,Pos.TOP_LEFT);
-        getStyleClass().add(transparent ? "bordered-titled-border-transparent": "bordered-titled-border");
-        getChildren().addAll(titleLabel,contentPane);
+        getStyleClass()
+                .add(titleBackground.isPresent() ? "bordered-titled-border-transparent" : "bordered-titled-border");
+        getChildren().addAll(contentPane,titleLabel);
+        titleBackground.ifPresent(titleLabel::setStyle);
     }
 }
