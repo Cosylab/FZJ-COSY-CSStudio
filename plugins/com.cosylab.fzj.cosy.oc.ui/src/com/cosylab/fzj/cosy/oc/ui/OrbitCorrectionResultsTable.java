@@ -33,7 +33,7 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
         createTable();
         setFixedCellSize(23);
         String s = System.getProperty("os.name", "nix").toLowerCase();
-        final int c = s.contains("win") ? 26 : 32;
+        final int c = s.contains("win") ? 26 : 29;
         prefHeightProperty().bind(Bindings.size(getItems()).multiply(getFixedCellSize()).add(c));
     }
 

@@ -188,7 +188,7 @@ public class OrbitCorrectionView extends FXViewPart {
     private GridPane createCharts() {
         GridPane charts = new GridPane();
         String s = System.getProperty("os.name", "nix").toLowerCase();
-        final int c = s.contains("win") ? 180 : 210;
+        final int c = s.contains("win") ? 180 : 230;
         charts.getColumnConstraints().setAll(new ColumnConstraints(50,Region.USE_COMPUTED_SIZE,50),
                 new ColumnConstraints(),new ColumnConstraints(c,Region.USE_COMPUTED_SIZE,c));
         Region orbitNode = createOrbitChart();
