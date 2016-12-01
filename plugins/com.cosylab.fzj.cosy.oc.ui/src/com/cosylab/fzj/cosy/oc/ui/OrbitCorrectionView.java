@@ -3,6 +3,8 @@ package com.cosylab.fzj.cosy.oc.ui;
 import static java.util.Optional.ofNullable;
 import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +51,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 
 /**
@@ -97,6 +100,29 @@ public class OrbitCorrectionView extends FXViewPart {
     private Scene scene;
     private AdvancedDialog advancedDialog;
     private AdvancedGoldenOrbitDialog advancedGoldernOrbitDialog;
+    private static boolean tooltipDelaySet = false;
+
+    private static void initializeTooltipDelay() {
+        if (tooltipDelaySet) return;
+        tooltipDelaySet = true;
+        try {
+            Tooltip obj = new Tooltip();
+            Class<?> clazz = Arrays.stream(obj.getClass().getDeclaredClasses())
+                    .filter(c -> c.getName().contains("TooltipBehavior")).findFirst().orElse(null);
+            if (clazz == null) return;
+            Constructor<?> constructor = clazz.getDeclaredConstructor(Duration.class,Duration.class,Duration.class,
+                    boolean.class);
+            constructor.setAccessible(true);
+            Object tooltipBehavior = constructor.newInstance(new Duration(250),new Duration(5000),new Duration(200),
+                    false);
+            Field fieldBehavior = obj.getClass().getDeclaredField("BEHAVIOR");
+            fieldBehavior.setAccessible(true);
+            fieldBehavior.set(obj,tooltipBehavior);
+        } catch (Exception e) {
+            e.printStackTrace();
+            //ignore
+        }
+    }
 
     /**
      * Constructs new orbit correction view.
@@ -114,6 +140,7 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     @Override
     protected Scene createFxScene() {
+        initializeTooltipDelay();
         scene = new Scene(createContentPane());
         scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
         Arrays.stream(LatticeElementType.values()).forEach(this::recreateAllCharts);
@@ -160,8 +187,10 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private GridPane createCharts() {
         GridPane charts = new GridPane();
+        String s = System.getProperty("os.name", "nix").toLowerCase();
+        final int c = s.contains("win") ? 180 : 210;
         charts.getColumnConstraints().setAll(new ColumnConstraints(50,Region.USE_COMPUTED_SIZE,50),
-                new ColumnConstraints(),new ColumnConstraints(180,Region.USE_COMPUTED_SIZE,180));
+                new ColumnConstraints(),new ColumnConstraints(c,Region.USE_COMPUTED_SIZE,c));
         Region orbitNode = createOrbitChart();
         GridPane orbitLegendNode = createOrbitChartLegend();
         GridPane.setMargin(orbitLegendNode,new Insets(0,10,0,10));
