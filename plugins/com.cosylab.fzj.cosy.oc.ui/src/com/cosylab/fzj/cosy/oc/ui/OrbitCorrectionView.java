@@ -45,7 +45,8 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
-import javafx.scene.effect.SepiaTone;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Effect;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -146,7 +147,15 @@ public class OrbitCorrectionView extends FXViewPart {
         scene = new Scene(createContentPane());
         scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
         Arrays.stream(LatticeElementType.values()).forEach(this::recreateAllCharts);
+        controller.allConnectedProperty().addListener((a, o, n) -> setConnectedState(n));
+        setConnectedState(controller.allConnectedProperty().get());
         return scene;
+    }
+
+    private void setConnectedState(boolean connected) {
+        Effect effectChart = connected ? null : new ColorAdjust(0.0,0.8,0.2,0);
+        orbitChart.setEffect(effectChart);
+        correctionsChart.setEffect(effectChart);
     }
 
     /*
@@ -173,9 +182,6 @@ public class OrbitCorrectionView extends FXViewPart {
      */
     private Parent createContentPane() {
         GridPane contentPane = new GridPane();
-        controller.allConnectedProperty()
-                .addListener((a, o, n) -> contentPane.setEffect(n ? null : new SepiaTone(1.0)));
-        contentPane.setEffect(controller.allConnectedProperty().get() ? null : new SepiaTone(1.0));
         contentPane.getStyleClass().add("root");
         contentPane.getRowConstraints().addAll(new RowConstraints(),
                 new RowConstraints(310,Region.USE_COMPUTED_SIZE,310));
@@ -623,12 +629,9 @@ public class OrbitCorrectionView extends FXViewPart {
      * @return titled pane with correction results table.
      */
     private BorderedTitledPane createCorrectionResults() {
-        GridPane correctionResults = new GridPane();
         OrbitCorrectionResultsTable correctionResultsTable = new OrbitCorrectionResultsTable();
         correctionResultsTable.updateTable(new ArrayList<>(controller.getOrbitCorrectionResults().values()));
-        correctionResults.add(correctionResultsTable,0,0);
-        setGridConstraints(correctionResultsTable,true,true,Priority.ALWAYS,Priority.ALWAYS);
-        return new BorderedTitledPane("Orbit Correction Results",correctionResults);
+        return new BorderedTitledPane("Orbit Correction Results",correctionResultsTable);
     }
 
     /**

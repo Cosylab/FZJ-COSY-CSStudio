@@ -164,7 +164,7 @@ public class OrbitCorrectionController {
         @Override
         void handleValue(PVReaderEvent<VType> e) {
             if (e.isExceptionChanged()) {
-                writeToLog("DIIRT Connection Error.",true,ofNullable(e.getPvReader().lastException()));
+                writeToLog("DIIRT Connection Error.",Level.SEVERE,ofNullable(e.getPvReader().lastException()));
             }
             connectionStateUpdate(e);
             synchronized (this) {
@@ -200,6 +200,7 @@ public class OrbitCorrectionController {
         volatile VType value;
         AtomicBoolean hasNewValue = new AtomicBoolean(false);
         AtomicBoolean connected = new AtomicBoolean(false);
+        private boolean firstTime = true;
 
         PV(PVReader<VType> reader, PVWriter<Object> writer) {
             this.reader = reader;
@@ -222,7 +223,7 @@ public class OrbitCorrectionController {
 
         void handleValue(PVReaderEvent<VType> e) {
             if (e.isExceptionChanged()) {
-                writeToLog("DIIRT Connection Error.",true,ofNullable(e.getPvReader().lastException()));
+                writeToLog("DIIRT Connection Error.",Level.SEVERE,ofNullable(e.getPvReader().lastException()));
             }
             connectionStateUpdate(e);
             value = e.getPvReader().isConnected() ? e.getPvReader().getValue() : null;
@@ -235,10 +236,11 @@ public class OrbitCorrectionController {
                 updateConnected();
             }
             if (!e.getPvReader().isConnected()) {
-                writeToLog(String.format("%s connection error.",e.getPvReader().getName()),true,empty());
-            } else if (e.isConnectionChanged()) {
-                writeToLog(String.format("%s connection recovered.",e.getPvReader().getName()),false,empty());
+                writeToLog(String.format("%s connection error.",e.getPvReader().getName()),Level.SEVERE,empty());
+            } else if (e.isConnectionChanged() && !firstTime) {
+                writeToLog(String.format("%s connection recovered.",e.getPvReader().getName()),Level.INFO,empty());
             }
+            firstTime = false;
         }
 
         void dispose() {
@@ -626,9 +628,9 @@ public class OrbitCorrectionController {
                         break;
                     }
                 }
-                writeToLog(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,false,empty());
+                writeToLog(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,Level.INFO,empty());
             } catch (Exception e) {
-                writeToLog(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,true,of(e));
+                writeToLog(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,Level.SEVERE,of(e));
             }
         });
     }
@@ -696,9 +698,9 @@ public class OrbitCorrectionController {
                     }
                     writer.write(sb.toString());
                 }
-                writeToLog(MSG_DOWNLOAD_ORM_SUCCESS,false,empty());
+                writeToLog(MSG_DOWNLOAD_ORM_SUCCESS,Level.INFO,empty());
             } catch (Exception e) {
-                writeToLog(MSG_DOWNLOAD_ORM_FAILURE,true,of(e));
+                writeToLog(MSG_DOWNLOAD_ORM_FAILURE,Level.SEVERE,of(e));
             }
         });
     }
@@ -734,9 +736,9 @@ public class OrbitCorrectionController {
                 }
                 String[] waveform = sb.toString().split(" ");
                 convertAndWriteData(ormPV,waveform,"Orbit response matrix",0);
-                writeToLog(MSG_UPLOAD_ORM_SUCCESS,false,empty());
+                writeToLog(MSG_UPLOAD_ORM_SUCCESS,Level.INFO,empty());
             } catch (Exception e) {
-                writeToLog(MSG_UPLOAD_ORM_FAILURE,true,of(e));
+                writeToLog(MSG_UPLOAD_ORM_FAILURE,Level.SEVERE,of(e));
             }
         });
     }
@@ -861,7 +863,7 @@ public class OrbitCorrectionController {
                 connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
                 try {
                     long start = System.currentTimeMillis();
-                    writeToLog("Trying to read the lattice.",false,empty());
+                    writeToLog("Trying to read the lattice.",Level.INFO,empty());
                     while (true) {
                         //check if there is a single value which has not yet received an update
                         //if there is one, wait a while, then check again
@@ -872,10 +874,11 @@ public class OrbitCorrectionController {
                                 OrbitCorrectionController.this.wait(50);
                             }
                             if (System.currentTimeMillis() - start > UPDATE_TIMEOUT) {
-                                writeToLog("Lattice information could not be read from the IOC.",true,empty());
+                                writeToLog("Lattice information could not be read from the IOC.",Level.SEVERE,empty());
                                 break;
                             }
                         } else {
+                            writeToLog("Lattice constructed.",Level.INFO,empty());
                             break;
                         }
                     }
@@ -1148,16 +1151,19 @@ public class OrbitCorrectionController {
                 writeToLog(
                         String.format("The number of %s values (%d) does not match the number of enabled bpms (%d/%d).",
                                 type.getSeriesName(),va.size(),enabledCount,bpms.size()),
-                        false,empty());
+                        Level.WARNING,empty());
                 int i = 0;
                 while (it.hasNext()) {
                     property.apply(bpms.get(i++)).set(it.nextDouble());
                 }
             } else {
+                if (bpms.isEmpty()) {
+                    writeToLog("Lattice information unknown.",Level.WARNING,empty());
+                }
                 writeToLog(
                         String.format("The number of %s values (%d) does not match the number of enabled bpms (%d/%d).",
                                 type.getSeriesName(),va.size(),enabledCount,bpms.size()),
-                        true,empty());
+                        Level.SEVERE,empty());
             }
         }
         if (callback) {
@@ -1195,7 +1201,7 @@ public class OrbitCorrectionController {
             } else if (correctors.size() > va.size()) {
                 writeToLog(String.format(
                         "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
-                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),false,empty());
+                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),Level.WARNING,empty());
                 int i = 0;
                 while (it.hasNext()) {
                     correctors.get(i++).correctionProperty().set(it.nextDouble() / 1000.);
@@ -1203,7 +1209,7 @@ public class OrbitCorrectionController {
             } else {
                 writeToLog(String.format(
                         "The number of %s kick values (%d) does not match the number of correctors (%d/%d).",
-                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),true,empty());
+                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),Level.SEVERE,empty());
             }
         }
     }
@@ -1220,7 +1226,7 @@ public class OrbitCorrectionController {
         if (va.size() < 5) {
             writeToLog(String.format(
                     "Statistical parameters values for %s have incorrect dimension. 5 elements expected, but %d received.",
-                    pvKey,va.size()),true,empty());
+                    pvKey,va.size()),Level.SEVERE,empty());
             return;
         }
         ofNullable(correctionResultsEntries.get(pvKey)).ifPresent(entry -> {
@@ -1260,12 +1266,12 @@ public class OrbitCorrectionController {
                 @Override
                 public void pvChanged(PVWriterEvent<PV> w) {
                     if (w.isWriteSucceeded()) {
-                        writeToLog(successMessage,false,empty());
+                        writeToLog(successMessage,Level.INFO,empty());
                     } else if (w.isWriteFailed()) {
                         if (w.isExceptionChanged()) {
-                            writeToLog(failureMessage,true,of(w.getPvWriter().lastWriteException()));
+                            writeToLog(failureMessage,Level.SEVERE,of(w.getPvWriter().lastWriteException()));
                         } else {
-                            writeToLog(failureMessage,true,empty());
+                            writeToLog(failureMessage,Level.SEVERE,empty());
                         }
                     }
                     w.getPvWriter().removePVWriterListener(this);
@@ -1339,9 +1345,9 @@ public class OrbitCorrectionController {
                 writer.write(yOrbit);
                 writer.write(NEW_LINE);
                 writer.write(yWeights);
-                writeToLog(successMessage,false,empty());
+                writeToLog(successMessage,Level.INFO,empty());
             } catch (Exception e) {
-                writeToLog(failureMessage,true,of(e));
+                writeToLog(failureMessage,Level.SEVERE,of(e));
             }
         });
     }
@@ -1373,19 +1379,17 @@ public class OrbitCorrectionController {
      *        message (logged as INFO)
      * @param exception exception to log; if present, the log will always be an error type
      */
-    private void writeToLog(String message, boolean error, Optional<Exception> exception) {
+    private void writeToLog(String message, Level level, Optional<Exception> exception) {
         if (message == null) return;
         if (exception.isPresent()) {
             OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,message,exception.get());
-        } else if (error) {
-            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,message);
         } else {
-            OrbitCorrectionPlugin.LOGGER.log(Level.INFO,message);
+            OrbitCorrectionPlugin.LOGGER.log(level,message);
         }
         final StringBuilder sb;
         synchronized (messages) {
             messages.add(
-                    String.format("%s [%s]: %s",MESSAGE_FORMAT.format(new Date()),error ? "ERROR" : "INFO",message));
+                    String.format("%s [%s]: %s",MESSAGE_FORMAT.format(new Date()),level.getName(),message));
             while (messages.size() > MAX_MESSAGES) {
                 messages.removeFirst();
             }
