@@ -751,7 +751,7 @@ public class OrbitCorrectionController {
             try {
                 Runtime.getRuntime().exec(c);
             } catch (IOException e) {
-                OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Error starting command " + c,e);
+                writeToLog("Error starting command " + c, Level.SEVERE,of(e));
             }
         }));
     }
@@ -791,10 +791,12 @@ public class OrbitCorrectionController {
             } catch (InterruptedException e) {
                 OrbitCorrectionPlugin.LOGGER.log(Level.WARNING,"Failed to shutdown gracefully. Timeout ocurred.",e);
             }
-            pvs.values().parallelStream().forEach(v -> v.dispose());
-            pvs.clear();
-            slowPVs.values().parallelStream().forEach(v -> v.dispose());
-            slowPVs.clear();
+            synchronized(OrbitCorrectionController.this) {
+                pvs.values().parallelStream().forEach(v -> v.dispose());
+                pvs.clear();
+                slowPVs.values().parallelStream().forEach(v -> v.dispose());
+                slowPVs.clear();
+            }
             clearList(horizontalBPMs);
             clearList(verticalBPMs);
             clearList(horizontalCorrectors);
@@ -822,20 +824,20 @@ public class OrbitCorrectionController {
         final int[] verticalCorrectors = getVerticalCorrectors().stream().mapToInt(toInt).toArray();
         final int[] horizontalBPMs = getHorizontalBPMs().stream().mapToInt(toInt).toArray();
         final int[] verticalBPMs = getVerticalBPMs().stream().mapToInt(toInt).toArray();
-        ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
+        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(horizontalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal BPMs"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal BPMs"),5);
         });
-        ofNullable(slowPVs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).ifPresent(pv -> {
+        ofNullable(pvs.get(Preferences.PV_VERTICAL_BPM_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(verticalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical BPMs"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical BPMs"),6);
         });
-        ofNullable(slowPVs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(horizontalCorrectors),
                     String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal correctors"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal correctors"),7);
         });
-        ofNullable(slowPVs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
+        ofNullable(pvs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(verticalCorrectors),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical correctors"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical correctors"),8);
         });
@@ -860,7 +862,9 @@ public class OrbitCorrectionController {
                     }
                 });
             } else {
-                connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
+                synchronized(this) {
+                    connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
+                }
                 try {
                     long start = System.currentTimeMillis();
                     writeToLog("Trying to read the lattice.",Level.INFO,empty());
@@ -1099,7 +1103,7 @@ public class OrbitCorrectionController {
         handleEnableDisable(hCorrEnable,horizontalCorrectors,LatticeElementType.HORIZONTAL_CORRECTOR);
         VNumberArray vBPMEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_BPM_ENABLED);
         handleEnableDisable(vBPMEnable,verticalBPMs,LatticeElementType.VERTICAL_BPM);
-        VNumberArray hBPMEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
+        VNumberArray hBPMEnable = getPVNumberArrayFilter.apply(Preferences.PV_HORIZONTAL_BPM_ENABLED);
         handleEnableDisable(hBPMEnable,horizontalBPMs,LatticeElementType.HORIZONTAL_BPM);
     }
 
