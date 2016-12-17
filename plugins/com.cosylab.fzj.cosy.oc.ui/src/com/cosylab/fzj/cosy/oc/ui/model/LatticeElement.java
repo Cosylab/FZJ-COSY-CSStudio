@@ -20,7 +20,7 @@ import javafx.beans.property.StringProperty;
  */
 public abstract class LatticeElement implements Comparable<LatticeElement> {
 
-    private final BooleanProperty enabledWish = new SimpleBooleanProperty(this,"enabledWish",true);
+    private final BooleanProperty enabledWish = new SimpleBooleanProperty(this, "enabledWish", true);
     private final BooleanProperty enabled = new SimpleBooleanProperty(this,"enabled",true);
     private final StringProperty name = new SimpleStringProperty(this,"name","");
     private final DoubleProperty location = new SimpleDoubleProperty(this,"location",0d);

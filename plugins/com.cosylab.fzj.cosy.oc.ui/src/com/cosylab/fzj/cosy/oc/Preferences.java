@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ public final class Preferences {
     private static final String OC_DEVICE_MACRO = "ocDeviceMacro";
     private static final String BPM_OPI = "bpm_opi";
     private static final String CORRECTOR_OPI = "corrector_opi";
+    private static final String INITIAL_DIRECTORY = "initial_directory";
     /** Horizontal BPM names PV provides the names of all horizontal BPMS */
     public static final String PV_HORIZONTAL_BPM_NAMES = "horizontal_bpm_names";
     /** Horizontal BPM positions provides the locations of all horizontal BPMs along z axis */
@@ -91,6 +93,8 @@ public final class Preferences {
     public static final String PV_ORM = "orm";
     /** Operation status provides the current status of the orbit corrections ioc. */
     public static final String PV_OPERATION_STATUS = "operation_status";
+    /** Reset the orbit correction setpoints to the current steerer settings */
+    public static final String PV_RESET_CORRECTION = "reset_correction";
     /** Start measuring orbit stars measuring orbit continuously */
     public static final String PV_START_MEASURING_ORBIT = "start_measuring_orbit";
     /** Stop measuring orbit stops continuous orbit measurement */
@@ -107,8 +111,10 @@ public final class Preferences {
     public static final String PV_HORIZONTAL_CUTOFF = "horizontal_orbit_cutoff";
     /** SVD cutoff value for vertical orbit correction */
     public static final String PV_VERTICAL_CUTOFF = "vertical_orbit_cutoff";
-    /** Factor to multiply the values with when applying correction */
-    public static final String PV_CORRECTION_FRACTION = "correction_factor";
+    /** Factor to multiply the values with when applying horizontal correction */
+    public static final String PV_HORIZONTAL_CORRECTION_FRACTION = "horizontal_correction_factor";
+    /** Factor to multiply the values with when applying vertical correction */
+    public static final String PV_VERTICAL_CORRECTION_FRACTION = "vertical_correction_factor";
     private Properties properties;
     private static Preferences instance;
 
@@ -173,9 +179,30 @@ public final class Preferences {
             String s = getString(LOAD_SETTINGS_FROM_FILES,"false",false);
             return Boolean.valueOf(s);
         } catch (Exception e) {
-            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load setings plugin settings.",e);
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load plugin settings.",e);
             return false;
         }
+    }
+
+    /**
+     * Returns the initial directory that is opened when an orbit is stored or loaded to and from a file.
+     *
+     * @return the initial directory (default is workspace location)
+     */
+    public File getInitialDirectory() {
+        try {
+            String s = getString(INITIAL_DIRECTORY,null,false);
+            if (s != null && !s.trim().isEmpty()) {
+                File f = new File(s);
+                if (f.exists()) {
+                    return f;
+                }
+            }
+        } catch (Exception e) {
+            OrbitCorrectionPlugin.LOGGER.log(Level.SEVERE,"Could not load plugin settings.",e);
+        }
+        Location loc = Platform.getInstanceLocation();
+        return new File(loc.getURL().getFile());
     }
 
     private String getFilename(String key, String defaultValue) {
@@ -257,7 +284,7 @@ public final class Preferences {
     private static Pattern MACRO_PATTERN = Pattern.compile("$(DEVICE)",Pattern.LITERAL);
 
     private String expandDeviceMacro(String pvName) {
-        if (pvName == null) {
+        if (pvName == null || pvName.trim().isEmpty()) {
             return null;
         }
         String macro = "";
@@ -280,14 +307,9 @@ public final class Preferences {
      */
     public Map<String,String> getLatticePVNames() {
         Map<String,String> pvs = new HashMap<>();
-        pvs.put(PV_HORIZONTAL_BPM_NAMES,getPVName(PV_HORIZONTAL_BPM_NAMES));
-        pvs.put(PV_HORIZONTAL_BPM_POSITIONS,getPVName(PV_HORIZONTAL_BPM_POSITIONS));
-        pvs.put(PV_VERTICAL_BPM_NAMES,getPVName(PV_VERTICAL_BPM_NAMES));
-        pvs.put(PV_VERTICAL_BPM_POSITIONS,getPVName(PV_VERTICAL_BPM_POSITIONS));
-        pvs.put(PV_HORIZONTAL_CORRECTOR_NAMES,getPVName(PV_HORIZONTAL_CORRECTOR_NAMES));
-        pvs.put(PV_HORIZONTAL_CORRECTOR_POSITIONS,getPVName(PV_HORIZONTAL_CORRECTOR_POSITIONS));
-        pvs.put(PV_VERTICAL_CORRECTOR_NAMES,getPVName(PV_VERTICAL_CORRECTOR_NAMES));
-        pvs.put(PV_VERTICAL_CORRECTOR_POSITIONS,getPVName(PV_VERTICAL_CORRECTOR_POSITIONS));
+        Arrays.asList(PV_HORIZONTAL_BPM_NAMES,PV_HORIZONTAL_BPM_POSITIONS,PV_VERTICAL_BPM_NAMES,
+                PV_VERTICAL_BPM_POSITIONS,PV_HORIZONTAL_CORRECTOR_NAMES,PV_HORIZONTAL_CORRECTOR_POSITIONS,
+                PV_VERTICAL_CORRECTOR_NAMES,PV_VERTICAL_CORRECTOR_POSITIONS).forEach(n -> pvs.put(n,getPVName(n)));
         return pvs;
     }
 
@@ -298,35 +320,17 @@ public final class Preferences {
      */
     public Map<String,String> getPVNames() {
         Map<String,String> pvs = new HashMap<>();
-        pvs.put(PV_HORIZONTAL_ORBIT,getPVName(PV_HORIZONTAL_ORBIT));
-        pvs.put(PV_VERTICAL_ORBIT,getPVName(PV_VERTICAL_ORBIT));
-        pvs.put(PV_GOLDEN_HORIZONTAL_ORBIT,getPVName(PV_GOLDEN_HORIZONTAL_ORBIT));
-        pvs.put(PV_GOLDEN_VERTICAL_ORBIT,getPVName(PV_GOLDEN_VERTICAL_ORBIT));
-        pvs.put(PV_HORIZONTAL_CORRECTOR_MRAD,getPVName(PV_HORIZONTAL_CORRECTOR_MRAD));
-        pvs.put(PV_VERTICAL_CORRECTOR_MRAD,getPVName(PV_VERTICAL_CORRECTOR_MRAD));
-        pvs.put(PV_HORIZONTAL_CORRECTOR_MA,getPVName(PV_HORIZONTAL_CORRECTOR_MA));
-        pvs.put(PV_VERTICAL_CORRECTOR_MA,getPVName(PV_VERTICAL_CORRECTOR_MA));
-        pvs.put(PV_OPERATION_STATUS,getPVName(PV_OPERATION_STATUS));
-        pvs.put(PV_HORIZONTAL_ORBIT_STATISTIC,getPVName(PV_HORIZONTAL_ORBIT_STATISTIC));
-        pvs.put(PV_VERTICAL_ORBIT_STATISTIC,getPVName(PV_VERTICAL_ORBIT_STATISTIC));
-        pvs.put(PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,getPVName(PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC));
-        pvs.put(PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,getPVName(PV_GOLDEN_VERTICAL_ORBIT_STATISTIC));
-        pvs.put(PV_HORIZONTAL_ORBIT_WEIGHTS,getPVName(PV_HORIZONTAL_ORBIT_WEIGHTS));
-        pvs.put(PV_VERTICAL_ORBIT_WEIGHTS,getPVName(PV_VERTICAL_ORBIT_WEIGHTS));
-        pvs.put(PV_ORM,getPVName(PV_ORM));
-        pvs.put(PV_START_MEASURING_ORBIT,getPVName(PV_START_MEASURING_ORBIT));
-        pvs.put(PV_STOP_MEASURING_ORBIT,getPVName(PV_STOP_MEASURING_ORBIT));
-        pvs.put(PV_MEASURE_ORBIT_ONCE,getPVName(PV_MEASURE_ORBIT_ONCE));
-        pvs.put(PV_START_CORRECTING_ORBIT,getPVName(PV_START_CORRECTING_ORBIT));
-        pvs.put(PV_STOP_CORRECTING_ORBIT,getPVName(PV_STOP_CORRECTING_ORBIT));
-        pvs.put(PV_CORRECT_ORBIT_ONCE,getPVName(PV_CORRECT_ORBIT_ONCE));
-        pvs.put(PV_HORIZONTAL_CUTOFF,getPVName(PV_HORIZONTAL_CUTOFF));
-        pvs.put(PV_VERTICAL_CUTOFF,getPVName(PV_VERTICAL_CUTOFF));
-        pvs.put(PV_CORRECTION_FRACTION,getPVName(PV_CORRECTION_FRACTION));
-        pvs.put(PV_HORIZONTAL_BPM_ENABLED,getPVName(PV_HORIZONTAL_BPM_ENABLED));
-        pvs.put(PV_VERTICAL_BPM_ENABLED,getPVName(PV_VERTICAL_BPM_ENABLED));
-        pvs.put(PV_HORIZONTAL_CORRECTOR_ENABLED,getPVName(PV_HORIZONTAL_CORRECTOR_ENABLED));
-        pvs.put(PV_VERTICAL_CORRECTOR_ENABLED,getPVName(PV_VERTICAL_CORRECTOR_ENABLED));
+        Arrays.asList(PV_HORIZONTAL_ORBIT,PV_VERTICAL_ORBIT,PV_GOLDEN_HORIZONTAL_ORBIT,PV_GOLDEN_VERTICAL_ORBIT,
+                PV_HORIZONTAL_CORRECTOR_MRAD,PV_VERTICAL_CORRECTOR_MRAD,PV_HORIZONTAL_CORRECTOR_MA,
+                PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTIC,PV_VERTICAL_ORBIT_STATISTIC,
+                PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,PV_HORIZONTAL_ORBIT_WEIGHTS,
+                PV_VERTICAL_ORBIT_WEIGHTS,PV_ORM).forEach(n -> pvs.put(n,getPVName(n)));
+        Arrays.asList(PV_RESET_CORRECTION,PV_START_MEASURING_ORBIT,PV_STOP_MEASURING_ORBIT,PV_MEASURE_ORBIT_ONCE,
+                PV_START_CORRECTING_ORBIT,PV_STOP_CORRECTING_ORBIT,PV_CORRECT_ORBIT_ONCE,PV_HORIZONTAL_CUTOFF,
+                PV_VERTICAL_CUTOFF,PV_HORIZONTAL_CORRECTION_FRACTION,PV_VERTICAL_CORRECTION_FRACTION,
+                PV_HORIZONTAL_BPM_ENABLED,PV_VERTICAL_BPM_ENABLED,PV_HORIZONTAL_CORRECTOR_ENABLED,
+                PV_VERTICAL_CORRECTOR_ENABLED)
+                .forEach(n -> Optional.ofNullable(getPVName(n)).ifPresent(c -> pvs.put(n,c)));
         return pvs;
     }
 

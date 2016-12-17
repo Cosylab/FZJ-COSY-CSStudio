@@ -1,5 +1,7 @@
 package com.cosylab.fzj.cosy.oc.ui;
 
+import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -27,7 +29,7 @@ public class ZoomableLineChart extends StackPane {
     private static final int MIN_ZOOM_THRESHOLD = 5;
     private final LineChart<Number,Number> chart;
     private final NumberAxis xAxis;
-    private final NumberAxis yAxis;
+    private final SymmetricAxis yAxis;
     private final Rectangle zoomRect;
     private final boolean useXAutoRangeForDefaultZoom;
     private final double defaultXMin;
@@ -48,7 +50,7 @@ public class ZoomableLineChart extends StackPane {
         this.chart = chart;
         this.useXAutoRangeForDefaultZoom = useXAutoRangeForDefaultZoom;
         this.xAxis = (NumberAxis)chart.getXAxis();
-        this.yAxis = (NumberAxis)chart.getYAxis();
+        this.yAxis = (SymmetricAxis)chart.getYAxis();
         this.defaultXMin = xAxis.getLowerBound();
         this.defaultXMax = xAxis.getUpperBound();
         this.defaultTickX = xAxis.getTickUnit();

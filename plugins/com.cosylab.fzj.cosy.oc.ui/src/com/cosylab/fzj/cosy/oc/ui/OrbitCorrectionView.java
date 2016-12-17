@@ -6,8 +6,10 @@ import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 
@@ -21,6 +23,7 @@ import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 import com.cosylab.fzj.cosy.oc.ui.util.BorderedTitledPane;
 import com.cosylab.fzj.cosy.oc.ui.util.MultiLineButton;
+import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
 import com.cosylab.fzj.cosy.oc.ui.util.TooltipCheckBox;
 
 import javafx.beans.property.DoubleProperty;
@@ -116,13 +119,12 @@ public class OrbitCorrectionView extends FXViewPart {
             Constructor<?> constructor = clazz.getDeclaredConstructor(Duration.class,Duration.class,Duration.class,
                     boolean.class);
             constructor.setAccessible(true);
-            Object tooltipBehavior = constructor.newInstance(new Duration(250),new Duration(5000),new Duration(200),
+            Object tooltipBehavior = constructor.newInstance(new Duration(250),new Duration(7000),new Duration(200),
                     false);
             Field fieldBehavior = obj.getClass().getDeclaredField("BEHAVIOR");
             fieldBehavior.setAccessible(true);
             fieldBehavior.set(obj,tooltipBehavior);
         } catch (Exception e) {
-            e.printStackTrace();
             //ignore
         }
     }
@@ -133,6 +135,7 @@ public class OrbitCorrectionView extends FXViewPart {
     public OrbitCorrectionView() {
         fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(0,new ExtensionFilter("All Files","*.*"));
+        fileChooser.setInitialDirectory(Preferences.getInstance().getInitialDirectory());
         controller = new OrbitCorrectionController();
         controller.addLaticeUpdateCallback(this::recreateAllCharts);
     }
@@ -289,9 +292,9 @@ public class OrbitCorrectionView extends FXViewPart {
         NumberAxis axis = new NumberAxis();
         axis.autoRangingProperty().set(false);
         axis.setSide(Side.LEFT);
-        axis.upperBoundProperty().bind(((NumberAxis)chart.getYAxis()).upperBoundProperty());
-        axis.lowerBoundProperty().bind(((NumberAxis)chart.getYAxis()).lowerBoundProperty());
-        axis.tickUnitProperty().bind(((NumberAxis)chart.getYAxis()).tickUnitProperty());
+        axis.upperBoundProperty().bind(((ValueAxis<Number>)chart.getYAxis()).upperBoundProperty());
+        axis.lowerBoundProperty().bind(((ValueAxis<Number>)chart.getYAxis()).lowerBoundProperty());
+        axis.tickUnitProperty().bind(((SymmetricAxis)chart.getYAxis()).tickUnitProperty());
         axis.upperBoundProperty().addListener((a, o, n) -> axis.layout());
         axis.lowerBoundProperty().addListener((a, o, n) -> axis.layout());
         axis.tickUnitProperty().addListener((a, o, n) -> axis.layout());
@@ -357,7 +360,7 @@ public class OrbitCorrectionView extends FXViewPart {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
         xAxis.setMinorTickCount(0);
-        NumberAxis yAxis = new NumberAxis();
+        ValueAxis<Number> yAxis = new SymmetricAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
         xAxis.setTickMarkVisible(false);
@@ -388,7 +391,7 @@ public class OrbitCorrectionView extends FXViewPart {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
         xAxis.setMinorTickCount(0);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
-        NumberAxis yAxis = new NumberAxis();
+        ValueAxis<Number> yAxis = new SymmetricAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(false);
         xAxis.setTickMarkVisible(false);
@@ -417,7 +420,8 @@ public class OrbitCorrectionView extends FXViewPart {
         ValueAxis<Number> xAxis = new NumberAxis(-5,185,5);
         xAxis.setMinorTickCount(0);
         xAxis.setTickLabelFormatter(TICK_LABEL_FORMATTER);
-        NumberAxis yAxis = new NumberAxis(-50,50,10);
+        xAxis.setLabel("Position in the ring [m]");
+        ValueAxis<Number> yAxis = new SymmetricAxis(-50,50,10);
         yAxis.setTickLabelsVisible(false);
         yAxis.setTickMarkVisible(false);
         yAxis.setMinorTickVisible(false);
@@ -433,7 +437,7 @@ public class OrbitCorrectionView extends FXViewPart {
         latticeZoom = new ZoomableLineChart(latticeChart,false,true,false);
         latticeZoom.setMinWidth(0);
         latticeZoom.setMaxWidth(Integer.MAX_VALUE);
-        final int height = 80;
+        final int height = 100;
         latticeChart.setMaxHeight(height);
         latticeChart.setMinHeight(height);
         latticeChart.setPrefHeight(height);
@@ -659,54 +663,72 @@ public class OrbitCorrectionView extends FXViewPart {
         GridPane orbitCorrectionControl = new GridPane();
         orbitCorrectionControl.setHgap(10);
         orbitCorrectionControl.setVgap(10);
-        orbitCorrectionControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(4));
+        orbitCorrectionControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(5));
         orbitCorrectionControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
         final StringProperty status = controller.statusProperty();
         Button startMeasuringOrbitButton = new MultiLineButton("Start Measuring Orbit");
+        startMeasuringOrbitButton.setTooltip(new Tooltip("Continuously measure the orbit"));
         startMeasuringOrbitButton.setWrapText(true);
         startMeasuringOrbitButton.getStyleClass().add("button");
         startMeasuringOrbitButton.setOnAction(e -> controller.startMeasuringOrbit());
         startMeasuringOrbitButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button measureOrbitOnceButton = new MultiLineButton("Measure Orbit Once");
+        measureOrbitOnceButton.setTooltip(new Tooltip("Perform a single orbit measurement"));
         measureOrbitOnceButton.setWrapText(true);
         measureOrbitOnceButton.setOnAction(e -> controller.measureOrbitOnce());
         measureOrbitOnceButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button startOrbitCorrectionButton = new MultiLineButton("Start Orbit Correction");
+        startOrbitCorrectionButton.setTooltip(new Tooltip("Start orbit correction in continuous mode"));
         startOrbitCorrectionButton.setWrapText(true);
         startOrbitCorrectionButton.setOnAction(e -> controller.startCorrectingOrbit());
         startOrbitCorrectionButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button exportCurrentOrbitButton = new MultiLineButton("Export Current Orbit");
+        exportCurrentOrbitButton.setTooltip(new Tooltip("Export current orbit to a file"));
         exportCurrentOrbitButton.setWrapText(true);
-        exportCurrentOrbitButton.setOnAction(e -> ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
-                .ifPresent(file -> controller.exportCurrentOrbit(file)));
+        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
+        exportCurrentOrbitButton.setOnAction(e -> {
+            fileChooser.setInitialFileName("Orbit-" + format.format(new Date()));
+            ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
+                    .ifPresent(file -> controller.exportCurrentOrbit(file));
+        });
         Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
+        stopMeasuringOrbitButton.setTooltip(new Tooltip("Stop performing orbit measurement"));
         stopMeasuringOrbitButton.setWrapText(true);
         stopMeasuringOrbitButton.setOnAction(e -> controller.stopMeasuringOrbit());
         stopMeasuringOrbitButton.disableProperty()
                 .bind(status.isNotEqualTo(OperationStatus.MEASURING_ORBIT.toString()));
         Button correctOrbitOnceButton = new MultiLineButton("Correct Orbit Once");
+        correctOrbitOnceButton.setTooltip(new Tooltip("Perform a single orbit correction"));
         correctOrbitOnceButton.setWrapText(true);
         correctOrbitOnceButton.setOnAction(e -> controller.correctOrbitOnce());
         correctOrbitOnceButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button stopOrbitCorrectionButton = new MultiLineButton("Stop Orbit Correction");
+        stopOrbitCorrectionButton.setTooltip(new Tooltip("Stop performing orbit correction"));
         stopOrbitCorrectionButton.setWrapText(true);
         stopOrbitCorrectionButton.setOnAction(e -> controller.stopCorrectingOrbit());
         stopOrbitCorrectionButton.disableProperty()
                 .bind(status.isNotEqualTo(OperationStatus.CORRECTING_ORBIT.toString()));
+        Button resetCorrectionButton = new MultiLineButton("Reset Correction");
+        resetCorrectionButton.setTooltip(new Tooltip("Reset current correction to the current magnet setpoints"));
+        resetCorrectionButton.setWrapText(true);
+        resetCorrectionButton.getStyleClass().add("button");
+        resetCorrectionButton.setOnAction(e -> controller.resetOrbitCorrection());
+        resetCorrectionButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
         Button advancedButton = new MultiLineButton("Advanced...");
         advancedButton.setWrapText(true);
         advancedButton.setOnAction(e -> getAdvancedDialog().open());
         setFullResizable(startMeasuringOrbitButton,measureOrbitOnceButton,startOrbitCorrectionButton,
                 exportCurrentOrbitButton,stopMeasuringOrbitButton,correctOrbitOnceButton,stopOrbitCorrectionButton,
-                advancedButton);
+                advancedButton,resetCorrectionButton);
         orbitCorrectionControl.add(startMeasuringOrbitButton,0,0);
         orbitCorrectionControl.add(measureOrbitOnceButton,1,0);
         orbitCorrectionControl.add(startOrbitCorrectionButton,2,0);
-        orbitCorrectionControl.add(exportCurrentOrbitButton,3,0);
+        orbitCorrectionControl.add(resetCorrectionButton,3,0);
+        orbitCorrectionControl.add(exportCurrentOrbitButton,4,0);
         orbitCorrectionControl.add(stopMeasuringOrbitButton,0,1);
         orbitCorrectionControl.add(correctOrbitOnceButton,1,1);
         orbitCorrectionControl.add(stopOrbitCorrectionButton,2,1);
-        orbitCorrectionControl.add(advancedButton,3,1);
+        orbitCorrectionControl.add(advancedButton,4,1);
         return new BorderedTitledPane("Orbit Correction Control",orbitCorrectionControl);
     }
 
@@ -870,7 +892,10 @@ public class OrbitCorrectionView extends FXViewPart {
                 dataPoint.YValueProperty().bind(property.apply(bpm));
                 dataPoint.nodeProperty().addListener((a, o, n) -> {
                     if (n != null) {
-                        Tooltip.install(n,new Tooltip(bpm.nameProperty().get()));
+                        Tooltip tooltip = new Tooltip(bpm.nameProperty().get());
+                        tooltip.textProperty()
+                                .bind(dataPoint.YValueProperty().asString(bpm.nameProperty().get() + ": %3.2f"));
+                        Tooltip.install(n,tooltip);
                     }
                 });
                 data.add(dataPoint);
@@ -890,7 +915,10 @@ public class OrbitCorrectionView extends FXViewPart {
                 dataPoint.YValueProperty().bind(corrector.correctionProperty());
                 dataPoint.nodeProperty().addListener((a, o, n) -> {
                     if (n != null) {
-                        Tooltip.install(n,new Tooltip(corrector.nameProperty().get()));
+                        Tooltip tooltip = new Tooltip(corrector.nameProperty().get());
+                        tooltip.textProperty()
+                                .bind(dataPoint.YValueProperty().asString(corrector.nameProperty().get() + ": %3.2f"));
+                        Tooltip.install(n,tooltip);
                     }
                 });
                 data.add(dataPoint);

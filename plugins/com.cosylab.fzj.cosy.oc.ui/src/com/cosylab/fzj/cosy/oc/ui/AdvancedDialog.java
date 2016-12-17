@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.csstudio.ui.fx.util.FXUtilities;
+import org.csstudio.ui.fx.util.UnfocusableCheckBox;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -32,7 +33,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -40,6 +43,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -102,6 +106,36 @@ public class AdvancedDialog extends Dialog {
 
     private static class Table<T extends LatticeElement> extends TableView<T> {
 
+        private class SelectionTableColumn extends TableColumn<T,Boolean> {
+
+            SelectionTableColumn() {
+                super("");
+                setCellValueFactory(new PropertyValueFactory<>("enabledWish"));
+                setCellFactory(l -> new Cell<>());
+                setEditable(true);
+                setSortable(false);
+                setPrefWidth(30);
+                setMaxWidth(30);
+                setMinWidth(30);
+                selectAllCheckBox = new UnfocusableCheckBox();
+                selectAllCheckBox.setSelected(false);
+                selectAllCheckBox.setOnAction(e -> getItems()
+                        .forEach(te -> te.enabledWishProperty().setValue(selectAllCheckBox.isSelected())));
+                setGraphic(selectAllCheckBox);
+                MenuItem inverseMI = new MenuItem("Inverse Selection");
+                inverseMI.setOnAction(e -> getItems()
+                        .forEach(te -> te.enabledWishProperty().setValue(!te.enabledWishProperty().get())));
+                final ContextMenu contextMenu = new ContextMenu(inverseMI);
+                selectAllCheckBox.setOnMouseReleased(e -> {
+                    if (e.getButton() == MouseButton.SECONDARY) {
+                        contextMenu.show(selectAllCheckBox,e.getScreenX(),e.getScreenY());
+                    }
+                });
+            }
+        }
+
+        private UnfocusableCheckBox selectAllCheckBox;
+
         Table() {
             setMaxWidth(Double.MAX_VALUE);
             setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -115,21 +149,29 @@ public class AdvancedDialog extends Dialog {
             TableColumn<T,String> nameColumn = new TableColumn<>("Device");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             nameColumn.setEditable(false);
-            TableColumn<T,Boolean> enabledColumn = new TableColumn<>("");
-            enabledColumn.setCellValueFactory(new PropertyValueFactory<>("enabledWish"));
-            enabledColumn.setEditable(true);
-            enabledColumn.setPrefWidth(30);
-            enabledColumn.setMaxWidth(30);
-            enabledColumn.setMinWidth(30);
-            enabledColumn.setCellFactory(l -> new Cell<>());
+            TableColumn<T,Boolean> enabledColumn = new SelectionTableColumn();
             TableColumn<T,Double> locationColumn = new TableColumn<>("Location [m]");
             locationColumn.setCellValueFactory(new PropertyValueFactory<>("location"));
             locationColumn.setEditable(false);
             getColumns().addAll(Arrays.asList(nameColumn,locationColumn,enabledColumn));
         }
 
+        private ChangeListener<Boolean> listener = (a, o, n) -> {
+            if (n) {
+                boolean all = getItems().stream().allMatch(e -> e.enabledWishProperty().get());
+                selectAllCheckBox.setSelected(all);
+            } else {
+                selectAllCheckBox.setSelected(false);
+            }
+        };
+
         void updateTable(List<T> entries) {
+            getItems().forEach(e -> e.enabledWishProperty().removeListener(listener));
             getItems().setAll(entries);
+            //enabledwishproperty can only have one registered listener
+            entries.forEach(e -> e.enabledWishProperty().removeListener(listener));
+            entries.forEach(e -> e.enabledWishProperty().addListener(listener));
+            selectAllCheckBox.setSelected(getItems().stream().allMatch(e -> e.enabledWishProperty().get()));
         }
     }
 
@@ -163,7 +205,8 @@ public class AdvancedDialog extends Dialog {
     private Table<Corrector> verticalCorrectorTable;
     private CutOff horizontalCutOff;
     private CutOff verticalCutOff;
-    private CutOff correctionPercentage;
+    private CutOff horizontalCorrectionPercentage;
+    private CutOff verticalCorrectionPercentage;
     private final Consumer<LatticeElementType> updater = this::update;
     private final Shell parent;
 
@@ -288,7 +331,8 @@ public class AdvancedDialog extends Dialog {
         controller.removeLaticeUpdateCallback(updater);
         horizontalCutOff.dispose();
         verticalCutOff.dispose();
-        correctionPercentage.dispose();
+        horizontalCorrectionPercentage.dispose();
+        verticalCorrectionPercentage.dispose();
     }
 
     private Node createFXContents(Composite parent) {
@@ -311,20 +355,22 @@ public class AdvancedDialog extends Dialog {
         verticalCorectorLabel.setStyle("-fx-font-weight: bold");
         horizontalCutOff = new CutOff(controller.horizontalCutOffProperty(),false);
         verticalCutOff = new CutOff(controller.verticalCutOffProperty(),false);
-        correctionPercentage = new CutOff(controller.correctionFactorProperty(),true);
+        horizontalCorrectionPercentage = new CutOff(controller.horizontalCorrectionFactorProperty(),true);
+        verticalCorrectionPercentage = new CutOff(controller.verticalCorrectionFactorProperty(),true);
         BorderedTitledPane horizontalCutOffPane = new BorderedTitledPane("Horizontal SVD Cut Off",horizontalCutOff,
                 background);
         BorderedTitledPane verticalCutOffPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,
                 background);
-        BorderedTitledPane factorCutOffPane = new BorderedTitledPane("Correction Percentage Factor",
-                correctionPercentage,background);
+        BorderedTitledPane horizontalFactorCutOffPane = new BorderedTitledPane("Horizontal Correction Percentage",
+                horizontalCorrectionPercentage,background);
+        BorderedTitledPane verticalFactorCutOffPane = new BorderedTitledPane("Vertical Correction Percentage",
+                verticalCorrectionPercentage,background);
         int height = 60;
-        verticalCutOffPane.setMinHeight(height);
-        verticalCutOffPane.setMaxHeight(height);
-        horizontalCutOffPane.setMinHeight(height);
-        horizontalCutOffPane.setMaxHeight(height);
-        factorCutOffPane.setMinHeight(height);
-        factorCutOffPane.setMaxHeight(height);
+        Arrays.asList(verticalCutOffPane,horizontalCutOffPane,verticalFactorCutOffPane,horizontalFactorCutOffPane)
+                .forEach(c -> {
+                    c.setMinHeight(height);
+                    c.setMaxHeight(height);
+                });
         pane.add(horizontalBPMLabel,0,0);
         pane.add(horizontalCorrectorLabel,1,0);
         pane.add(verticalBPMLabel,2,0);
@@ -335,14 +381,15 @@ public class AdvancedDialog extends Dialog {
         pane.add(verticalCorrectorTable,3,1);
         pane.add(horizontalCutOffPane,0,2,2,1);
         pane.add(verticalCutOffPane,2,2,2,1);
-        pane.add(factorCutOffPane,0,3,2,1);
+        pane.add(horizontalFactorCutOffPane,0,3,2,1);
+        pane.add(verticalFactorCutOffPane,2,3,2,1);
         Arrays.asList(horizontalBPMLabel,verticalBPMLabel,horizontalCorrectorLabel,verticalCorectorLabel)
                 .forEach(l -> setGridConstraints(l,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER));
         Arrays.asList(horizontalBPMTable,verticalBPMTable,horizontalCorrectorTable,verticalCorrectorTable)
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS));
-        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,factorCutOffPane)
+        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,horizontalFactorCutOffPane,verticalFactorCutOffPane)
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.NEVER));
-        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,factorCutOffPane)
+        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,horizontalFactorCutOffPane,verticalFactorCutOffPane)
                 .forEach(l -> GridPane.setMargin(l,new Insets(10,0,0,0)));
         return pane;
     }

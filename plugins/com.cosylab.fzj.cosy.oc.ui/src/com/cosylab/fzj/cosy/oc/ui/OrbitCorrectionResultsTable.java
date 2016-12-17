@@ -4,9 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import javafx.beans.binding.Bindings;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.text.TextAlignment;
 
 /**
  * <code>OrbitCorrectionResultsTable</code> is an table which contains information about orbit correction results.
@@ -17,9 +22,18 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
 
     private static class Column extends TableColumn<OrbitCorrectionResultsEntry,String> {
 
-        Column(String title, String property) {
-            super(title);
+        Column(String property) {
             setCellValueFactory(new PropertyValueFactory<>(property));
+        }
+
+        Column(String title, String property) {
+            this(property);
+            Label label = new Label(title);
+            Tooltip tooltip = new Tooltip();
+            tooltip.setGraphic(new ImageView(new Image(getClass().getResourceAsStream("/icons/" + property + ".png"))));
+            label.setTooltip(tooltip);
+            label.setTextAlignment(TextAlignment.CENTER);
+            setGraphic(label);
         }
     }
 
@@ -32,7 +46,7 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         createTable();
         setFixedCellSize(23);
-        String s = System.getProperty("os.name", "nix").toLowerCase();
+        String s = System.getProperty("os.name","nix").toLowerCase();
         final int c = s.contains("win") ? 26 : 29;
         prefHeightProperty().bind(Bindings.size(getItems()).multiply(getFixedCellSize()).add(c));
     }
@@ -41,8 +55,8 @@ public class OrbitCorrectionResultsTable extends TableView<OrbitCorrectionResult
      * Creates orbit correction results table columns.
      */
     private void createTable() {
-        getColumns().addAll(Arrays.asList(new Column("","name"),new Column("Min","min"),new Column("Max","max"),
-                new Column("Average","avg"),new Column("RMS","rms"),new Column("STD","std")));
+        getColumns().addAll(Arrays.asList(new Column("name"),new Column("Min [mm]","min"),new Column("Max [mm]","max"),
+                new Column("Average [mm]","avg"),new Column("RMS [mm]","rms"),new Column("STD [mm]","std")));
     }
 
     /**

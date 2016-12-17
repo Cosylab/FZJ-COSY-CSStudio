@@ -104,6 +104,8 @@ public class OrbitCorrectionController {
     private static final String TABLE_ENTRY_GOLDEN_HORIZONTAL_ORBIT = "Golden Horizontal Orbit";
     private static final String TABLE_ENTRY_GOLDEN_VERTICAL_ORBIT = "Golden Vertical Orbit";
     // status messages
+    private static final String MSG_RESET_CORRECTION_CMD_SUCCESS = "Reset orbit correction setpoints was successfully sent.";
+    private static final String MSG_RESET_CORRECTION_CMD_FAILURE = "Error occured while sending the reset orbit correction command.";
     private static final String MSG_START_ORBIT_MEASURING_CMD_SUCCESS = "Start orbit measuring command was successfully sent.";
     private static final String MSG_START_ORBIT_MEASURING_CMD_FAILURE = "Error occured while sending start orbit measuring command.";
     private static final String MSG_STOP_ORBIT_MEASURING_CMD_SUCCESS = "Stop orbit measuring command was successfully sent.";
@@ -124,8 +126,8 @@ public class OrbitCorrectionController {
     private static final String MSG_UPDATE_ONOFF_FAILURE = "Error enabling/disabling %s.";
     private static final String MSG_CUTOFF_SUCCESS = "%s cutoff factor %f successfully written.";
     private static final String MSG_CUTOFF_FAILURE = "Failed to write %s cutoff factor.";
-    private static final String MSG_CORRECTION_FACTOR_SUCCESS = "Correction factor %d successfully written.";
-    private static final String MSG_CORRECTION_FACTOR_FAILURE = "Failed to write correction factor.";
+    private static final String MSG_CORRECTION_FACTOR_SUCCESS = "%s correction factor %d successfully written.";
+    private static final String MSG_CORRECTION_FACTOR_FAILURE = "Failed to write %s correction factor.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_SUCCESS = "Golden horizontal orbit was successfully updated to current.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_FAILURE = "Error occured while updating golden horizontal orbit to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_SUCCESS = "Golden vertical orbit was successfully updated to current.";
@@ -257,7 +259,8 @@ public class OrbitCorrectionController {
 
     private DoubleProperty horizontalCutOffProperty;
     private DoubleProperty verticalCutOffProperty;
-    private IntegerProperty correctionFactorProperty;
+    private IntegerProperty verticalCorrectionFactorProperty;
+    private IntegerProperty horizontalCorrectionFactorProperty;
     private final BooleanProperty allConnectedProperty = new SimpleBooleanProperty(this,"allConnected",false);
     private final BooleanProperty mradProperty = new SimpleBooleanProperty(this,"mrad",false);
     private final StringProperty messageLogProperty = new SimpleStringProperty(this,"messageLog",EMPTY_STRING);
@@ -497,25 +500,57 @@ public class OrbitCorrectionController {
     }
 
     /**
-     * Returns the property that stores the current factor used when apply the correction. The correcting values are
-     * calculated and then multiplied by this factor to only apply 10, 20, 30 etc. percent. This property returns the
-     * factor in percentage between 0 and 100.
+     * Returns the property that stores the current factor used when applying horizontal correction. The correcting
+     * values are calculated and then multiplied by this factor to only apply 10, 20, 30 etc. percent. This property
+     * returns the factor in percentage between 0 and 100.
      *
      * @return the correction factor property
      */
-    public IntegerProperty correctionFactorProperty() {
-        if (correctionFactorProperty == null) {
-            correctionFactorProperty = new SimpleIntegerProperty(this,"correctionFactor",0);
-            correctionFactorProperty.addListener((a, o, n) -> {
-                getNumberPV.apply(Preferences.PV_CORRECTION_FRACTION).ifPresent(pv -> {
+    public IntegerProperty horizontalCorrectionFactorProperty() {
+        if (horizontalCorrectionFactorProperty == null) {
+            horizontalCorrectionFactorProperty = new SimpleIntegerProperty(this,"horizontalCorrectionFactor",0);
+            horizontalCorrectionFactorProperty.addListener((a, o, n) -> {
+                getNumberPV.apply(Preferences.PV_HORIZONTAL_CORRECTION_FRACTION).ifPresent(pv -> {
                     if (n.intValue() != (int)(100 * ((VNumber)pv.value).getValue().doubleValue())) {
-                        writeData(pv,n.doubleValue() / 100.,String.format(MSG_CORRECTION_FACTOR_SUCCESS,n.intValue()),
-                                MSG_CORRECTION_FACTOR_FAILURE,3);
+                        writeData(pv,n.doubleValue() / 100.,
+                                String.format(MSG_CORRECTION_FACTOR_SUCCESS,"Horizontal",n.intValue()),
+                                String.format(MSG_CORRECTION_FACTOR_FAILURE,"horizontal"),3);
                     }
                 });
             });
         }
-        return correctionFactorProperty;
+        return horizontalCorrectionFactorProperty;
+    }
+
+    /**
+     * Returns the property that stores the current factor used when applying vertical correction. The correcting values
+     * are calculated and then multiplied by this factor to only apply 10, 20, 30 etc. percent. This property returns
+     * the factor in percentage between 0 and 100.
+     *
+     * @return the correction factor property
+     */
+    public IntegerProperty verticalCorrectionFactorProperty() {
+        if (verticalCorrectionFactorProperty == null) {
+            verticalCorrectionFactorProperty = new SimpleIntegerProperty(this,"verticalCorrectionFactor",0);
+            verticalCorrectionFactorProperty.addListener((a, o, n) -> {
+                getNumberPV.apply(Preferences.PV_VERTICAL_CORRECTION_FRACTION).ifPresent(pv -> {
+                    if (n.intValue() != (int)(100 * ((VNumber)pv.value).getValue().doubleValue())) {
+                        writeData(pv,n.doubleValue() / 100.,
+                                String.format(MSG_CORRECTION_FACTOR_SUCCESS,"Vertical",n.intValue()),
+                                String.format(MSG_CORRECTION_FACTOR_FAILURE,"vertical"),3);
+                    }
+                });
+            });
+        }
+        return verticalCorrectionFactorProperty;
+    }
+
+    /**
+     * Calls the command which resets the correction values to the current steerer setpoints.
+     */
+    public void resetOrbitCorrection() {
+        executeCommand(Preferences.PV_RESET_CORRECTION,MSG_RESET_CORRECTION_CMD_SUCCESS,
+                MSG_RESET_CORRECTION_CMD_FAILURE);
     }
 
     /**
@@ -751,7 +786,7 @@ public class OrbitCorrectionController {
             try {
                 Runtime.getRuntime().exec(c);
             } catch (IOException e) {
-                writeToLog("Error starting command " + c, Level.SEVERE,of(e));
+                writeToLog("Error starting command " + c,Level.SEVERE,of(e));
             }
         }));
     }
@@ -791,7 +826,7 @@ public class OrbitCorrectionController {
             } catch (InterruptedException e) {
                 OrbitCorrectionPlugin.LOGGER.log(Level.WARNING,"Failed to shutdown gracefully. Timeout ocurred.",e);
             }
-            synchronized(OrbitCorrectionController.this) {
+            synchronized (OrbitCorrectionController.this) {
                 pvs.values().parallelStream().forEach(v -> v.dispose());
                 pvs.clear();
                 slowPVs.values().parallelStream().forEach(v -> v.dispose());
@@ -862,7 +897,7 @@ public class OrbitCorrectionController {
                     }
                 });
             } else {
-                synchronized(this) {
+                synchronized (this) {
                     connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
                 }
                 try {
@@ -1095,8 +1130,12 @@ public class OrbitCorrectionController {
                 .ifPresent(pv -> horizontalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
         getPV.apply(Preferences.PV_VERTICAL_CUTOFF).filter(pv -> pv.value instanceof VNumber)
                 .ifPresent(pv -> verticalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
-        getPV.apply(Preferences.PV_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber).ifPresent(
-                pv -> correctionFactorProperty().set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
+        getPV.apply(Preferences.PV_HORIZONTAL_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber)
+                .ifPresent(pv -> horizontalCorrectionFactorProperty()
+                        .set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
+        getPV.apply(Preferences.PV_VERTICAL_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber)
+                .ifPresent(pv -> verticalCorrectionFactorProperty()
+                        .set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
         VNumberArray vCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
         handleEnableDisable(vCorrEnable,verticalCorrectors,LatticeElementType.VERTICAL_CORRECTOR);
         VNumberArray hCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
@@ -1203,17 +1242,21 @@ public class OrbitCorrectionController {
             } else if (correctors.size() == va.size()) {
                 correctors.forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
             } else if (correctors.size() > va.size()) {
-                writeToLog(String.format(
-                        "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
-                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),Level.WARNING,empty());
+                writeToLog(
+                        String.format(
+                                "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
+                                type.getElementTypeName(),va.size(),enabledCount,correctors.size()),
+                        Level.WARNING,empty());
                 int i = 0;
                 while (it.hasNext()) {
                     correctors.get(i++).correctionProperty().set(it.nextDouble() / 1000.);
                 }
             } else {
-                writeToLog(String.format(
-                        "The number of %s kick values (%d) does not match the number of correctors (%d/%d).",
-                        type.getElementTypeName(),va.size(),enabledCount,correctors.size()),Level.SEVERE,empty());
+                writeToLog(
+                        String.format(
+                                "The number of %s kick values (%d) does not match the number of correctors (%d/%d).",
+                                type.getElementTypeName(),va.size(),enabledCount,correctors.size()),
+                        Level.SEVERE,empty());
             }
         }
     }
@@ -1392,8 +1435,7 @@ public class OrbitCorrectionController {
         }
         final StringBuilder sb;
         synchronized (messages) {
-            messages.add(
-                    String.format("%s [%s]: %s",MESSAGE_FORMAT.format(new Date()),level.getName(),message));
+            messages.add(String.format("%s [%s]: %s",MESSAGE_FORMAT.format(new Date()),level.getName(),message));
             while (messages.size() > MAX_MESSAGES) {
                 messages.removeFirst();
             }
