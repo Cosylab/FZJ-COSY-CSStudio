@@ -24,7 +24,7 @@
 
     <groupId>org.csstudio</groupId>
     <artifactId>fzj-cosy</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
     <packaging>pom</packaging>
 
     <pluginRepositories>
