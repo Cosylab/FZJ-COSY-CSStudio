@@ -16,7 +16,10 @@ import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
+import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.jface.preference.IPersistentPreferenceStore;
 import org.eclipse.osgi.service.datalocation.Location;
+import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 /**
  * <code>Preferences</code> represents the preferences for the Orbit Correction (OC) plugin. The file names are loaded
@@ -26,6 +29,8 @@ import org.eclipse.osgi.service.datalocation.Location;
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
 public final class Preferences {
+
+    private IPersistentPreferenceStore preferenceStore;
 
     private static final String BPMS_FILE = "bpms_file";
     private static final String CORRECTORS_FILE = "correctors_file";
@@ -203,6 +208,33 @@ public final class Preferences {
         }
         Location loc = Platform.getInstanceLocation();
         return new File(loc.getURL().getFile());
+    }
+
+    /**
+     * Save the initial directory location so that it is persisted when the application is restarted.
+     *
+     * @param directory the directory to save as the initial directory
+     */
+    public void saveInitialDirectory(File directory) {
+        if (directory == null) return;
+
+        if (directory.isFile()) {
+            directory = directory.getParentFile();
+        }
+        String dir = directory.getAbsolutePath();
+        getPreferenceStore().setValue(INITIAL_DIRECTORY,dir);
+        try {
+            getPreferenceStore().save();
+        } catch (IOException e) {
+            OrbitCorrectionPlugin.LOGGER.log(Level.WARNING,"Could not save the preferences.",e);
+        }
+    }
+
+    private IPersistentPreferenceStore getPreferenceStore() {
+        if (preferenceStore == null) {
+            preferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE, OrbitCorrectionPlugin.PLUGIN_ID);
+        }
+        return preferenceStore;
     }
 
     private String getFilename(String key, String defaultValue) {

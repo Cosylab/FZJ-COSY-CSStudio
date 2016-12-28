@@ -608,6 +608,7 @@ public class OrbitCorrectionController {
      * @param file file in which horizontal and vertical orbit with weights will be written
      */
     public void exportCurrentOrbit(File file) {
+        Preferences.getInstance().saveInitialDirectory(file.getParentFile());
         writeOrbitToFile(file,Preferences.PV_HORIZONTAL_ORBIT,Preferences.PV_VERTICAL_ORBIT,
                 MSG_EXPORT_CURRENT_ORBIT_SUCCESS,MSG_EXPORT_CURRENT_ORBIT_FAILURE);
     }
