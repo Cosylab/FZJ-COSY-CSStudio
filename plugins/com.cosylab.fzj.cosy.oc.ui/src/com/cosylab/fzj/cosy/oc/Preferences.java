@@ -89,10 +89,6 @@ public final class Preferences {
     public static final String PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC = "golden_horizontal_orbit_statistic";
     /** Golden vertical orbit statistic provides the statistical parameters of the current vertical golden orbit. */
     public static final String PV_GOLDEN_VERTICAL_ORBIT_STATISTIC = "golden_vertical_orbit_statistic";
-    /** Horizontal orbit weights provides the weights used in calculation of the horizontal orbit corrections */
-    public static final String PV_HORIZONTAL_ORBIT_WEIGHTS = "horizontal_orbit_weights";
-    /** Vertical orbit weights PV provides the weights used in calculation of the vertical orbit corrections */
-    public static final String PV_VERTICAL_ORBIT_WEIGHTS = "vertical_orbit_weights";
     /** Orbit response matrix provides the pv with the orbit response matrix in a single array */
     @Deprecated
     public static final String PV_ORM = "orm";
@@ -355,8 +351,8 @@ public final class Preferences {
         Arrays.asList(PV_HORIZONTAL_ORBIT,PV_VERTICAL_ORBIT,PV_GOLDEN_HORIZONTAL_ORBIT,PV_GOLDEN_VERTICAL_ORBIT,
                 PV_HORIZONTAL_CORRECTOR_MRAD,PV_VERTICAL_CORRECTOR_MRAD,PV_HORIZONTAL_CORRECTOR_MA,
                 PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTIC,PV_VERTICAL_ORBIT_STATISTIC,
-                PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,PV_HORIZONTAL_ORBIT_WEIGHTS,
-                PV_VERTICAL_ORBIT_WEIGHTS,PV_ORM).forEach(n -> pvs.put(n,getPVName(n)));
+                PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
+                PV_ORM).forEach(n -> pvs.put(n,getPVName(n)));
         Arrays.asList(PV_RESET_CORRECTION,PV_START_MEASURING_ORBIT,PV_STOP_MEASURING_ORBIT,PV_MEASURE_ORBIT_ONCE,
                 PV_START_CORRECTING_ORBIT,PV_STOP_CORRECTING_ORBIT,PV_CORRECT_ORBIT_ONCE,PV_HORIZONTAL_CUTOFF,
                 PV_VERTICAL_CUTOFF,PV_HORIZONTAL_CORRECTION_FRACTION,PV_VERTICAL_CORRECTION_FRACTION,

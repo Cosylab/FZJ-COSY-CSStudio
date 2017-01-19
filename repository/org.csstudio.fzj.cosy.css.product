@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="css" uid="org.csstudio.fzj.cosy.css" id="org.csstudio.fzj.cosy.css.product.product" application="org.csstudio.fzj.cosy.application" version="1.2.2.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="css" uid="org.csstudio.fzj.cosy.css" id="org.csstudio.fzj.cosy.css.product.product" application="org.csstudio.fzj.cosy.application" version="1.2.3.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="icons/about.png"/>

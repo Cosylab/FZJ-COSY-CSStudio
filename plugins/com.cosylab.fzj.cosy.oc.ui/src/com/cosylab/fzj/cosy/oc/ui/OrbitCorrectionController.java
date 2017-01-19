@@ -652,14 +652,8 @@ public class OrbitCorrectionController {
                         ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT))
                                 .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Horizontal Orbit",0));
                     } else if (lineCounter == 2) {
-                        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_ORBIT_WEIGHTS))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Horizontal Orbit Weights",0));
-                    } else if (lineCounter == 3) {
                         ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
                                 .ifPresent(pv -> convertAndWriteData(pv,values,"Golden Vertical Orbit",0));
-                    } else if (lineCounter == 4) {
-                        ofNullable(pvs.get(Preferences.PV_VERTICAL_ORBIT_WEIGHTS))
-                                .ifPresent(pv -> convertAndWriteData(pv,values,"Vertical Orbit Weights",0));
                     } else {
                         break;
                     }
@@ -679,7 +673,7 @@ public class OrbitCorrectionController {
      */
     @Deprecated
     public void downloadGoldenOrbit(File file) {
-        writeOrbitToFile(file,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,Preferences.PV_VERTICAL_ORBIT_WEIGHTS,
+        writeOrbitToFile(file,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,Preferences.PV_GOLDEN_VERTICAL_ORBIT,
                 MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS,MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE);
     }
 
@@ -1377,22 +1371,14 @@ public class OrbitCorrectionController {
             String failureMessage) {
         if (!throttle.isRunning()) return;
         final PV xOrbitPV = pvs.get(xOrbitKey);
-        final PV xWeightsPV = pvs.get(Preferences.PV_HORIZONTAL_ORBIT_WEIGHTS);
         final PV yOrbitPV = pvs.get(yOrbitKey);
-        final PV yWeightsPV = pvs.get(Preferences.PV_VERTICAL_ORBIT_WEIGHTS);
         nonUIexecutor.execute(() -> {
             String xOrbit = xOrbitPV != null ? getStringValue(xOrbitPV.value) : EMPTY_STRING;
-            String xWeights = xWeightsPV != null ? getStringValue(xWeightsPV.value) : EMPTY_STRING;
             String yOrbit = yOrbitPV != null ? getStringValue(yOrbitPV.value) : EMPTY_STRING;
-            String yWeights = yWeightsPV != null ? getStringValue(yWeightsPV.value) : EMPTY_STRING;
             try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()),StandardCharsets.UTF_8)) {
                 writer.write(xOrbit);
                 writer.write(NEW_LINE);
-                writer.write(xWeights);
-                writer.write(NEW_LINE);
                 writer.write(yOrbit);
-                writer.write(NEW_LINE);
-                writer.write(yWeights);
                 writeToLog(successMessage,Level.INFO,empty());
             } catch (Exception e) {
                 writeToLog(failureMessage,Level.SEVERE,of(e));
