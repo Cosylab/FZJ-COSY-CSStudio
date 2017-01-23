@@ -534,7 +534,7 @@ public class OrbitCorrectionView extends FXViewPart {
         checkBoxes.add(vCorrectorsCheckBox,0,1);
         GridPane radioButtons = new GridPane();
         radioButtons.setVgap(5);
-        RadioButton mradRadioButton = new RadioButton("Kick Andle [mrad]");
+        RadioButton mradRadioButton = new RadioButton("Kick Angle [mrad]");
         mradRadioButton.setSelected(true);
         RadioButton maRadioButton = new RadioButton("Kick Strength [A]");
         ToggleGroup radioButtonsGroup = new ToggleGroup();
@@ -547,7 +547,7 @@ public class OrbitCorrectionView extends FXViewPart {
         radioButtons.add(mradRadioButton,0,0);
         radioButtons.add(maRadioButton,0,1);
         legend.add(checkBoxes,0,0);
-        legend.add(radioButtons,0,2);
+//        legend.add(radioButtons,0,2);
         legend.setMinHeight(0);
         legend.setMinWidth(0);
         legend.setMaxWidth(Integer.MAX_VALUE);
