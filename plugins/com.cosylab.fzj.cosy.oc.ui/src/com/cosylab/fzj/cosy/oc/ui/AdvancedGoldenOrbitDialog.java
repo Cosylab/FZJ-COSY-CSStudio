@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.Shell;
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
+import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
 
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
@@ -293,7 +294,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
     private Region createOrbitChart() {
         ValueAxis<Number> xAxis = new NumberAxis(0,185,5);
         xAxis.setTickLabelFormatter(OrbitCorrectionView.TICK_LABEL_FORMATTER);
-        NumberAxis yAxis = new NumberAxis(-10,10,4);
+        ValueAxis<Number> yAxis = new SymmetricAxis();
         yAxis.setAnimated(false);
         xAxis.setTickLabelsVisible(true);
         xAxis.setTickMarkVisible(true);
