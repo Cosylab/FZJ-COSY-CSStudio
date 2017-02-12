@@ -12,14 +12,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -263,7 +259,6 @@ public class OrbitCorrectionController {
     private IntegerProperty horizontalCorrectionFactorProperty;
     private final BooleanProperty allConnectedProperty = new SimpleBooleanProperty(this,"allConnected",false);
     private final BooleanProperty mradProperty = new SimpleBooleanProperty(this,"mrad",false);
-    private final StringProperty messageLogProperty = new SimpleStringProperty(this,"messageLog",EMPTY_STRING);
     private final StringProperty statusProperty = new SimpleStringProperty(this,"status",EMPTY_STRING);
     private final Map<String,PV> pvs = new HashMap<>();
     private final Map<String,PV> slowPVs = new HashMap<>();
@@ -272,11 +267,8 @@ public class OrbitCorrectionController {
     private final List<BPM> verticalBPMs = new ArrayList<>();
     private final List<Corrector> horizontalCorrectors = new ArrayList<>();
     private final List<Corrector> verticalCorrectors = new ArrayList<>();
-    private final LinkedList<String> messages = new LinkedList<>();
     private final List<Consumer<LatticeElementType>> latticeUpdateCallbacks = new CopyOnWriteArrayList<>();
     private final List<Consumer<SeriesType>> goldenOrbitCallbacks = new CopyOnWriteArrayList<>();
-    private static final int MAX_MESSAGES = 200;
-    private static final DateFormat MESSAGE_FORMAT = new SimpleDateFormat("HH:mm:ss");
     private static final BiConsumer<Runnable,Throwable> AFTER_EXECUTE = (r, t) -> {
         if (r instanceof Future<?>) {
             if (((Future<?>)r).isDone()) {
@@ -315,7 +307,7 @@ public class OrbitCorrectionController {
      */
     public OrbitCorrectionController() {
         createCorrectionResultsEntries();
-        loadLatticeElements();
+        nonUIexecutor.execute(() -> loadLatticeElements());
         nonUIexecutor.execute(() -> connectPVs(Preferences.getInstance().getPVNames(),pvs,true));
         nonUIexecutor.execute(() -> throttle.start());
         mradProperty.addListener(e -> throttle.trigger());
@@ -411,16 +403,6 @@ public class OrbitCorrectionController {
      */
     public Map<String,OrbitCorrectionResultsEntry> getOrbitCorrectionResults() {
         return correctionResultsEntries;
-    }
-
-    /**
-     * Returns the property providing the current message log. The message log is always trimmed so that it cannot
-     * contain more messages that defined by the {@link #MAX_MESSAGES}.
-     *
-     * @return property providing the current message log
-     */
-    public StringProperty messageLogProperty() {
-        return messageLogProperty;
     }
 
     /**
@@ -878,52 +860,50 @@ public class OrbitCorrectionController {
      */
     @SuppressWarnings("deprecation")
     private void loadLatticeElements() {
-        nonUIexecutor.execute(() -> {
-            if (Preferences.getInstance().isLoadLatticeFromFiles()) {
-                LatticeElementDataLoader.loadLatticeElements().forEach(e -> {
-                    if (e.getType() == LatticeElementType.HORIZONTAL_BPM) {
-                        addToList(horizontalBPMs,new BPM(e));
-                    } else if (e.getType() == LatticeElementType.VERTICAL_BPM) {
-                        addToList(verticalBPMs,new BPM(e));
-                    } else if (e.getType() == LatticeElementType.HORIZONTAL_CORRECTOR) {
-                        addToList(horizontalCorrectors,new Corrector(e));
-                    } else if (e.getType() == LatticeElementType.VERTICAL_CORRECTOR) {
-                        addToList(verticalCorrectors,new Corrector(e));
-                    }
-                });
-            } else {
-                synchronized (this) {
-                    connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
+        if (Preferences.getInstance().isLoadLatticeFromFiles()) {
+            LatticeElementDataLoader.loadLatticeElements().forEach(e -> {
+                if (e.getType() == LatticeElementType.HORIZONTAL_BPM) {
+                    addToList(horizontalBPMs,new BPM(e));
+                } else if (e.getType() == LatticeElementType.VERTICAL_BPM) {
+                    addToList(verticalBPMs,new BPM(e));
+                } else if (e.getType() == LatticeElementType.HORIZONTAL_CORRECTOR) {
+                    addToList(horizontalCorrectors,new Corrector(e));
+                } else if (e.getType() == LatticeElementType.VERTICAL_CORRECTOR) {
+                    addToList(verticalCorrectors,new Corrector(e));
                 }
-                try {
-                    long start = System.currentTimeMillis();
-                    writeToLog("Trying to read the lattice.",Level.INFO,empty());
-                    while (true) {
-                        //check if there is a single value which has not yet received an update
-                        //if there is one, wait a while, then check again
-                        Optional<PV> noValue = slowPVs.values().parallelStream().filter(pv -> !pv.hasNewValue.get())
-                                .findAny();
-                        if (noValue.isPresent()) {
-                            synchronized (OrbitCorrectionController.this) {
-                                OrbitCorrectionController.this.wait(50);
-                            }
-                            if (System.currentTimeMillis() - start > UPDATE_TIMEOUT) {
-                                writeToLog("Lattice information could not be read from the IOC.",Level.SEVERE,empty());
-                                break;
-                            }
-                        } else {
-                            writeToLog("Lattice constructed.",Level.INFO,empty());
+            });
+        } else {
+            synchronized (this) {
+                connectPVs(Preferences.getInstance().getLatticePVNames(),slowPVs,false);
+            }
+            try {
+                long start = System.currentTimeMillis();
+                writeToLog("Trying to read the lattice.",Level.INFO,empty());
+                while (true) {
+                    //check if there is a single value which has not yet received an update
+                    //if there is one, wait a while, then check again
+                    Optional<PV> noValue = slowPVs.values().parallelStream().filter(pv -> !pv.hasNewValue.get())
+                            .findAny();
+                    if (noValue.isPresent()) {
+                        synchronized (OrbitCorrectionController.this) {
+                            OrbitCorrectionController.this.wait(50);
+                        }
+                        if (System.currentTimeMillis() - start > UPDATE_TIMEOUT) {
+                            writeToLog("Lattice information could not be read from the IOC.",Level.SEVERE,empty());
                             break;
                         }
+                    } else {
+                        writeToLog("Lattice constructed.",Level.INFO,empty());
+                        break;
                     }
-                } catch (InterruptedException e) {
-                    //ignore - executor aborted because application is being closed; we don't care for that
-                    return;
                 }
-                updateLattice();
-                slowPVs.values().parallelStream().forEach(pv -> ((SlowPV)pv).startTriggering());
+            } catch (InterruptedException e) {
+                //ignore - executor aborted because application is being closed; we don't care for that
+                return;
             }
-        });
+            updateLattice();
+            slowPVs.values().parallelStream().forEach(pv -> ((SlowPV)pv).startTriggering());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1420,15 +1400,5 @@ public class OrbitCorrectionController {
         } else {
             OrbitCorrectionPlugin.LOGGER.log(level,message);
         }
-        final StringBuilder sb;
-        synchronized (messages) {
-            messages.add(String.format("%s [%s]: %s",MESSAGE_FORMAT.format(new Date()),level.getName(),message));
-            while (messages.size() > MAX_MESSAGES) {
-                messages.removeFirst();
-            }
-            sb = new StringBuilder(messages.size() * 100);
-            messages.forEach(s -> sb.append(s).append(NEW_LINE));
-        }
-        UI_EXECUTOR.execute(() -> messageLogProperty.set(sb.toString()));
     }
 }

@@ -15,7 +15,7 @@
       <perspectiveExtension
             targetID="com.cosylab.fzj.cosy.oc.ui.perspective">
          <view
-               closeable="true"
+               closeable="false"
                id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
                minimized="false"
                moveable="true"
@@ -25,9 +25,40 @@
                standalone="false"
                visible="true">
          </view>
+         <view
+               closeable="true"
+               id="com.cosylab.fzj.cosy.oc.ui.controls"
+               minimized="false"
+               moveable="true"
+               ratio="0.6"
+               relationship="bottom"
+               relative="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
+               showTitle="true"
+               standalone="false"
+               visible="true">
+         </view>
          <viewShortcut
                id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection">
          </viewShortcut>
+         <viewShortcut
+               id="com.cosylab.fzj.cosy.oc.ui.controls">
+         </viewShortcut>
+         <view
+               closeable="true"
+               id="org.eclipse.ui.console.ConsoleView"
+               minimized="false"
+               moveable="true"
+               ratio="0.6"
+               relationship="right"
+               relative="com.cosylab.fzj.cosy.oc.ui.controls"
+               showTitle="false"
+               standalone="false"
+               visible="true">
+         </view>
+         <viewShortcut
+               id="org.eclipse.ui.console.ConsoleView">
+         </viewShortcut>
+         
       </perspectiveExtension>
    </extension>
    <extension
@@ -39,6 +70,15 @@
             icon="icons/chart.png"
             id="com.cosylab.fzj.cosy.oc.ui.orbitcorrection"
             name="Orbit Correction"
+            restorable="true">
+      </view>
+      <view
+            allowMultiple="false"
+            category="org.csstudio"
+            class="com.cosylab.fzj.cosy.oc.ui.OrbitCorrectionControls"
+            icon="icons/chart.png"
+            id="com.cosylab.fzj.cosy.oc.ui.controls"
+            name="Orbit Correction Controls"
             restorable="true">
       </view>
    </extension>

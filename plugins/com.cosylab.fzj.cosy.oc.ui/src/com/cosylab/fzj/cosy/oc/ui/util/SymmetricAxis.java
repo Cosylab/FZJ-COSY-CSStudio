@@ -32,7 +32,9 @@ import javafx.util.StringConverter;
  * A axis class that plots a range of numbers with major tick marks every "tickUnit". You can use any Number type with
  * this axis, Long, Double, BigDecimal etc.
  *
- * @since JavaFX 2.0 This is a copy of javafx.scene.chart.NumberAxis, with special autorange, where both boundaries are
+ * @since JavaFX 2.0
+ *
+ * This is a copy of javafx.scene.chart.NumberAxis, with special autorange, where both boundaries are
  *        set to symmetric values.
  */
 public final class SymmetricAxis extends ValueAxis<Number> {

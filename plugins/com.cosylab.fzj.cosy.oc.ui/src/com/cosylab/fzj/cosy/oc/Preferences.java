@@ -31,7 +31,8 @@ import org.eclipse.ui.preferences.ScopedPreferenceStore;
 public final class Preferences {
 
     private IPersistentPreferenceStore preferenceStore;
-
+    /** Accelerator circumference */
+    public static final double CIRCUMFERENCE = 184.0;
     private static final String BPMS_FILE = "bpms_file";
     private static final String CORRECTORS_FILE = "correctors_file";
     private static final String PVS_FILE = "pvs_file";
@@ -213,7 +214,6 @@ public final class Preferences {
      */
     public void saveInitialDirectory(File directory) {
         if (directory == null) return;
-
         if (directory.isFile()) {
             directory = directory.getParentFile();
         }
@@ -228,7 +228,7 @@ public final class Preferences {
 
     private IPersistentPreferenceStore getPreferenceStore() {
         if (preferenceStore == null) {
-            preferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE, OrbitCorrectionPlugin.PLUGIN_ID);
+            preferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE,OrbitCorrectionPlugin.PLUGIN_ID);
         }
         return preferenceStore;
     }
