@@ -1,7 +1,14 @@
 package org.csstudio.fzj.cosy.css.product;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.net.URL;
+
 import org.csstudio.startup.application.Application;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.eclipse.osgi.service.datalocation.Location;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.internal.WorkbenchPlugin;
@@ -30,6 +37,31 @@ public class FZJCOSYApplication extends Application {
 
     @Override
     protected Object promptForWorkspace(Display display, IApplicationContext context) throws Exception {
+        Location loc = Platform.getInstanceLocation();
+        if (loc.isSet()) {
+            URL url = loc.getURL();
+            File file = new File(url.getFile());
+            file = new File(file, ".metadata");
+            file = new File(file, ".plugins");
+            file = new File(file, "org.eclipse.e4.workbench");
+            file = new File(file, "workbench.xmi");
+            if (file.exists()) {
+                boolean delete = false;
+                try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                    while(br.ready()) {
+                        String line = br.readLine();
+                        if (line != null && line.contains("com.cosylab.fzj.cosy.oc.ui.perspective")) {
+                            delete = true;
+                            break;
+                        }
+                    }
+                }
+                if (delete) {
+                    file.delete();
+                }
+            }
+}
+
         Shell shell = WorkbenchPlugin.getSplashShell(display);
         if (shell != null) {
             shell.setVisible(false);
