@@ -18,6 +18,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
+import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
@@ -283,7 +284,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         pane.add(verticalBPMLabel,1,1);
         pane.add(horizontalBPMTable,0,2);
         pane.add(verticalBPMTable,1,2);
-        setGridConstraints(orbitChart,true,true,HPos.CENTER,VPos.CENTER,Priority.ALWAYS,Priority.NEVER);
+        setGridConstraints(orbitChart,true,true,HPos.CENTER,VPos.CENTER,Priority.ALWAYS,Priority.ALWAYS);
         setGridConstraints(horizontalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
         setGridConstraints(verticalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
         setGridConstraints(horizontalBPMTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
@@ -310,12 +311,8 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         orbitChart.getData().add(new Series<>("Empty Series",FXCollections.emptyObservableList()));
         addSeries(SeriesType.GOLDEN_HORIZONTAL_ORBIT);
         addSeries(SeriesType.GOLDEN_VERTICAL_ORBIT);
-        ZoomableLineChart orbitZoom = new ZoomableLineChart(orbitChart,false,true,true);
-        orbitZoom.setMinWidth(0);
-        orbitZoom.setMaxWidth(Integer.MAX_VALUE);
-        orbitZoom.setMinHeight(0);
-        orbitZoom.setMaxHeight(Integer.MAX_VALUE);
-        orbitChart.setMaxHeight(150);
+        orbitZoom = new ZoomableLineChart(orbitChart,false,true,true);
+        OrbitCorrectionView.setMinMax(orbitZoom,orbitChart);
         return orbitZoom;
     }
 
