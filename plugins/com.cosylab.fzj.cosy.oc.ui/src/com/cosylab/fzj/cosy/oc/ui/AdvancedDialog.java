@@ -106,6 +106,8 @@ public class AdvancedDialog extends Dialog {
 
     private static class Table<T extends LatticeElement> extends TableView<T> {
 
+        private boolean valueIsAdjusting = false;
+
         private class SelectionTableColumn extends TableColumn<T,Boolean> {
 
             SelectionTableColumn() {
@@ -119,8 +121,11 @@ public class AdvancedDialog extends Dialog {
                 setMinWidth(30);
                 selectAllCheckBox = new UnfocusableCheckBox();
                 selectAllCheckBox.setSelected(false);
-                selectAllCheckBox.setOnAction(e -> getItems()
-                        .forEach(te -> te.enabledWishProperty().setValue(selectAllCheckBox.isSelected())));
+                selectAllCheckBox.setOnAction(e -> {
+                    valueIsAdjusting = true;
+                    getItems().forEach(te -> te.enabledWishProperty().setValue(selectAllCheckBox.isSelected()));
+                    valueIsAdjusting = false;
+                });
                 setGraphic(selectAllCheckBox);
                 MenuItem inverseMI = new MenuItem("Inverse Selection");
                 inverseMI.setOnAction(e -> getItems()
@@ -157,6 +162,7 @@ public class AdvancedDialog extends Dialog {
         }
 
         private ChangeListener<Boolean> listener = (a, o, n) -> {
+            if (valueIsAdjusting) return;
             if (n) {
                 boolean all = getItems().stream().allMatch(e -> e.enabledWishProperty().get());
                 selectAllCheckBox.setSelected(all);
