@@ -18,7 +18,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
-import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
 import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
@@ -154,6 +153,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         }
     };
     private LineChart<Number,Number> orbitChart;
+    private ZoomableLineChart orbitZoom;
     private final Shell parent;
 
     /**
