@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 Cosylab d.d.
+ *
+ * Contact Information:
+ *   Cosylab d.d., Ljubljana, Slovenia
+ *   http://www.cosylab.com
+ */
 package com.cosylab.fzj.cosy.oc.ui;
 
 import java.util.Iterator;

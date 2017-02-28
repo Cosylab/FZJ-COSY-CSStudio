@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 Cosylab d.d.
+ *
+ * Contact Information:
+ *   Cosylab d.d., Ljubljana, Slovenia
+ *   http://www.cosylab.com
+ */
 package com.cosylab.fzj.cosy.oc.ui.util;
 
 import java.util.Optional;
@@ -32,7 +39,7 @@ public class GUIUpdateThrottle extends Thread {
     private volatile boolean run = true;
 
     private final Object mutex = new Object();
-    
+
     private final Optional<Consumer<Void>> consumer;
 
     /**
@@ -102,10 +109,10 @@ public class GUIUpdateThrottle extends Thread {
         run = false;
         trigger();
     }
-    
+
     /**
      * Returns true if the thread is alive and running.
-     * 
+     *
      * @return true if alive and running or false if no longer alive or requested to stop.
      */
     public boolean isRunning() {

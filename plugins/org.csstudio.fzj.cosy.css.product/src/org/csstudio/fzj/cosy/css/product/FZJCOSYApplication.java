@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 Cosylab d.d.
+ *
+ * Contact Information:
+ *   Cosylab d.d., Ljubljana, Slovenia
+ *   http://www.cosylab.com
+ */
 package org.csstudio.fzj.cosy.css.product;
 
 import java.io.BufferedReader;
