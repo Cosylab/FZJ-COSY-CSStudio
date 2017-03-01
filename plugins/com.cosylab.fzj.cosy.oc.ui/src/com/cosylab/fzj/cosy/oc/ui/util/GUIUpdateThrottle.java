@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2017 Cosylab d.d.
- *
- * Contact Information:
- *   Cosylab d.d., Ljubljana, Slovenia
- *   http://www.cosylab.com
- */
 package com.cosylab.fzj.cosy.oc.ui.util;
 
 import java.util.Optional;
@@ -24,6 +17,8 @@ import com.cosylab.fzj.cosy.oc.OrbitCorrectionPlugin;
  * and suppresses further updates for a while to limit flicker. Finally, it starts over.
  *
  * @author Kay Kasemir
+ *
+ * The code was copied from org.csstudio.saverestore.ui plugin.
  */
 public class GUIUpdateThrottle extends Thread {
     /** Delay in milliseconds for the initial update after trigger */

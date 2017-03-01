@@ -1,16 +1,9 @@
 /*
- * Copyright (c) 2017 Cosylab d.d.
- *
- * Contact Information:
- *   Cosylab d.d., Ljubljana, Slovenia
- *   http://www.cosylab.com
- */
-package com.cosylab.fzj.cosy.oc.ui.util;
-
-/*
  * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved. ORACLE PROPRIETARY/CONFIDENTIAL. Use is
  * subject to license terms.
  */
+package com.cosylab.fzj.cosy.oc.ui.util;
+
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;

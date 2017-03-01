@@ -4,6 +4,14 @@
  * Contact Information:
  *   Cosylab d.d., Ljubljana, Slovenia
  *   http://www.cosylab.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the Eclipse Public License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  */
 package org.csstudio.fzj.cosy.css.product;
 

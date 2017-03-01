@@ -12,14 +12,23 @@
 
    <copyright>
       Copyright (c) 2017 Cosylab d.d.
+  Contact Information:
+  Cosylab d.d., Ljubljana, Slovenia
+  http://www.cosylab.com
+ 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the Eclipse Public License.
 
-Contact Information:
-Cosylab d.d., Ljubljana, Slovenia
-http://www.cosylab.com
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+For more information about the license please refer to the LICENSE
+file included in the distribution.
    </copyright>
 
-   <license>
-      [Enter License Description here.]
+   <license url="https://www.eclipse.org/legal/epl-v10.html">
+      Eclipse Public License, v 1.0
    </license>
 
    <requires>
