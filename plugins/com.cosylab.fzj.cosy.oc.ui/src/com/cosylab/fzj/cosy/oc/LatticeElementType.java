@@ -29,7 +29,10 @@ public enum LatticeElementType {
     VERTICAL_BPM("bpmv"),
     HORIZONTAL_CORRECTOR("horizontal"),
     VERTICAL_CORRECTOR("vertical"),
-    HORIZONTAL_VERTICAL_CORRECTOR("horizontal/vertical");
+    HORIZONTAL_VERTICAL_CORRECTOR("horizontal/vertical"),
+    DIPOLE("dipole"),
+    QUADRUPOLE("quadrupole"),
+    SEXTUPOLE("sextupole");
 
     private String elementTypeName;
 
@@ -47,15 +50,6 @@ public enum LatticeElementType {
      */
     public String getElementTypeName() {
         return elementTypeName;
-    }
-
-    /**
-     * Returns true if this type represents a BPM or false if it represents a corrector.
-     *
-     * @return true if this is bpm or false if corrector
-     */
-    public boolean isBPM() {
-        return this == HORIZONTAL_BPM || this == VERTICAL_BPM;
     }
 
     /**

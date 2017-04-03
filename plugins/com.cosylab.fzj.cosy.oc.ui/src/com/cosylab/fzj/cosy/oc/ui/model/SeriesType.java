@@ -29,11 +29,18 @@ public enum SeriesType {
     VERTICAL_ORBIT(1, "Vertical Orbit"),
     GOLDEN_HORIZONTAL_ORBIT(2, "Golden Horizontal Orbit"),
     GOLDEN_VERTICAL_ORBIT(3, "Golden Vertical Orbit"),
+    REFERENCE_HORIZONTAL_ORBIT(4, "Horizontal Reference Orbit"),
+    REFERENCE_VERTICAL_ORBIT(5, "Vertical Reference Orbit"),
+    DIFFERENCE_HORIZONTAL_ORBIT(6, "Horizontal Difference Orbit"),
+    DIFFERENCE_VERTICAL_ORBIT(7, "Vertical Difference Orbit"),
     HORIZONTAL_CORRECTORS_CORRECTION(0, "Horizontal Correctors Correction"),
     VERTICAL_CORRECTORS_CORRECTION(1, "Vertical Correctors Correction"),
     BPM(0, "BPM"),
     HORIZONTAL_CORRECTORS(1, "Horizontal Correctors"),
-    VERTICAL_CORRECTORS(2, "Vertical Correctors");
+    VERTICAL_CORRECTORS(2, "Vertical Correctors"),
+    DIPOLES(3, "Dipoles"),
+    QUADS(4, "Quadrupoles"),
+    SEXTUPOLES(5, "Sextupoles");
 
     private int seriesIndex;
     private String seriesName;

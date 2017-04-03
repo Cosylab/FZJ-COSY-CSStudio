@@ -37,6 +37,7 @@ import org.eclipse.swt.widgets.Shell;
 import com.cosylab.fzj.cosy.oc.LatticeElementType;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
+import com.cosylab.fzj.cosy.oc.ui.util.HorizontalAxis;
 import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
 
 import javafx.application.Platform;
@@ -48,7 +49,6 @@ import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ValueAxis;
 import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
@@ -77,7 +77,10 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
 
     private static class Cell extends TextFieldTableCell<BPM,Double> {
 
-        private static final Background BACKGROUND = new Background(new BackgroundFill(new Color(1,0,0,0.2),null,null));
+        private static final Background CHANGED_BACKGROUND = new Background(
+                new BackgroundFill(new Color(1,0,0,0.2),null,null));
+        private static final Background UNUSED_BACKGROUND = new Background(
+                new BackgroundFill(new Color(0.6,0.6,0.6,0.4),null,null));
         private Background defaultBackground = null;
 
         Cell(final Consumer<Boolean> editingCallback) {
@@ -105,14 +108,27 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         public void updateItem(Double item, boolean empty) {
             super.updateItem(item,empty);
             TableRow<BPM> currentRow = getTableRow();
-            if (currentRow.getItem() != null && currentRow.getItem().goldenDifferentProperty().get()) {
-                if (defaultBackground == null) {
-                    defaultBackground = currentRow.getBackground();
-                }
-                currentRow.setBackground(BACKGROUND);
-            } else {
+            if (currentRow.getItem() == null) {
                 if (defaultBackground != null) {
                     currentRow.setBackground(defaultBackground);
+                }
+            } else {
+                if (currentRow.getItem().goldenDifferentProperty().get()) {
+                    if (defaultBackground == null) {
+                        defaultBackground = currentRow.getBackground();
+                    }
+                    currentRow.setBackground(CHANGED_BACKGROUND);
+                } else {
+                    if (currentRow.getItem().enabledProperty().get()) {
+                        if (defaultBackground != null) {
+                            currentRow.setBackground(defaultBackground);
+                        }
+                    } else {
+                        if (defaultBackground == null) {
+                            defaultBackground = currentRow.getBackground();
+                        }
+                        currentRow.setBackground(UNUSED_BACKGROUND);
+                    }
                 }
             }
         }
@@ -239,7 +255,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
     @Override
     protected void buttonPressed(int buttonId) {
         if (buttonId == IDialogConstants.SELECT_ALL_ID) {
-            controller.updateGoldenOrbit();
+            controller.updateGoldenOrbit(true,true);
         } else if (buttonId == IDialogConstants.ABORT_ID) {
             refresh();
         } else {
@@ -301,7 +317,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         pane.add(verticalBPMLabel,1,1);
         pane.add(horizontalBPMTable,0,2);
         pane.add(verticalBPMTable,1,2);
-        setGridConstraints(orbitChart,true,true,HPos.CENTER,VPos.CENTER,Priority.ALWAYS,Priority.ALWAYS);
+        setGridConstraints(orbitChart,true,true,HPos.CENTER,VPos.CENTER,Priority.ALWAYS,Priority.NEVER);
         setGridConstraints(horizontalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
         setGridConstraints(verticalBPMLabel,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER);
         setGridConstraints(horizontalBPMTable,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS);
@@ -310,7 +326,7 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
     }
 
     private Region createOrbitChart() {
-        ValueAxis<Number> xAxis = new NumberAxis(0,185,5);
+        ValueAxis<Number> xAxis = new HorizontalAxis(0,185,5);
         xAxis.setTickLabelFormatter(OrbitCorrectionView.TICK_LABEL_FORMATTER);
         ValueAxis<Number> yAxis = new SymmetricAxis();
         yAxis.setAnimated(false);
@@ -329,7 +345,11 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
         addSeries(SeriesType.GOLDEN_HORIZONTAL_ORBIT);
         addSeries(SeriesType.GOLDEN_VERTICAL_ORBIT);
         orbitZoom = new ZoomableLineChart(orbitChart,false,true,true);
-        OrbitCorrectionView.setMinMax(orbitZoom,orbitChart);
+        orbitZoom.setMinWidth(0);
+        orbitZoom.setMaxWidth(Integer.MAX_VALUE);
+        orbitZoom.setMinHeight(0);
+        orbitZoom.setMaxHeight(Integer.MAX_VALUE);
+        orbitChart.setMaxHeight(150);
         return orbitZoom;
     }
 
@@ -362,6 +382,14 @@ public class AdvancedGoldenOrbitDialog extends Dialog {
             dataPoint.nodeProperty().addListener((a, o, n) -> {
                 if (n != null) {
                     Tooltip.install(n,new Tooltip(bpm.nameProperty().get()));
+                    n.setOnMousePressed(e -> orbitZoom.inhibitZoomProperty().set(true));
+                    n.setOnMouseReleased(e -> orbitZoom.inhibitZoomProperty().set(false));
+                    n.setOnMouseDragged(e -> {
+                        double val = orbitChart.getYAxis().getValueForDisplay(
+                                e.getSceneY() - orbitChart.getPadding().getTop()).doubleValue();
+                        val = (long)(val * 1000.0)/1000.0;
+                        property.apply(bpm).set(val);
+                    });
                 }
             });
             data.add(dataPoint);

@@ -17,6 +17,7 @@
  */
 package com.cosylab.fzj.cosy.oc.ui;
 
+import com.cosylab.fzj.cosy.oc.ui.util.HorizontalAxis;
 import com.cosylab.fzj.cosy.oc.ui.util.SymmetricAxis;
 
 import javafx.beans.property.BooleanProperty;
@@ -27,7 +28,6 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -45,7 +45,7 @@ public class ZoomableLineChart extends StackPane {
 
     private static final int MIN_ZOOM_THRESHOLD = 5;
     private final LineChart<Number,Number> chart;
-    private final NumberAxis xAxis;
+    private final HorizontalAxis xAxis;
     private final SymmetricAxis yAxis;
     private final Rectangle zoomRect;
     private final boolean useXAutoRangeForDefaultZoom;
@@ -58,6 +58,7 @@ public class ZoomableLineChart extends StackPane {
     private final boolean horizontalZoom;
     private final boolean verticalZoom;
     private BooleanProperty defaultZoomProperty = new SimpleBooleanProperty(true);
+    private BooleanProperty inhibitZoomProperty = new SimpleBooleanProperty(false);
 
     /**
      * Constructs a new zoomable chart without any labels.
@@ -66,7 +67,7 @@ public class ZoomableLineChart extends StackPane {
             boolean horizontalZoom, boolean verticalZoom) {
         this.chart = chart;
         this.useXAutoRangeForDefaultZoom = useXAutoRangeForDefaultZoom;
-        this.xAxis = (NumberAxis)chart.getXAxis();
+        this.xAxis = (HorizontalAxis)chart.getXAxis();
         this.yAxis = (SymmetricAxis)chart.getYAxis();
         this.defaultXMin = xAxis.getLowerBound();
         this.defaultXMax = xAxis.getUpperBound();
@@ -80,6 +81,15 @@ public class ZoomableLineChart extends StackPane {
         this.zoomRect.setStroke(Color.DARKSEAGREEN.darker());
         getChildren().addAll(this.chart,this.zoomRect);
         setUpZooming();
+    }
+
+    /**
+     * Returns the property which specifies if the zooming is allowed or inhibited.
+     *
+     * @return the property defining if zoom is allowed or not
+     */
+    public BooleanProperty inhibitZoomProperty() {
+        return inhibitZoomProperty;
     }
 
     private double[] snap(double x, double y) {
@@ -117,12 +127,14 @@ public class ZoomableLineChart extends StackPane {
             }
         });
         chart.setOnMousePressed(e -> {
+            if (inhibitZoomProperty.get()) return;
             double[] snap = snap(e.getX(),e.getY());
             mouseAnchor.set(new Point2D(snap[0],snap[1]));
             zoomRect.setWidth(0);
             zoomRect.setHeight(0);
         });
         chart.setOnMouseDragged(e -> {
+            if (inhibitZoomProperty.get()) return;
             double x = e.getX();
             double y = e.getY();
             double xAnchor = mouseAnchor.get().getX();
@@ -183,6 +195,12 @@ public class ZoomableLineChart extends StackPane {
         defaultZoomProperty.set(true);
     }
 
+    /**
+     * Zoom the chart in horizontal axis to the given zommed in range.
+     *
+     * @param low the lower boundary to zoom into
+     * @param high the upper boundary to zoom into
+     */
     public void doHorizontalZoom(double low, double high) {
         if (defaultZoomProperty.get()) {
             defaultYMin = yAxis.getLowerBound();

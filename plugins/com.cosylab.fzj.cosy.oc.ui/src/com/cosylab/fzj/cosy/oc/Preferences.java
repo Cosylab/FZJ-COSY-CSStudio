@@ -1,19 +1,9 @@
 /*
- * Copyright (c) 2017 Cosylab d.d.
- *
- * Contact Information:
- *   Cosylab d.d., Ljubljana, Slovenia
- *   http://www.cosylab.com
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the Eclipse Public License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * For more information about the license please refer to the LICENSE
- * file included in the distribution.
+ * Copyright (c) 2017 Cosylab d.d. Contact Information: Cosylab d.d., Ljubljana, Slovenia http://www.cosylab.com This
+ * program is free software: you can redistribute it and/or modify it under the terms of the Eclipse Public License.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information about the license please refer
+ * to the LICENSE file included in the distribution.
  */
 package com.cosylab.fzj.cosy.oc;
 
@@ -83,6 +73,18 @@ public final class Preferences {
     public static final String PV_VERTICAL_CORRECTOR_POSITIONS = "vertical_corrector_positions";
     /** Vertical corrector enable PV provides 1 or 0 states whether individual corrector is enabled or not */
     public static final String PV_VERTICAL_CORRECTOR_ENABLED = "vertical_corrector_enabled";
+    /** Sextupole names PV provides the array of names of all sextupoles in the ring */
+    public static final String PV_SEXTUPOLE_NAMES = "sextupole_names";
+    /** Sextupole positions PV provides the positions of all sextupoles along the Z axis */
+    public static final String PV_SEXTUPOLE_POSITIONS = "sextupole_positions";
+    /** Quadrupole names PV provides the array of names of all quadrupoles in the ring */
+    public static final String PV_QUADRUPOLE_NAMES = "quadrupole_names";
+    /** Quadrupole positions PV provides the positions of all quadrupoles along the Z axis */
+    public static final String PV_QUADRUPOLE_POSITIONS = "quadrupole_positions";
+    /** Dipole names PV provides the array of names of all dipoles in the ring */
+    public static final String PV_DIPOLE_NAMES = "dipole_names";
+    /** Dipole positions PV provides the positions of all dipoles along the Z axis */
+    public static final String PV_DIPOLE_POSITIONS = "dipole_positions";
     /** Horizontal orbit PV provides the horizontal orbit position */
     public static final String PV_HORIZONTAL_ORBIT = "horizontal_orbit";
     /** Vertical orbit PV provides the vertical orbit position */
@@ -91,6 +93,14 @@ public final class Preferences {
     public static final String PV_GOLDEN_HORIZONTAL_ORBIT = "golden_horizontal_orbit";
     /** Golden vertical orbit provides the golden vertical orbit position */
     public static final String PV_GOLDEN_VERTICAL_ORBIT = "golden_vertical_orbit";
+    /** Horizontal reference orbit */
+    public static final String PV_HORIZONTAL_REFERENCE_ORBIT = "reference_horizontal_orbit";
+    /** Vertical reference orbit */
+    public static final String PV_VERTICAL_REFERENCE_ORBIT = "reference_vertical_orbit";
+    /** Horizontal difference orbit */
+    public static final String PV_HORIZONTAL_DIFFERENCE_ORBIT = "difference_horizontal_orbit";
+    /** Vertical difference orbit */
+    public static final String PV_VERTICAL_DIFFERENCE_ORBIT = "difference_vertical_orbit";
     /** Horizontal correctors (mrad) provides the last horizontal correctors kick in milli radians */
     public static final String PV_HORIZONTAL_CORRECTOR_MRAD = "horizontal_corrector_mrad";
     /** Vertical correctors (mrad) provides the last vertical correctors kick in milli radians */
@@ -107,6 +117,10 @@ public final class Preferences {
     public static final String PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC = "golden_horizontal_orbit_statistic";
     /** Golden vertical orbit statistic provides the statistical parameters of the current vertical golden orbit. */
     public static final String PV_GOLDEN_VERTICAL_ORBIT_STATISTIC = "golden_vertical_orbit_statistic";
+    /** Correction frequency PV specifies the frequency with which the orbit correction is performed. */
+    public static final String PV_CORRECTION_FREQUENCY = "correction_frequency";
+    /** Correction type PV switches the correction between the split matrices and coupled matrices */
+    public static final String PV_CORRECTION_TYPE = "correction_type";
     /** Orbit response matrix provides the pv with the orbit response matrix in a single array */
     @Deprecated
     public static final String PV_ORM = "orm";
@@ -354,7 +368,9 @@ public final class Preferences {
         Map<String,String> pvs = new HashMap<>();
         Arrays.asList(PV_HORIZONTAL_BPM_NAMES,PV_HORIZONTAL_BPM_POSITIONS,PV_VERTICAL_BPM_NAMES,
                 PV_VERTICAL_BPM_POSITIONS,PV_HORIZONTAL_CORRECTOR_NAMES,PV_HORIZONTAL_CORRECTOR_POSITIONS,
-                PV_VERTICAL_CORRECTOR_NAMES,PV_VERTICAL_CORRECTOR_POSITIONS).forEach(n -> pvs.put(n,getPVName(n)));
+                PV_VERTICAL_CORRECTOR_NAMES,PV_VERTICAL_CORRECTOR_POSITIONS,PV_DIPOLE_NAMES,PV_DIPOLE_POSITIONS,
+                PV_QUADRUPOLE_NAMES,PV_QUADRUPOLE_POSITIONS,PV_SEXTUPOLE_NAMES,PV_SEXTUPOLE_POSITIONS)
+                .forEach(n -> pvs.put(n,getPVName(n)));
         return pvs;
     }
 
@@ -366,9 +382,10 @@ public final class Preferences {
     public Map<String,String> getPVNames() {
         Map<String,String> pvs = new HashMap<>();
         Arrays.asList(PV_HORIZONTAL_ORBIT,PV_VERTICAL_ORBIT,PV_GOLDEN_HORIZONTAL_ORBIT,PV_GOLDEN_VERTICAL_ORBIT,
-                PV_HORIZONTAL_CORRECTOR_MRAD,PV_VERTICAL_CORRECTOR_MRAD,PV_HORIZONTAL_CORRECTOR_MA,
-                PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTIC,PV_VERTICAL_ORBIT_STATISTIC,
-                PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
+                PV_HORIZONTAL_REFERENCE_ORBIT,PV_VERTICAL_REFERENCE_ORBIT,PV_HORIZONTAL_DIFFERENCE_ORBIT,
+                PV_VERTICAL_DIFFERENCE_ORBIT,PV_HORIZONTAL_CORRECTOR_MRAD,PV_VERTICAL_CORRECTOR_MRAD,
+                PV_HORIZONTAL_CORRECTOR_MA,PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTIC,
+                PV_VERTICAL_ORBIT_STATISTIC,PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
                 PV_ORM).forEach(n -> pvs.put(n,getPVName(n)));
         Arrays.asList(PV_RESET_CORRECTION,PV_START_MEASURING_ORBIT,PV_STOP_MEASURING_ORBIT,PV_MEASURE_ORBIT_ONCE,
                 PV_START_CORRECTING_ORBIT,PV_STOP_CORRECTING_ORBIT,PV_CORRECT_ORBIT_ONCE,PV_HORIZONTAL_CUTOFF,

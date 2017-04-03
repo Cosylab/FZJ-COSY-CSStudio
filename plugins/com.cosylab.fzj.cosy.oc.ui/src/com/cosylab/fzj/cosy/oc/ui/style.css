@@ -90,36 +90,81 @@
     -fx-padding: 0px;
 }
 
+*{
+ 	blue: #0000ff;
+ 	red: #ff0000;
+ 	green: #009900;
+ 	orange: #cc9900;
+ 	lightblue: #7092be;
+ 	lightpurple: #c76799;
+ 	lightgreen: #64ffb1;
+ 	lightorange: #e2dd81;
+ 	grey: #696969;
+ 	purple: #a349a4;
+}
+
 .orbit-chart .default-color0.chart-series-line { 
-	-fx-stroke: #0000ff;
+	-fx-stroke: blue;
 }
 
 .orbit-chart .default-color0.chart-line-symbol {
-	-fx-background-color: #0000ff;
+	-fx-background-color: blue;
 }
 
 .orbit-chart .default-color1.chart-series-line { 
-	-fx-stroke: #ff0000;
+	-fx-stroke: red;
 }
 
 .orbit-chart .default-color1.chart-line-symbol {
-	-fx-background-color: #ff0000;
+	-fx-background-color: red;
 }
 
 .orbit-chart .default-color2.chart-series-line { 
-	-fx-stroke: #00ff00;
+	-fx-stroke: green;
 }
 
 .orbit-chart .default-color2.chart-line-symbol {
-	-fx-background-color: #00ff00;
+	-fx-background-color: green;
 }
 
 .orbit-chart .default-color3.chart-series-line { 
-	-fx-stroke: #cc9900;
+	-fx-stroke: orange;
 }
 
 .orbit-chart .default-color3.chart-line-symbol {
-	-fx-background-color: #cc9900;
+	-fx-background-color: orange;
+}
+
+.orbit-chart .default-color4.chart-series-line { 
+	-fx-stroke: lightblue;
+}
+
+.orbit-chart .default-color4.chart-line-symbol {
+	-fx-background-color: lightblue;
+}
+
+.orbit-chart .default-color5.chart-series-line { 
+	-fx-stroke: lightpurple;
+}
+
+.orbit-chart .default-color5.chart-line-symbol {
+	-fx-background-color: lightpurple;
+}
+
+.orbit-chart .default-color6.chart-series-line { 
+	-fx-stroke: lightgreen;
+}
+
+.orbit-chart .default-color6.chart-line-symbol {
+	-fx-background-color: lightgreen;
+}
+
+.orbit-chart .default-color7.chart-series-line { 
+	-fx-stroke: lightorange;
+}
+
+.orbit-chart .default-color7.chart-line-symbol {
+	-fx-background-color: lightorange;
 }
 
 .corrections-chart .chart-line-symbol {
@@ -129,12 +174,12 @@
 }
 
 .corrections-chart .default-color0.chart-line-symbol {
-	-fx-background-color: #0000ff, #ffffff;
+	-fx-background-color: blue, #ffffff;
 	-fx-background-radius: 0;
 }
 
 .corrections-chart .default-color1.chart-line-symbol {
-	-fx-background-color: #ff0000, #ffffff;
+	-fx-background-color: red, #ffffff;
 	-fx-background-radius: 0;
 }
 
@@ -161,110 +206,264 @@
 	-fx-stroke: transparent;
 }
 
+.lattice-chart .default-color3.chart-series-line { 
+	-fx-stroke: transparent;
+}
+
+.lattice-chart .default-color4.chart-series-line { 
+	-fx-stroke: transparent;
+}
+
+.lattice-chart .default-color5.chart-series-line { 
+	-fx-stroke: transparent;
+}
+
 .lattice-chart .default-color0.chart-line-symbol { 
-    -fx-background-color: #696969;     
+    -fx-background-color: grey;     
    	-fx-shape: "M0,0 l3.5,0 0,15 -3.5,0, 0,-15";
 }
 
 .lattice-chart .default-color1.chart-line-symbol { 
-    -fx-background-color: #0000ff;
+    -fx-background-color: blue;
     -fx-shape: "M-1.75,0a1.75,2.75 0 1,0 7,0a1.75,2.75 0 1,0 -7,0";
 }
 
 .lattice-chart .default-color2.chart-line-symbol { 
-    -fx-background-color: #ff0000; 
+    -fx-background-color: red; 
     -fx-shape: "M-1.75,0a1.75,2.75 0 1,0 7,0a1.75,2.75 0 1,0 -7,0";
 }
 
+.lattice-chart .default-color3.chart-line-symbol { 
+    -fx-background-color: orange;     
+   	-fx-shape: "M0,0 l3.5,0 0,15 -3.5,0, 0,-15";
+}
+
+.lattice-chart .default-color4.chart-line-symbol { 
+    -fx-background-color: green;     
+   	-fx-shape: "M0,0 l3.5,0 0,15 -3.5,0, 0,-15";
+}
+
+.lattice-chart .default-color5.chart-line-symbol { 
+    -fx-background-color: purple;     
+   	-fx-shape: "M0,0 l3.5,0 0,15 -3.5,0, 0,-15";
+}
+
 .horizontal-check-box {
-	-fx-text-fill: #0000ff;
+	-fx-text-fill: blue;
 	-fx-font-weight: bold;	
 }
 
 .horizontal-check-box .box {
-	-fx-outer-border: #0000ff;
+	-fx-outer-border: blue;
 	-fx-body-color: transparent;
 }
 
 .horizontal-check-box:selected .mark {
-    -fx-background-color: #0000ff;
+    -fx-background-color: blue;
 }
 
 .horizontal-check-box:focused .box {
-	-fx-background-color: #0000ff, #0000ff, -fx-inner-border, -fx-body-color;
+	-fx-background-color: blue, blue, -fx-inner-border, -fx-body-color;
 }
 
 .vertical-check-box {
-	-fx-text-fill: #ff0000;
+	-fx-text-fill: red;
 	-fx-font-weight: bold;	
 }
 
 .vertical-check-box .box {
-	-fx-outer-border: #ff0000;
+	-fx-outer-border: red;
 	-fx-body-color: transparent;
 }
 
 .vertical-check-box:selected .mark {
-    -fx-background-color: #ff0000;
+    -fx-background-color: red;
 }
 
 .vertical-check-box:focused .box {
-	-fx-background-color: #ff0000, #ff0000, -fx-inner-border, -fx-body-color;
+	-fx-background-color: red, red, -fx-inner-border, -fx-body-color;
 }
 
 .golden-horizontal-check-box {
-	-fx-text-fill: #009900;
+	-fx-text-fill: green;
 	-fx-font-weight: bold;	
 }
 
 .golden-horizontal-check-box .box {
-	-fx-outer-border: #009900;
+	-fx-outer-border: green;
 	-fx-body-color: transparent;
 }
 
 .golden-horizontal-check-box:selected .mark {
-    -fx-background-color: #009900;
+    -fx-background-color: green;
 }
 
 .golden-horizontal-check-box:focused .box {
-	-fx-background-color: #009900, #009900, -fx-inner-border, -fx-body-color;
+	-fx-background-color: green, green, -fx-inner-border, -fx-body-color;
 }
 
 .golden-vertical-check-box {
-	-fx-text-fill: #cc9900;
+	-fx-text-fill: orange;
 	-fx-font-weight: bold;	
 }
 
 .golden-vertical-check-box .box {
-	-fx-outer-border: #cc9900;
+	-fx-outer-border: orange;
 	-fx-body-color: transparent;
 }
 
 .golden-vertical-check-box:selected .mark {
-    -fx-background-color: #cc9900;
+    -fx-background-color: orange;
 }
 
 .golden-vertical-check-box:focused .box {
-	-fx-background-color: #cc9900, #cc9900, -fx-inner-border, -fx-body-color;
+	-fx-background-color: orange, orange, -fx-inner-border, -fx-body-color;
+}
+
+.reference-horizontal-check-box {
+	-fx-text-fill: lightblue;
+	-fx-font-weight: bold;	
+}
+
+.reference-horizontal-check-box .box {
+	-fx-outer-border: lightblue;
+	-fx-body-color: transparent;
+}
+
+.reference-horizontal-check-box:selected .mark {
+    -fx-background-color: lightblue;
+}
+
+.reference-horizontal-check-box:focused .box {
+	-fx-background-color: lightblue, lightblue, -fx-inner-border, -fx-body-color;
+}
+
+.reference-vertical-check-box {
+	-fx-text-fill: lightpurple;
+	-fx-font-weight: bold;	
+}
+
+.reference-vertical-check-box .box {
+	-fx-outer-border: lightpurple;
+	-fx-body-color: transparent;
+}
+
+.reference-vertical-check-box:selected .mark {
+    -fx-background-color: lightpurple;
+}
+
+.reference-vertical-check-box:focused .box {
+	-fx-background-color: lightpurple, lightpurple, -fx-inner-border, -fx-body-color;
+}
+
+.difference-horizontal-check-box {
+	-fx-text-fill: lightgreen;
+	-fx-font-weight: bold;	
+}
+
+.difference-horizontal-check-box .box {
+	-fx-outer-border: lightgreen;
+	-fx-body-color: transparent;
+}
+
+.difference-horizontal-check-box:selected .mark {
+    -fx-background-color: lightgreen;
+}
+
+.difference-horizontal-check-box:focused .box {
+	-fx-background-color: lightgreen, lightgreen, -fx-inner-border, -fx-body-color;
+}
+
+.difference-vertical-check-box {
+	-fx-text-fill: lightorange;
+	-fx-font-weight: bold;	
+}
+
+.difference-vertical-check-box .box {
+	-fx-outer-border: lightorange;
+	-fx-body-color: transparent;
+}
+
+.difference-vertical-check-box:selected .mark {
+    -fx-background-color: lightorange;
+}
+
+.difference-vertical-check-box:focused .box {
+	-fx-background-color: lightorange, lightorange, -fx-inner-border, -fx-body-color;
 }
 
 .bpm-check-box {
-	-fx-text-fill: #696969;
+	-fx-text-fill: grey;
 	-fx-font-weight: bold;	
 }
 
 .bpm-check-box .box {
-	-fx-outer-border: #696969;
+	-fx-outer-border: grey;
 	-fx-body-color: transparent;
 }
 
 .bpm-check-box:selected .mark {
-    -fx-background-color: #696969;
+    -fx-background-color: grey;
 }
 
 .bpm-check-box:focused .box {
-	-fx-background-color: #696969, #696969, -fx-inner-border, -fx-body-color;
+	-fx-background-color: grey, grey, -fx-inner-border, -fx-body-color;
 }
+
+.sextupoles-check-box {
+	-fx-text-fill: purple;
+	-fx-font-weight: bold;	
+}
+
+.sextupoles-check-box .box {
+	-fx-outer-border: purple;
+	-fx-body-color: transparent;
+}
+
+.sextupoles-check-box:selected .mark {
+    -fx-background-color: purple;
+}
+
+.sextupoles-check-box:focused .box {
+	-fx-background-color: purple, purple, -fx-inner-border, -fx-body-color;
+}
+
+.quads-check-box {
+	-fx-text-fill: green;
+	-fx-font-weight: bold;	
+}
+
+.quads-check-box .box {
+	-fx-outer-border: green;
+	-fx-body-color: transparent;
+}
+
+.quads-check-box:selected .mark {
+    -fx-background-color: green;
+}
+
+.quads-check-box:focused .box {
+	-fx-background-color: green, green, -fx-inner-border, -fx-body-color;
+}
+
+.dipoles-check-box {
+	-fx-text-fill: orange;
+	-fx-font-weight: bold;	
+}
+
+.dipoles-check-box .box {
+	-fx-outer-border: orange;
+	-fx-body-color: transparent;
+}
+
+.dipoles-check-box:selected .mark {
+    -fx-background-color: orange;
+}
+
+.dipoles-check-box:focused .box {
+	-fx-background-color: orange, orange, -fx-inner-border, -fx-body-color;
+}
+
 .slider-pointing .thumb {
 	-fx-shape: "M0 0 H 5 V 3 L 2.5 10 L 0 3 L 0 0";
     -fx-background-color:

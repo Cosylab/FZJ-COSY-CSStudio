@@ -1,19 +1,9 @@
 /*
- * Copyright (c) 2017 Cosylab d.d.
- *
- * Contact Information:
- *   Cosylab d.d., Ljubljana, Slovenia
- *   http://www.cosylab.com
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the Eclipse Public License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * For more information about the license please refer to the LICENSE
- * file included in the distribution.
+ * Copyright (c) 2017 Cosylab d.d. Contact Information: Cosylab d.d., Ljubljana, Slovenia http://www.cosylab.com This
+ * program is free software: you can redistribute it and/or modify it under the terms of the Eclipse Public License.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information about the license please refer
+ * to the LICENSE file included in the distribution.
  */
 package com.cosylab.fzj.cosy.oc.ui;
 
@@ -83,8 +73,11 @@ import com.cosylab.fzj.cosy.oc.OrbitCorrectionPlugin;
 import com.cosylab.fzj.cosy.oc.Preferences;
 import com.cosylab.fzj.cosy.oc.ui.model.BPM;
 import com.cosylab.fzj.cosy.oc.ui.model.Corrector;
+import com.cosylab.fzj.cosy.oc.ui.model.Dipole;
 import com.cosylab.fzj.cosy.oc.ui.model.LatticeElement;
+import com.cosylab.fzj.cosy.oc.ui.model.Quadrupole;
 import com.cosylab.fzj.cosy.oc.ui.model.SeriesType;
+import com.cosylab.fzj.cosy.oc.ui.model.Sextupole;
 import com.cosylab.fzj.cosy.oc.ui.util.GUIUpdateThrottle;
 
 import javafx.application.Platform;
@@ -145,6 +138,8 @@ public class OrbitCorrectionController {
     private static final String MSG_USE_CURRENT_HORIZONTAL_FAILURE = "Error occured while updating golden horizontal orbit to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_SUCCESS = "Golden vertical orbit was successfully updated to current.";
     private static final String MSG_USE_CURRENT_VERTICAL_FAILURE = "Error occured while updatind golden vertical orbit to current.";
+    private static final String MSG_USE_CURRENT_AS_REFERENCE_SUCCESS = "Reference orbit successfully updated to the current orbit values.";
+    private static final String MSG_USE_CURRENT_AS_REFERENCE_FAILURE = "Reference orbit update failed.";
     @Deprecated
     private static final String MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS = "Golden orbit was successfully downloaded.";
     @Deprecated
@@ -284,6 +279,9 @@ public class OrbitCorrectionController {
     private final List<BPM> verticalBPMs = new ArrayList<>();
     private final List<Corrector> horizontalCorrectors = new ArrayList<>();
     private final List<Corrector> verticalCorrectors = new ArrayList<>();
+    private final List<Quadrupole> quadrupoles = new ArrayList<>();
+    private final List<Dipole> dipoles = new ArrayList<>();
+    private final List<Sextupole> sextupoles = new ArrayList<>();
     private final List<Consumer<LatticeElementType>> latticeUpdateCallbacks = new CopyOnWriteArrayList<>();
     private final List<Consumer<SeriesType>> goldenOrbitCallbacks = new CopyOnWriteArrayList<>();
     private static final BiConsumer<Runnable,Throwable> AFTER_EXECUTE = (r, t) -> {
@@ -409,6 +407,39 @@ public class OrbitCorrectionController {
     public List<Corrector> getVerticalCorrectors() {
         synchronized (verticalCorrectors) {
             return new ArrayList<>(verticalCorrectors);
+        }
+    }
+
+    /**
+     * Returns the list of all quadrupole magnets.
+     *
+     * @return list of quadrupoles
+     */
+    public List<LatticeElement> getQuadrupoles() {
+        synchronized (quadrupoles) {
+            return new ArrayList<>(quadrupoles);
+        }
+    }
+
+    /**
+     * Returns the list of all dipoles magnets.
+     *
+     * @return list of dipoles
+     */
+    public List<LatticeElement> getDipoles() {
+        synchronized (dipoles) {
+            return new ArrayList<>(dipoles);
+        }
+    }
+
+    /**
+     * Returns the list of all sextupoles magnets.
+     *
+     * @return list of sextupoles
+     */
+    public List<LatticeElement> getSextupoles() {
+        synchronized (sextupoles) {
+            return new ArrayList<>(sextupoles);
         }
     }
 
@@ -605,26 +636,34 @@ public class OrbitCorrectionController {
      * Exports current horizontal and vertical orbit with weights into the given file.
      *
      * @param file file in which horizontal and vertical orbit with weights will be written
+     * @param comment to store into the file if given
      */
-    public void exportCurrentOrbit(File file) {
+    public void exportCurrentOrbit(File file, Optional<String> comment) {
         Preferences.getInstance().saveInitialDirectory(file.getParentFile());
-        writeOrbitToFile(file,Preferences.PV_HORIZONTAL_ORBIT,Preferences.PV_VERTICAL_ORBIT,
+        writeOrbitToFile(file,comment.orElse(null),Preferences.PV_HORIZONTAL_ORBIT,Preferences.PV_VERTICAL_ORBIT,
                 MSG_EXPORT_CURRENT_ORBIT_SUCCESS,MSG_EXPORT_CURRENT_ORBIT_FAILURE);
     }
 
     /**
      * Update the golden orbit as it is defined by the golden position wish property on each BPM.
+     *
+     * @param horizontal true if horizontal golden orbit should be updated
+     * @param vertical true if vertical golden orbit should be updated
      */
-    public void updateGoldenOrbit() {
+    public void updateGoldenOrbit(boolean horizontal, boolean vertical) {
         ToDoubleFunction<BPM> mapper = bpm -> bpm.goldenPositionWishProperty().get();
-        final ArrayDouble horizontal = new ArrayDouble(getHorizontalBPMs().stream().mapToDouble(mapper).toArray());
-        final ArrayDouble vertical = new ArrayDouble(getVerticalBPMs().stream().mapToDouble(mapper).toArray());
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT))
-                .ifPresent(pv -> writeData(pv,horizontal,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Horizontal"),
-                        String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"horizontal"),4));
-        ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
-                .ifPresent(pv -> writeData(pv,vertical,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Vertical"),
-                        String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"vertical"),5));
+        if (horizontal) {
+            final ArrayDouble hValues = new ArrayDouble(getHorizontalBPMs().stream().mapToDouble(mapper).toArray());
+            ofNullable(pvs.get(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT))
+                    .ifPresent(pv -> writeData(pv,hValues,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Horizontal"),
+                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"horizontal"),4));
+        }
+        if (vertical) {
+            final ArrayDouble vValues = new ArrayDouble(getVerticalBPMs().stream().mapToDouble(mapper).toArray());
+            ofNullable(pvs.get(Preferences.PV_GOLDEN_VERTICAL_ORBIT))
+                    .ifPresent(pv -> writeData(pv,vValues,String.format(MSG_UPLOAD_GOLDEN_ORBIT_SUCCESS,"Vertical"),
+                            String.format(MSG_UPLOAD_GOLDEN_ORBIT_FAILURE,"vertical"),5));
+        }
     }
 
     /**
@@ -672,7 +711,7 @@ public class OrbitCorrectionController {
      */
     @Deprecated
     public void downloadGoldenOrbit(File file) {
-        writeOrbitToFile(file,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,Preferences.PV_GOLDEN_VERTICAL_ORBIT,
+        writeOrbitToFile(file,null,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT,Preferences.PV_GOLDEN_VERTICAL_ORBIT,
                 MSG_DOWNLOAD_GOLDEN_ORBIT_SUCCESS,MSG_DOWNLOAD_GOLDEN_ORBIT_FAILURE);
     }
 
@@ -692,6 +731,28 @@ public class OrbitCorrectionController {
         if (verticalOrbit != null && goldenVerticalOrbit != null) {
             writeData(goldenVerticalOrbit,verticalOrbit.value,MSG_USE_CURRENT_VERTICAL_SUCCESS,
                     MSG_USE_CURRENT_VERTICAL_FAILURE,0);
+        }
+        throttle.trigger();
+    }
+
+    /**
+     * Uses current horizontal or vertical orbit values as a reference orbit.
+     *
+     * @param horizontal true if the horizontal reference orbit should be applied or false if vertical
+     */
+    public void useCurrentAsReference(boolean horizontal) {
+        if (!throttle.isRunning()) return;
+        final PV destination, source;
+        if (horizontal) {
+            destination = pvs.get(Preferences.PV_HORIZONTAL_REFERENCE_ORBIT);
+            source = pvs.get(Preferences.PV_HORIZONTAL_ORBIT);
+        } else {
+            destination = pvs.get(Preferences.PV_VERTICAL_REFERENCE_ORBIT);
+            source = pvs.get(Preferences.PV_VERTICAL_ORBIT);
+        }
+        if (destination != null && source != null) {
+            writeData(destination,source.value,MSG_USE_CURRENT_AS_REFERENCE_SUCCESS,
+                    MSG_USE_CURRENT_AS_REFERENCE_FAILURE,0);
         }
         throttle.trigger();
     }
@@ -828,6 +889,9 @@ public class OrbitCorrectionController {
             }
             clearList(horizontalBPMs);
             clearList(verticalBPMs);
+            clearList(quadrupoles);
+            clearList(dipoles);
+            clearList(sextupoles);
             clearList(horizontalCorrectors);
             clearList(verticalCorrectors);
             nonUIexecutor.shutdownNow();
@@ -887,6 +951,12 @@ public class OrbitCorrectionController {
                     addToList(horizontalCorrectors,new Corrector(e));
                 } else if (e.getType() == LatticeElementType.VERTICAL_CORRECTOR) {
                     addToList(verticalCorrectors,new Corrector(e));
+                } else if (e.getType() == LatticeElementType.QUADRUPOLE) {
+                    addToList(quadrupoles,new Quadrupole(e));
+                } else if (e.getType() == LatticeElementType.DIPOLE) {
+                    addToList(dipoles,new Dipole(e));
+                } else if (e.getType() == LatticeElementType.SEXTUPOLE) {
+                    addToList(sextupoles,new Sextupole(e));
                 }
             });
         } else {
@@ -1026,6 +1096,17 @@ public class OrbitCorrectionController {
             VNumberArray vCorrEnable = getPVNumberArray.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
             handleLatticeUpdate(vCorrNames,vCorrPositions,vCorrEnable,verticalCorrectors,
                     LatticeElementType.VERTICAL_CORRECTOR,Corrector::new);
+            VStringArray quadrupoleNames = getSlowPVString.apply(Preferences.PV_QUADRUPOLE_NAMES);
+            VNumberArray quadrupolePositions = getSlowPVNumber.apply(Preferences.PV_QUADRUPOLE_POSITIONS);
+            handleLatticeUpdate(quadrupoleNames,quadrupolePositions,null,quadrupoles,LatticeElementType.QUADRUPOLE,
+                    Quadrupole::new);
+            VStringArray dipoleNames = getSlowPVString.apply(Preferences.PV_DIPOLE_NAMES);
+            VNumberArray dipolePositions = getSlowPVNumber.apply(Preferences.PV_DIPOLE_POSITIONS);
+            handleLatticeUpdate(dipoleNames,dipolePositions,null,dipoles,LatticeElementType.DIPOLE,Dipole::new);
+            VStringArray sextupoleNames = getSlowPVString.apply(Preferences.PV_SEXTUPOLE_NAMES);
+            VNumberArray sextupolePositions = getSlowPVNumber.apply(Preferences.PV_SEXTUPOLE_POSITIONS);
+            handleLatticeUpdate(sextupoleNames,sextupolePositions,null,sextupoles,LatticeElementType.SEXTUPOLE,
+                    Sextupole::new);
         }
     }
 
@@ -1097,6 +1178,14 @@ public class OrbitCorrectionController {
                 pv -> updateOrbit(pv.value,SeriesType.GOLDEN_HORIZONTAL_ORBIT));
         handlePV.accept(Preferences.PV_GOLDEN_VERTICAL_ORBIT,
                 pv -> updateOrbit(pv.value,SeriesType.GOLDEN_VERTICAL_ORBIT));
+        handlePV.accept(Preferences.PV_HORIZONTAL_REFERENCE_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.REFERENCE_HORIZONTAL_ORBIT));
+        handlePV.accept(Preferences.PV_VERTICAL_REFERENCE_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.REFERENCE_VERTICAL_ORBIT));
+        handlePV.accept(Preferences.PV_HORIZONTAL_DIFFERENCE_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.DIFFERENCE_HORIZONTAL_ORBIT));
+        handlePV.accept(Preferences.PV_VERTICAL_DIFFERENCE_ORBIT,
+                pv -> updateOrbit(pv.value,SeriesType.DIFFERENCE_VERTICAL_ORBIT));
         if (mradProperty.get()) {
             handlePV.accept(Preferences.PV_HORIZONTAL_CORRECTOR_MRAD,
                     pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
@@ -1149,6 +1238,7 @@ public class OrbitCorrectionController {
         final ListNumber va = ((VNumberArray)value).getData();
         if (va.size() == 0) return;
         Function<BPM,DoubleProperty> property;
+        Predicate<BPM> inhibited = bpm -> false;
         List<BPM> bpms;
         boolean callback = false;
         switch (type) {
@@ -1162,26 +1252,54 @@ public class OrbitCorrectionController {
                 break;
             case GOLDEN_HORIZONTAL_ORBIT:
                 property = bpm -> bpm.goldenPositionProperty();
+                inhibited = bpm -> bpm.inhibitedProperty().get();
                 bpms = horizontalBPMs;
                 callback = true;
                 break;
             case GOLDEN_VERTICAL_ORBIT:
                 property = bpm -> bpm.goldenPositionProperty();
+                inhibited = bpm -> bpm.inhibitedProperty().get();
                 bpms = verticalBPMs;
                 callback = true;
+                break;
+            case REFERENCE_HORIZONTAL_ORBIT:
+                property = bpm -> bpm.referencePositionProperty();
+                bpms = horizontalBPMs;
+                break;
+            case REFERENCE_VERTICAL_ORBIT:
+                property = bpm -> bpm.referencePositionProperty();
+                bpms = verticalBPMs;
+                break;
+            case DIFFERENCE_HORIZONTAL_ORBIT:
+                property = bpm -> bpm.differencePositionProperty();
+                bpms = horizontalBPMs;
+                break;
+            case DIFFERENCE_VERTICAL_ORBIT:
+                property = bpm -> bpm.differencePositionProperty();
+                bpms = verticalBPMs;
                 break;
             default:
                 return;
         }
         synchronized (bpms) {
+            final Predicate<BPM> filterOut = inhibited;
             long enabledCount = bpms.stream().filter(b -> b.enabledProperty().get()).count();
             final IteratorNumber it = va.iterator();
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
-                bpms.stream().filter(b -> b.enabledProperty().get())
-                        .forEach(b -> property.apply(b).set(it.nextDouble()));
+                bpms.stream().filter(b -> b.enabledProperty().get()).forEach(b -> {
+                    double val = it.nextDouble();
+                    if (!filterOut.test(b)) {
+                        property.apply(b).set(val);
+                    }
+                });
             } else if (bpms.size() == va.size()) {
-                bpms.forEach(b -> property.apply(b).set(it.nextDouble()));
+                bpms.forEach(b -> {
+                    double val = it.nextDouble();
+                    if (!filterOut.test(b)) {
+                        property.apply(b).set(val);
+                    }
+                });
             } else if (bpms.size() > va.size()) {
                 writeToLog(
                         String.format("The number of %s values (%d) does not match the number of enabled bpms (%d/%d).",
@@ -1189,7 +1307,11 @@ public class OrbitCorrectionController {
                         Level.WARNING,empty());
                 int i = 0;
                 while (it.hasNext()) {
-                    property.apply(bpms.get(i++)).set(it.nextDouble());
+                    double val = it.nextDouble();
+                    BPM bpm = bpms.get(i++);
+                    if (!filterOut.test(bpm)) {
+                        property.apply(bpm).set(val);
+                    }
                 }
             } else {
                 if (bpms.isEmpty()) {
@@ -1364,7 +1486,7 @@ public class OrbitCorrectionController {
      * @param successMessage logged message if write succeeded
      * @param failureMessage logged message if write failed
      */
-    private void writeOrbitToFile(File file, String xOrbitKey, String yOrbitKey, String successMessage,
+    private void writeOrbitToFile(File file, String comment, String xOrbitKey, String yOrbitKey, String successMessage,
             String failureMessage) {
         if (!throttle.isRunning()) return;
         final PV xOrbitPV = pvs.get(xOrbitKey);
@@ -1373,6 +1495,11 @@ public class OrbitCorrectionController {
             String xOrbit = xOrbitPV != null ? getStringValue(xOrbitPV.value) : EMPTY_STRING;
             String yOrbit = yOrbitPV != null ? getStringValue(yOrbitPV.value) : EMPTY_STRING;
             try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(file.getPath()),StandardCharsets.UTF_8)) {
+                if (comment != null) {
+                    writer.write("<" + comment + ">");
+                    writer.write(NEW_LINE);
+                    writer.write(NEW_LINE);
+                }
                 writer.write(xOrbit);
                 writer.write(NEW_LINE);
                 writer.write(yOrbit);

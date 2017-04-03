@@ -35,10 +35,13 @@ import javafx.beans.property.SimpleDoubleProperty;
  */
 public class BPM extends LatticeElement {
 
-    private final DoubleProperty position = new SimpleDoubleProperty(this, "position", 0);
-    private final DoubleProperty goldenPosition = new SimpleDoubleProperty(this, "goldenPosition", 0);
-    private final DoubleProperty goldenPositionWish = new SimpleDoubleProperty(this, "goldenPositionWish", 0);
-    private final BooleanProperty goldenDifferent = new SimpleBooleanProperty(this, "goldenDifferent", false);
+    private final DoubleProperty position = new SimpleDoubleProperty(this,"position",0);
+    private final DoubleProperty referencePosition = new SimpleDoubleProperty(this,"referencePosition",0);
+    private final DoubleProperty differencePosition = new SimpleDoubleProperty(this,"differencePosition",0);
+    private final DoubleProperty goldenPosition = new SimpleDoubleProperty(this,"goldenPosition",0);
+    private final DoubleProperty goldenPositionWish = new SimpleDoubleProperty(this,"goldenPositionWish",0);
+    private final BooleanProperty goldenDifferent = new SimpleBooleanProperty(this,"goldenDifferent",false);
+    private final BooleanProperty inhibited = new SimpleBooleanProperty(false);
 
     /**
      * Constructs the new BPM with the given lattice element data.
@@ -57,6 +60,34 @@ public class BPM extends LatticeElement {
      */
     public DoubleProperty positionProperty() {
         return position;
+    }
+
+    /**
+     * Property providing the reference position at this BPM.
+     *
+     * @return property providing the reference position
+     */
+    public DoubleProperty referencePositionProperty() {
+        return referencePosition;
+    }
+
+    /**
+     * Property providing the difference between the reference and current position at this BPM.
+     *
+     * @return property providing the difference in position
+     */
+    public DoubleProperty differencePositionProperty() {
+        return differencePosition;
+    }
+
+    /**
+     * Return the property that specifies if the BPM is inhibited or not. When inhibited, golden position value changes
+     * from remote server should not be made.
+     *
+     * @return the property specifying if the BPM is inhibited or not
+     */
+    public BooleanProperty inhibitedProperty() {
+        return inhibited;
     }
 
     /**

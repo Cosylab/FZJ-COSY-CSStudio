@@ -23,8 +23,10 @@ import static org.csstudio.ui.fx.util.FXUtilities.setGridConstraints;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Optional;
 import java.util.logging.Level;
 
+import org.csstudio.ui.fx.util.FXTextAreaInputDialog;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.PlatformUI;
@@ -92,6 +94,7 @@ public class OrbitCorrectionControls extends FXViewPart {
     protected Scene createFxScene() {
         fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(0,new ExtensionFilter("All Files","*.*"));
+        fileChooser.setInitialDirectory(Preferences.getInstance().getInitialDirectory());
         scene = new Scene(createContentPane());
         scene.getStylesheets().add(OrbitCorrectionView.class.getResource("style.css").toExternalForm());
         return scene;
@@ -140,13 +143,12 @@ public class OrbitCorrectionControls extends FXViewPart {
                 new PercentColumnConstraints(20));
         buttonControls.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
         Node orbitCorrectionControl = createOrbitCorrectionControls();
-        Node engineeringControls = createEngineeringScreensControls();
         buttonControls.add(orbitCorrectionControl,0,0);
         buttonControls.add(createGoldenOrbitControls(),1,0);
-        buttonControls.add(createResponseMatrixControls(),1,1);
-        buttonControls.add(engineeringControls,2,0);
+        buttonControls.add(createReferenceOrbitControls(),1,1);
+        buttonControls.add(createResponseMatrixControls(),2,0);
+        buttonControls.add(createEngineeringScreensControls(),2,1);
         GridPane.setRowSpan(orbitCorrectionControl,2);
-        GridPane.setRowSpan(engineeringControls,2);
         GridPane masterControls = new GridPane();
         masterControls.setHgap(10);
         masterControls.setVgap(10);
@@ -199,9 +201,12 @@ public class OrbitCorrectionControls extends FXViewPart {
         final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HHmmss");
         exportCurrentOrbitButton.setOnAction(e -> {
             fileChooser.setInitialFileName("Orbit-" + format.format(new Date()));
-            ofNullable(fileChooser.showSaveDialog(scene.getWindow()))
-                    .ifPresent(file -> controller.exportCurrentOrbit(file));
+            ofNullable(fileChooser.showSaveDialog(scene.getWindow())).ifPresent(file -> FXTextAreaInputDialog
+                    .get(getSite().getShell(),"Exported Orbit Comment",
+                            "Enter the comment to store into the orbit file:","",null)
+                    .ifPresent(comment -> controller.exportCurrentOrbit(file,Optional.of(comment))));
         });
+
         Button stopMeasuringOrbitButton = new MultiLineButton("Stop Measuring Orbit");
         stopMeasuringOrbitButton.setTooltip(new Tooltip("Stop performing orbit measurement"));
         stopMeasuringOrbitButton.setWrapText(true);
@@ -293,6 +298,30 @@ public class OrbitCorrectionControls extends FXViewPart {
     }
 
     /**
+     * @return titled pane with golden orbit controls.
+     */
+    private BorderedTitledPane createReferenceOrbitControls() {
+        GridPane referenceOrbitControl = new GridPane();
+        referenceOrbitControl.setHgap(10);
+        referenceOrbitControl.setVgap(10);
+        referenceOrbitControl.setPadding(new Insets(0,0,0,0));
+        referenceOrbitControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(2));
+        final StringProperty status = controller.statusProperty();
+        Button horizontalButton = new Button("Horizontal");
+        horizontalButton.setTooltip(new Tooltip("Set current horizontal orbit as a reference horizontal orbit"));
+        horizontalButton.setOnAction(e -> controller.useCurrentAsReference(true));
+        horizontalButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+        Button verticalButton = new Button("Vertical");
+        verticalButton.setTooltip(new Tooltip("Set current vertical orbit as a reference vertical orbit"));
+        verticalButton.setOnAction(e -> controller.useCurrentAsReference(false));
+        verticalButton.disableProperty().bind(status.isNotEqualTo(OperationStatus.IDLE.toString()));
+        setFullResizable(horizontalButton,verticalButton);
+        referenceOrbitControl.add(horizontalButton,0,0);
+        referenceOrbitControl.add(verticalButton,1,0);
+        return new BorderedTitledPane("Reference Orbit",referenceOrbitControl);
+    }
+
+    /**
      * @return titled pane with response matrix controls.
      */
     private BorderedTitledPane createResponseMatrixControls() {
@@ -316,16 +345,18 @@ public class OrbitCorrectionControls extends FXViewPart {
         GridPane engineeringScreensControl = new GridPane();
         engineeringScreensControl.setHgap(10);
         engineeringScreensControl.setVgap(10);
-        engineeringScreensControl.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
-        Button bpmControlButton = new MultiLineButton("BPM Control");
+        engineeringScreensControl.getColumnConstraints().setAll(PercentColumnConstraints.createEqualsConstraints(2));
+        Button bpmControlButton = new MultiLineButton("BPM");
+        bpmControlButton.setTooltip(new Tooltip("Open BPM Engineering OPI"));
         bpmControlButton.setDisable(!Preferences.getInstance().getBPMOPIFile().isPresent());
         bpmControlButton.setOnAction(e -> controller.openEngineeringScreen(true));
-        Button correctorsControlButton = new MultiLineButton("Correctors Control");
+        Button correctorsControlButton = new MultiLineButton("Correctors");
+        bpmControlButton.setTooltip(new Tooltip("Open Correctors Engineering OPI"));
         correctorsControlButton.setDisable(!Preferences.getInstance().getCorrectorOPIFile().isPresent());
         correctorsControlButton.setOnAction(e -> controller.openEngineeringScreen(false));
         setFullResizable(bpmControlButton,correctorsControlButton);
         engineeringScreensControl.add(bpmControlButton,0,0);
-        engineeringScreensControl.add(correctorsControlButton,0,1);
+        engineeringScreensControl.add(correctorsControlButton,1,0);
         return new BorderedTitledPane("Engineering Screens",engineeringScreensControl);
     }
 }

@@ -157,4 +157,13 @@ public abstract class LatticeElement implements Comparable<LatticeElement> {
         LatticeElement other = (LatticeElement)obj;
         return Objects.equals(elementData,other.elementData);
     }
+
+    /*
+     * (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return name.get() + ": " + location.get();
+    }
 }
