@@ -84,12 +84,16 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 
 /**
  * <code>OrbitCorrectionController</code> is the controller for the orbit correction viewer. It provides the logic for
@@ -98,6 +102,10 @@ import javafx.beans.property.StringProperty;
  * @author <a href="mailto:miha.novak@cosylab.com">Miha Novak</a>
  */
 public class OrbitCorrectionController {
+
+    public static enum CorrectionAlgorithm {
+        SPLIT, COUPLED
+    }
 
     /** The rate at which the UI is updated */
     private static final long UPDATE_RATE = 500;
@@ -109,6 +117,8 @@ public class OrbitCorrectionController {
     private static final String TABLE_ENTRY_VERTICAL_ORBIT = "Vertical Orbit";
     private static final String TABLE_ENTRY_GOLDEN_HORIZONTAL_ORBIT = "Golden Horizontal Orbit";
     private static final String TABLE_ENTRY_GOLDEN_VERTICAL_ORBIT = "Golden Vertical Orbit";
+    private static final String TABLE_ENTRY_REFERENCE_HORIZONTAL_ORBIT = "Horizontal Reference Orbit";
+    private static final String TABLE_ENTRY_REFERENCE_VERTICAL_ORBIT = "Vertical Reference Orbit";
     // status messages
     private static final String MSG_RESET_CORRECTION_CMD_SUCCESS = "Reset orbit correction setpoints was successfully sent.";
     private static final String MSG_RESET_CORRECTION_CMD_FAILURE = "Error occured while sending the reset orbit correction command.";
@@ -132,6 +142,8 @@ public class OrbitCorrectionController {
     private static final String MSG_UPDATE_ONOFF_FAILURE = "Error enabling/disabling %s.";
     private static final String MSG_CUTOFF_SUCCESS = "%s cutoff factor %f successfully written.";
     private static final String MSG_CUTOFF_FAILURE = "Failed to write %s cutoff factor.";
+    private static final String MSG_PERIOD_SUCCESS = "Correction period %f successfully written.";
+    private static final String MSG_PERIOD_FAILURE = "Failed to write correction period.";
     private static final String MSG_CORRECTION_FACTOR_SUCCESS = "%s correction factor %d successfully written.";
     private static final String MSG_CORRECTION_FACTOR_FAILURE = "Failed to write %s correction factor.";
     private static final String MSG_USE_CURRENT_HORIZONTAL_SUCCESS = "Golden horizontal orbit was successfully updated to current.";
@@ -154,6 +166,7 @@ public class OrbitCorrectionController {
     private static final String MSG_DOWNLOAD_ORM_FAILURE = "Error occured while downloading orbit response matrix.";
     private static final String EMPTY_STRING = "";
     private static final char NEW_LINE = '\n';
+    private static final String IDLE = "idle";
 
     private class SlowPV extends PV {
 
@@ -265,10 +278,14 @@ public class OrbitCorrectionController {
         }
     }
 
+    private ObjectProperty<CorrectionAlgorithm> correctionAlgorithmProperty;
+    private BooleanProperty splitAlgorithmProperty;
+    private BooleanProperty coupledAlgorithmProperty;
     private DoubleProperty horizontalCutOffProperty;
     private DoubleProperty verticalCutOffProperty;
     private IntegerProperty verticalCorrectionFactorProperty;
     private IntegerProperty horizontalCorrectionFactorProperty;
+    private DoubleProperty correctionPeriodProperty;
     private final BooleanProperty allConnectedProperty = new SimpleBooleanProperty(this,"allConnected",false);
     private final BooleanProperty mradProperty = new SimpleBooleanProperty(this,"mrad",false);
     private final StringProperty statusProperty = new SimpleStringProperty(this,"status",EMPTY_STRING);
@@ -490,6 +507,58 @@ public class OrbitCorrectionController {
     }
 
     /**
+     * Returns the property that stores the selected correction algorithm.
+     *
+     * @return correction algorithm property
+     */
+    public ObjectProperty<CorrectionAlgorithm> correctionAlgorithmProperty() {
+        if (correctionAlgorithmProperty == null) {
+            correctionAlgorithmProperty = new SimpleObjectProperty<>(this,"correctionAlgorithm",
+                    CorrectionAlgorithm.SPLIT);
+            correctionAlgorithmProperty.addListener((a, o, n) -> {
+                ofNullable(pvs.get(Preferences.PV_CORRECTION_ALGORITHM)).ifPresent(pv -> {
+                    if (Integer.compare(n.ordinal(),((VEnum)pv.value).getIndex()) != 0) {
+                        writeData(pv,n.ordinal(),null,null,20);
+                    }
+                });
+                splitAlgorithmProperty().set(n == CorrectionAlgorithm.SPLIT);
+                coupledAlgorithmProperty().set(n == CorrectionAlgorithm.COUPLED);
+            });
+        }
+        return correctionAlgorithmProperty;
+    }
+
+    /**
+     * Returns the property returning true if the correction algorithm is split or false if coupled.
+     *
+     * @return correction algorithm is split property
+     */
+    public BooleanProperty splitAlgorithmProperty() {
+        if (splitAlgorithmProperty == null) {
+            splitAlgorithmProperty = new SimpleBooleanProperty(this,"splitAlgorithm",true);
+            splitAlgorithmProperty.addListener((a,o,n) ->
+                correctionAlgorithmProperty().set(n ? CorrectionAlgorithm.SPLIT : CorrectionAlgorithm.COUPLED));
+            splitAlgorithmProperty.set(correctionAlgorithmProperty().get() == CorrectionAlgorithm.SPLIT);
+        }
+        return splitAlgorithmProperty;
+    }
+
+    /**
+     * Returns the property returning true if the correction algorithm is coupled or false if split.
+     *
+     * @return correction algorithm is coupled property
+     */
+    public BooleanProperty coupledAlgorithmProperty() {
+        if (coupledAlgorithmProperty == null) {
+            coupledAlgorithmProperty = new SimpleBooleanProperty(this,"coupledAlgorithm",false);
+            coupledAlgorithmProperty.addListener((a,o,n) ->
+                correctionAlgorithmProperty().set(n ? CorrectionAlgorithm.COUPLED : CorrectionAlgorithm.SPLIT));
+            coupledAlgorithmProperty.set(correctionAlgorithmProperty().get() == CorrectionAlgorithm.COUPLED);
+        }
+        return coupledAlgorithmProperty;
+    }
+
+    /**
      * Returns the property that stores the current SVD cut off value for horizontal correction.
      *
      * @return horizontal correction SVD cut off value
@@ -576,6 +645,41 @@ public class OrbitCorrectionController {
     }
 
     /**
+     * Returns the property that stores the current correction period in seconds.
+     *
+     * @return the correction period property
+     */
+    public DoubleProperty correctionPeriodProperty() {
+        if (correctionPeriodProperty == null) {
+            correctionPeriodProperty = new SimpleDoubleProperty(this,"correctionPeriod",0) {
+
+                @Override
+                public void set(double newValue) {
+                    super.set(newValue < 0.1 ? 0.1 : newValue);
+                }
+            };
+            correctionPeriodProperty.addListener((a, o, n) -> {
+                ofNullable(pvs.get(Preferences.PV_CORRECTION_FREQUENCY)).ifPresent(pv -> {
+                    double val = n.doubleValue() < 0.1 ? 0.1 : n.doubleValue();
+                    if (Math.abs(val - (1. / ((VNumber)pv.value).getValue().doubleValue())) > 0.0005) {
+                        //create listener to execute proc after the period was written
+                        writeData(pv,1. / val,21,event -> {
+                            if (event.isWriteSucceeded()) {
+                                ofNullable(pvs.get(Preferences.PV_CORRECTION_FREQUENCY_PROC))
+                                        .ifPresent(procPv -> writeData(procPv,1,
+                                                String.format(MSG_PERIOD_SUCCESS,val),MSG_PERIOD_FAILURE,22));
+                            } else if (event.isWriteFailed()) {
+                                writeFailure(event,MSG_PERIOD_FAILURE);
+                            }
+                        });
+                    }
+                });
+            });
+        }
+        return correctionPeriodProperty;
+    }
+
+    /**
      * Calls the command which resets the correction values to the current steerer setpoints.
      */
     public void resetOrbitCorrection() {
@@ -628,8 +732,45 @@ public class OrbitCorrectionController {
      * Calls command which uses the last horizontal and vertical orbit, calculate the corrections and apply them once
      */
     public void correctOrbitOnce() {
-        executeCommand(Preferences.PV_CORRECT_ORBIT_ONCE,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
-                MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
+        //TODO
+        //switch the algorithm to coupled
+        //executed correct orbit once, wait for the status to become idle
+        //switch the algorithm back to normal
+        CorrectionAlgorithm algorithm = correctionAlgorithmProperty().get();
+        if (algorithm == CorrectionAlgorithm.SPLIT) {
+            executeCommand(Preferences.PV_CORRECT_ORBIT_ONCE,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
+                    MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
+        } else {
+            if (!throttle.isRunning()) return;
+            //first switch the algorithm. If successful, execute the orbit correction once.
+            //after that wait for the status to become IDLE and then switch the algorithm back.
+            ofNullable(pvs.get(Preferences.PV_CORRECTION_ALGORITHM)).ifPresent(algorithmPV -> {
+                writeData(algorithmPV,CorrectionAlgorithm.COUPLED,20,event -> {
+                    if (event.isWriteSucceeded()) {
+                        ChangeListener<String> statusListener = new ChangeListener<String>() {
+                            private boolean hasFlipped = false;
+                            @Override
+                            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                                if (newValue.equalsIgnoreCase(IDLE)) {
+                                    if (hasFlipped) {
+                                        statusProperty().removeListener(this);
+                                        correctionAlgorithmProperty().set(CorrectionAlgorithm.SPLIT);
+                                    }
+                                } else {
+                                    hasFlipped = true;
+                                }
+                            }
+                        };
+                        //add listener to status property to find out when it changed back to idle to IDLE
+                        statusProperty().addListener(statusListener);
+                        ofNullable(pvs.get(Preferences.PV_CORRECT_ORBIT_ONCE)).ifPresent(
+                                correctPV -> writeData(correctPV,null,null,null,22));
+                    } else if (event.isWriteFailed()) {
+                        writeFailure(event,MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
+                    }
+                });
+            });
+        }
     }
 
     /**
@@ -1111,14 +1252,18 @@ public class OrbitCorrectionController {
     }
 
     private void createCorrectionResultsEntries() {
-        correctionResultsEntries.put(Preferences.PV_HORIZONTAL_ORBIT_STATISTIC,
+        correctionResultsEntries.put(Preferences.PV_HORIZONTAL_ORBIT_STATISTICS,
                 new OrbitCorrectionResultsEntry(TABLE_ENTRY_HORIZONTAL_ORBIT));
-        correctionResultsEntries.put(Preferences.PV_VERTICAL_ORBIT_STATISTIC,
+        correctionResultsEntries.put(Preferences.PV_VERTICAL_ORBIT_STATISTICS,
                 new OrbitCorrectionResultsEntry(TABLE_ENTRY_VERTICAL_ORBIT));
-        correctionResultsEntries.put(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,
+        correctionResultsEntries.put(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTICS,
                 new OrbitCorrectionResultsEntry(TABLE_ENTRY_GOLDEN_HORIZONTAL_ORBIT));
-        correctionResultsEntries.put(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
+        correctionResultsEntries.put(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTICS,
                 new OrbitCorrectionResultsEntry(TABLE_ENTRY_GOLDEN_VERTICAL_ORBIT));
+        correctionResultsEntries.put(Preferences.PV_REFERENCE_HORIZONTAL_ORBIT_STATISTICS,
+                new OrbitCorrectionResultsEntry(TABLE_ENTRY_REFERENCE_HORIZONTAL_ORBIT));
+        correctionResultsEntries.put(Preferences.PV_REFERENCE_VERTICAL_ORBIT_STATISTICS,
+                new OrbitCorrectionResultsEntry(TABLE_ENTRY_REFERENCE_VERTICAL_ORBIT));
     }
 
     private void connectPVs(Map<String,String> pvsToconnect, Map<String,PV> destination, boolean trigger) {
@@ -1199,14 +1344,18 @@ public class OrbitCorrectionController {
         }
         getPV.apply(Preferences.PV_OPERATION_STATUS).filter(pv -> pv.value instanceof VEnum)
                 .ifPresent(pv -> statusProperty.set(((VEnum)pv.value).getValue()));
-        handlePV.accept(Preferences.PV_HORIZONTAL_ORBIT_STATISTIC,
-                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_HORIZONTAL_ORBIT_STATISTIC));
-        handlePV.accept(Preferences.PV_VERTICAL_ORBIT_STATISTIC,
-                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_VERTICAL_ORBIT_STATISTIC));
-        handlePV.accept(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,
-                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC));
-        handlePV.accept(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
-                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTIC));
+        handlePV.accept(Preferences.PV_HORIZONTAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_HORIZONTAL_ORBIT_STATISTICS));
+        handlePV.accept(Preferences.PV_VERTICAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_VERTICAL_ORBIT_STATISTICS));
+        handlePV.accept(Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_HORIZONTAL_ORBIT_STATISTICS));
+        handlePV.accept(Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_GOLDEN_VERTICAL_ORBIT_STATISTICS));
+        handlePV.accept(Preferences.PV_REFERENCE_HORIZONTAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_REFERENCE_HORIZONTAL_ORBIT_STATISTICS));
+        handlePV.accept(Preferences.PV_REFERENCE_VERTICAL_ORBIT_STATISTICS,
+                pv -> updateOrbitCorrectionResults(pv.value,Preferences.PV_REFERENCE_VERTICAL_ORBIT_STATISTICS));
         getPV.apply(Preferences.PV_HORIZONTAL_CUTOFF).filter(pv -> pv.value instanceof VNumber)
                 .ifPresent(pv -> horizontalCutOffProperty().set(((VNumber)pv.value).getValue().doubleValue()));
         getPV.apply(Preferences.PV_VERTICAL_CUTOFF).filter(pv -> pv.value instanceof VNumber)
@@ -1217,6 +1366,10 @@ public class OrbitCorrectionController {
         getPV.apply(Preferences.PV_VERTICAL_CORRECTION_FRACTION).filter(pv -> pv.value instanceof VNumber)
                 .ifPresent(pv -> verticalCorrectionFactorProperty()
                         .set((int)(100 * ((VNumber)pv.value).getValue().doubleValue())));
+        getPV.apply(Preferences.PV_CORRECTION_FREQUENCY).filter(pv -> pv.value instanceof VNumber)
+                .ifPresent(pv -> correctionPeriodProperty().set(1.0 / ((VNumber)pv.value).getValue().doubleValue()));
+        getPV.apply(Preferences.PV_CORRECTION_ALGORITHM).filter(pv -> pv.value instanceof VEnum).ifPresent(
+                pv -> correctionAlgorithmProperty().set(CorrectionAlgorithm.values()[((VEnum)pv.value).getIndex()]));
         VNumberArray vCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_VERTICAL_CORRECTOR_ENABLED);
         handleEnableDisable(vCorrEnable,verticalCorrectors,LatticeElementType.VERTICAL_CORRECTOR);
         VNumberArray hCorrEnable = getPVNumberArrayFilter.apply(Preferences.PV_HORIZONTAL_CORRECTOR_ENABLED);
@@ -1421,25 +1574,44 @@ public class OrbitCorrectionController {
      * @param id the id of the execution, which makes sure that executions are not piled up
      */
     private void writeData(PV pv, Object data, String successMessage, String failureMessage, int id) {
-        Runnable r = () -> {
-            PVWriterListener<?> pvListener = new PVWriterListener<PV>() {
+        writeData(pv,data,id,w -> {
+            if (w.isWriteSucceeded()) {
+                writeToLog(successMessage,Level.INFO,empty());
+            } else if (w.isWriteFailed()) {
+                writeFailure(w,failureMessage);
+            }
+        });
+    }
 
-                @Override
-                public void pvChanged(PVWriterEvent<PV> w) {
-                    if (w.isWriteSucceeded()) {
-                        writeToLog(successMessage,Level.INFO,empty());
-                    } else if (w.isWriteFailed()) {
-                        if (w.isExceptionChanged()) {
-                            writeToLog(failureMessage,Level.SEVERE,of(w.getPvWriter().lastWriteException()));
-                        } else {
-                            writeToLog(failureMessage,Level.SEVERE,empty());
-                        }
-                    }
-                    w.getPvWriter().removePVWriterListener(this);
-                }
-            };
+    private void writeFailure(PVWriterEvent<PV> event, String message) {
+        if (event.isExceptionChanged()) {
+            writeToLog(message,Level.SEVERE,of(event.getPvWriter().lastWriteException()));
+        } else {
+            writeToLog(message,Level.SEVERE,empty());
+        }
+    }
+
+    /**
+     * Writes data to the given PV. If data are provided they are written as waveform, otherwise 1 is written to the PV.
+     * After the write completes, a message is logged.
+     *
+     * @param pv pv
+     * @param data data to be written, if present
+     * @param id the id of the execution, which makes sure that executions are not piled up
+     * @param pvListener the listener which is notified upon completion of the action
+     */
+    private void writeData(PV pv, Object data, int id, final Consumer<PVWriterEvent<PV>> pvListener) {
+        final PVWriterListener<PV> wrapperListener = new PVWriterListener<PV>() {
+            @Override
+            public void pvChanged(PVWriterEvent<PV> w) {
+                pvListener.accept(w);
+                w.getPvWriter().removePVWriterListener(this);
+            }
+        };
+
+        Runnable r = () -> {
             synchronized (pv) {
-                pv.writer.addPVWriterListener(pvListener);
+                pv.writer.addPVWriterListener(wrapperListener);
                 if (data instanceof VNumberArray) {
                     pv.writer.write(((VNumberArray)data).getData());
                 } else if (data != null) {

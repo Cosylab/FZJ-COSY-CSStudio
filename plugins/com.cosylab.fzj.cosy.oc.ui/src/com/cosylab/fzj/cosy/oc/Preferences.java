@@ -109,18 +109,26 @@ public final class Preferences {
     public static final String PV_HORIZONTAL_CORRECTOR_MA = "horizontal_corrector_ma";
     /** Vertical correctors (mA) provides the last vertical correctors kick in milli ampers */
     public static final String PV_VERTICAL_CORRECTOR_MA = "vertical_corrector_ma";
-    /** Horizontal orbit statistic provides the statistical parameters of the current horizontal orbit */
-    public static final String PV_HORIZONTAL_ORBIT_STATISTIC = "horizontal_orbit_statistic";
-    /** Vertical orbit statistic provides the statistical parameters of the current vertical orbit */
-    public static final String PV_VERTICAL_ORBIT_STATISTIC = "vertical_orbit_statistic";
-    /** Golden horizontal orbit statistic provides the statistical parameters of the current horizontal golden orbit. */
-    public static final String PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC = "golden_horizontal_orbit_statistic";
-    /** Golden vertical orbit statistic provides the statistical parameters of the current vertical golden orbit. */
-    public static final String PV_GOLDEN_VERTICAL_ORBIT_STATISTIC = "golden_vertical_orbit_statistic";
+    /** Horizontal orbit statistics provides the statistical parameters of the current horizontal orbit */
+    public static final String PV_HORIZONTAL_ORBIT_STATISTICS = "horizontal_orbit_statistics";
+    /** Vertical orbit statistics provides the statistical parameters of the current vertical orbit */
+    public static final String PV_VERTICAL_ORBIT_STATISTICS = "vertical_orbit_statistics";
+    /**
+     * Golden horizontal orbit statistics provides the statistical parameters of the current horizontal golden orbit.
+     */
+    public static final String PV_GOLDEN_HORIZONTAL_ORBIT_STATISTICS = "golden_horizontal_orbit_statistics";
+    /** Golden vertical orbit statistics provides the statistical parameters of the current vertical golden orbit. */
+    public static final String PV_GOLDEN_VERTICAL_ORBIT_STATISTICS = "golden_vertical_orbit_statistics";
+    /** Horizontal reference orbit statistics provides the statistical parameters of the current horizontal orbit */
+    public static final String PV_REFERENCE_HORIZONTAL_ORBIT_STATISTICS = "reference_horizontal_orbit_statistics";
+    /** Vertical reference orbit statistics provides the statistical parameters of the current vertical orbit */
+    public static final String PV_REFERENCE_VERTICAL_ORBIT_STATISTICS = "reference_vertical_orbit_statistics";
     /** Correction frequency PV specifies the frequency with which the orbit correction is performed. */
     public static final String PV_CORRECTION_FREQUENCY = "correction_frequency";
-    /** Correction type PV switches the correction between the split matrices and coupled matrices */
-    public static final String PV_CORRECTION_TYPE = "correction_type";
+    /** Correction frequency change trigger PV */
+    public static final String PV_CORRECTION_FREQUENCY_PROC = "correction_frequency_proc";
+    /** Correction algorithm PV switches the correction between the split matrices and coupled matrices */
+    public static final String PV_CORRECTION_ALGORITHM = "correction_algorithm";
     /** Orbit response matrix provides the pv with the orbit response matrix in a single array */
     @Deprecated
     public static final String PV_ORM = "orm";
@@ -384,14 +392,16 @@ public final class Preferences {
         Arrays.asList(PV_HORIZONTAL_ORBIT,PV_VERTICAL_ORBIT,PV_GOLDEN_HORIZONTAL_ORBIT,PV_GOLDEN_VERTICAL_ORBIT,
                 PV_HORIZONTAL_REFERENCE_ORBIT,PV_VERTICAL_REFERENCE_ORBIT,PV_HORIZONTAL_DIFFERENCE_ORBIT,
                 PV_VERTICAL_DIFFERENCE_ORBIT,PV_HORIZONTAL_CORRECTOR_MRAD,PV_VERTICAL_CORRECTOR_MRAD,
-                PV_HORIZONTAL_CORRECTOR_MA,PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTIC,
-                PV_VERTICAL_ORBIT_STATISTIC,PV_GOLDEN_HORIZONTAL_ORBIT_STATISTIC,PV_GOLDEN_VERTICAL_ORBIT_STATISTIC,
-                PV_ORM).forEach(n -> pvs.put(n,getPVName(n)));
+                PV_HORIZONTAL_CORRECTOR_MA,PV_VERTICAL_CORRECTOR_MA,PV_OPERATION_STATUS,PV_HORIZONTAL_ORBIT_STATISTICS,
+                PV_VERTICAL_ORBIT_STATISTICS,PV_GOLDEN_HORIZONTAL_ORBIT_STATISTICS,PV_GOLDEN_VERTICAL_ORBIT_STATISTICS,
+                PV_REFERENCE_HORIZONTAL_ORBIT_STATISTICS,PV_REFERENCE_VERTICAL_ORBIT_STATISTICS,PV_ORM)
+                .forEach(n -> pvs.put(n,getPVName(n)));
         Arrays.asList(PV_RESET_CORRECTION,PV_START_MEASURING_ORBIT,PV_STOP_MEASURING_ORBIT,PV_MEASURE_ORBIT_ONCE,
                 PV_START_CORRECTING_ORBIT,PV_STOP_CORRECTING_ORBIT,PV_CORRECT_ORBIT_ONCE,PV_HORIZONTAL_CUTOFF,
                 PV_VERTICAL_CUTOFF,PV_HORIZONTAL_CORRECTION_FRACTION,PV_VERTICAL_CORRECTION_FRACTION,
                 PV_HORIZONTAL_BPM_ENABLED,PV_VERTICAL_BPM_ENABLED,PV_HORIZONTAL_CORRECTOR_ENABLED,
-                PV_VERTICAL_CORRECTOR_ENABLED)
+                PV_VERTICAL_CORRECTOR_ENABLED,PV_CORRECTION_ALGORITHM,PV_CORRECTION_FREQUENCY,
+                PV_CORRECTION_FREQUENCY_PROC)
                 .forEach(n -> Optional.ofNullable(getPVName(n)).ifPresent(c -> pvs.put(n,c)));
         return pvs;
     }

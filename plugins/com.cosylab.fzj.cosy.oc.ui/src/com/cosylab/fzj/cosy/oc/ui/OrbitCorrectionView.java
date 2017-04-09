@@ -210,7 +210,7 @@ public class OrbitCorrectionView extends FXViewPart {
     private GridPane createCharts() {
         GridPane charts = new GridPane();
         String s = System.getProperty("os.name","nix").toLowerCase();
-        final int c = s.contains("win") ? 180 : 230;
+        final int c = s.contains("win") ? 190 : 230;
         charts.getColumnConstraints().setAll(new ColumnConstraints(50,Region.USE_COMPUTED_SIZE,50),
                 new ColumnConstraints(),new ColumnConstraints(c,Region.USE_COMPUTED_SIZE,c));
         Region orbitNode = createOrbitChart();
@@ -624,7 +624,7 @@ public class OrbitCorrectionView extends FXViewPart {
             }
         });
         dipolesLatticeCheckBox.getStyleClass().add("dipoles-check-box");
-        quadsLatticeCheckBox = new TooltipCheckBox("Quads");
+        quadsLatticeCheckBox = new TooltipCheckBox("Quadrupoles");
         quadsLatticeCheckBox.setSelected(false);
         quadsLatticeCheckBox.setOnAction(e -> {
             if (quadsLatticeCheckBox.isSelected()) {

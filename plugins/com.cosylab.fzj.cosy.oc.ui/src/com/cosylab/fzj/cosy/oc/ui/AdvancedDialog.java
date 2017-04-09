@@ -1,19 +1,9 @@
 /*
- * Copyright (c) 2017 Cosylab d.d.
- *
- * Contact Information:
- *   Cosylab d.d., Ljubljana, Slovenia
- *   http://www.cosylab.com
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the Eclipse Public License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- * For more information about the license please refer to the LICENSE
- * file included in the distribution.
+ * Copyright (c) 2017 Cosylab d.d. Contact Information: Cosylab d.d., Ljubljana, Slovenia http://www.cosylab.com This
+ * program is free software: you can redistribute it and/or modify it under the terms of the Eclipse Public License.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. For more information about the license please refer
+ * to the LICENSE file included in the distribution.
  */
 package com.cosylab.fzj.cosy.oc.ui;
 
@@ -53,11 +43,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
@@ -76,28 +68,41 @@ import javafx.scene.paint.Color;
  */
 public class AdvancedDialog extends Dialog {
 
-    private static class CutOff extends GridPane implements ChangeListener<Number> {
+    private static class PropertySlider extends GridPane implements ChangeListener<Number> {
+
+        static enum Type {
+            CUTOFF, PERCENTAGE, PERIOD
+        }
 
         private final Slider slider;
         private final TextField field;
         private final Property<Number> source;
+        private final Type type;
 
-        CutOff(Property<Number> source, boolean percentage) {
+        PropertySlider(Property<Number> source, Type type) {
             this.source = source;
+            this.type = type;
             setHgap(5);
             getColumnConstraints().setAll(new PercentColumnConstraints(85),new PercentColumnConstraints(15));
             slider = new Slider();
-            slider.setMax(percentage ? 100 : 2);
+            slider.setMax(type == Type.PERCENTAGE ? 100 : type == Type.CUTOFF ? 2 : 200);
             slider.setMin(0);
             slider.setSnapToTicks(false);
-            slider.setMajorTickUnit(percentage ? 10 : 0.2);
-            slider.setMinorTickCount(percentage ? 4 : 1);
+            slider.setMajorTickUnit(type == Type.PERCENTAGE ? 10 : type == Type.CUTOFF ? 0.2 : 20);
+            slider.setMinorTickCount(type == Type.PERCENTAGE ? 4 : type == Type.CUTOFF ? 1 : 4);
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(true);
             slider.valueProperty().bindBidirectional(source);
             slider.getStyleClass().add("slider-pointing");
             field = new TextField();
-            field.setEditable(false);
+            field.setEditable(true);
+            field.setOnAction(e -> {
+                try {
+                    slider.setValue(Double.parseDouble(field.getText()));
+                } catch (NumberFormatException ex) {
+                    //ignore
+                }
+            });
             add(slider,0,0);
             add(field,1,0);
             source.addListener(this);
@@ -111,7 +116,15 @@ public class AdvancedDialog extends Dialog {
             if (newValue instanceof Integer) {
                 field.setText(String.valueOf(newValue));
             } else {
-                field.setText(String.valueOf(((long)(newValue.doubleValue() * 1000)) / 1000.));
+                if (type == Type.PERIOD) {
+                    if (newValue.doubleValue() < 1) {
+                        field.setText(String.valueOf(((long)(newValue.doubleValue() * 10)) / 10.));
+                    } else {
+                        field.setText(String.valueOf(newValue.longValue()));
+                    }
+                } else {
+                    field.setText(String.valueOf(((long)(newValue.doubleValue() * 1000)) / 1000.));
+                }
             }
         }
 
@@ -226,10 +239,13 @@ public class AdvancedDialog extends Dialog {
     private Table<BPM> verticalBPMTable;
     private Table<Corrector> horizontalCorrectorTable;
     private Table<Corrector> verticalCorrectorTable;
-    private CutOff horizontalCutOff;
-    private CutOff verticalCutOff;
-    private CutOff horizontalCorrectionPercentage;
-    private CutOff verticalCorrectionPercentage;
+    private PropertySlider horizontalCutOff;
+    private PropertySlider verticalCutOff;
+    private PropertySlider horizontalCorrectionPercentage;
+    private PropertySlider verticalCorrectionPercentage;
+    private PropertySlider correctionPeriod;
+    private RadioButton algorithmSplitButton;
+    private RadioButton algorithmCoupledButton;
     private final Consumer<LatticeElementType> updater = this::update;
     private final Shell parent;
 
@@ -356,6 +372,7 @@ public class AdvancedDialog extends Dialog {
         verticalCutOff.dispose();
         horizontalCorrectionPercentage.dispose();
         verticalCorrectionPercentage.dispose();
+        correctionPeriod.dispose();
     }
 
     private Node createFXContents(Composite parent) {
@@ -376,21 +393,41 @@ public class AdvancedDialog extends Dialog {
         verticalBPMLabel.setStyle("-fx-font-weight: bold");
         horizontalCorrectorLabel.setStyle("-fx-font-weight: bold");
         verticalCorectorLabel.setStyle("-fx-font-weight: bold");
-        horizontalCutOff = new CutOff(controller.horizontalCutOffProperty(),false);
-        verticalCutOff = new CutOff(controller.verticalCutOffProperty(),false);
-        horizontalCorrectionPercentage = new CutOff(controller.horizontalCorrectionFactorProperty(),true);
-        verticalCorrectionPercentage = new CutOff(controller.verticalCorrectionFactorProperty(),true);
-        BorderedTitledPane horizontalCutOffPane = new BorderedTitledPane("Horizontal SVD Cut Off",horizontalCutOff,
+        horizontalCutOff = new PropertySlider(controller.horizontalCutOffProperty(),PropertySlider.Type.CUTOFF);
+        verticalCutOff = new PropertySlider(controller.verticalCutOffProperty(),PropertySlider.Type.CUTOFF);
+        horizontalCorrectionPercentage = new PropertySlider(controller.horizontalCorrectionFactorProperty(),
+                PropertySlider.Type.PERCENTAGE);
+        verticalCorrectionPercentage = new PropertySlider(controller.verticalCorrectionFactorProperty(),
+                PropertySlider.Type.PERCENTAGE);
+        correctionPeriod = new PropertySlider(controller.correctionPeriodProperty(),PropertySlider.Type.PERIOD);
+        algorithmSplitButton = new RadioButton();
+        algorithmSplitButton.setText("Split horizontal and vertical correction");
+        algorithmSplitButton.setTooltip(new Tooltip(
+                "Use separate matrices for horizontal and vertical correction when performing continuous correction."));
+        algorithmSplitButton.selectedProperty().bindBidirectional(controller.splitAlgorithmProperty());
+        algorithmCoupledButton = new RadioButton();
+        algorithmCoupledButton.setText("Coupled correction");
+        algorithmCoupledButton
+                .setTooltip(new Tooltip("Use coupled matrix for correction when performing continuous correction."));
+        algorithmCoupledButton.selectedProperty().bindBidirectional(controller.coupledAlgorithmProperty());
+        BorderedTitledPane horizontalPane = new BorderedTitledPane("Horizontal SVD Cut Off",horizontalCutOff,
                 background);
-        BorderedTitledPane verticalCutOffPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,
-                background);
-        BorderedTitledPane horizontalFactorCutOffPane = new BorderedTitledPane("Horizontal Correction Percentage",
+        BorderedTitledPane verticalPane = new BorderedTitledPane("Vertical SVD Cut Off",verticalCutOff,background);
+        BorderedTitledPane horizontalFactorPane = new BorderedTitledPane("Horizontal Correction Percentage",
                 horizontalCorrectionPercentage,background);
-        BorderedTitledPane verticalFactorCutOffPane = new BorderedTitledPane("Vertical Correction Percentage",
+        BorderedTitledPane verticalFactorPane = new BorderedTitledPane("Vertical Correction Percentage",
                 verticalCorrectionPercentage,background);
+        BorderedTitledPane correctionPeriodPane = new BorderedTitledPane("Correction Period [s]",correctionPeriod,
+                background);
+        GridPane algorithmPanel = new GridPane();
+        algorithmPanel.setStyle(background.get());
+        algorithmPanel.setVgap(3);
+        algorithmPanel.add(algorithmSplitButton,0,0);
+        algorithmPanel.add(algorithmCoupledButton,0,1);
+        BorderedTitledPane algorithmPane = new BorderedTitledPane("Correction Algorithm",algorithmPanel,background);
         int height = 60;
-        Arrays.asList(verticalCutOffPane,horizontalCutOffPane,verticalFactorCutOffPane,horizontalFactorCutOffPane)
-                .forEach(c -> {
+        Arrays.asList(verticalPane,horizontalPane,verticalFactorPane,horizontalFactorPane,correctionPeriodPane,
+                algorithmPane).forEach(c -> {
                     c.setMinHeight(height);
                     c.setMaxHeight(height);
                 });
@@ -402,18 +439,21 @@ public class AdvancedDialog extends Dialog {
         pane.add(horizontalCorrectorTable,1,1);
         pane.add(verticalBPMTable,2,1);
         pane.add(verticalCorrectorTable,3,1);
-        pane.add(horizontalCutOffPane,0,2,2,1);
-        pane.add(verticalCutOffPane,2,2,2,1);
-        pane.add(horizontalFactorCutOffPane,0,3,2,1);
-        pane.add(verticalFactorCutOffPane,2,3,2,1);
+        pane.add(horizontalPane,0,2,2,1);
+        pane.add(verticalPane,2,2,2,1);
+        pane.add(horizontalFactorPane,0,3,2,1);
+        pane.add(verticalFactorPane,2,3,2,1);
+        pane.add(correctionPeriodPane,0,4,2,1);
+        pane.add(algorithmPane,2,4,2,1);
         Arrays.asList(horizontalBPMLabel,verticalBPMLabel,horizontalCorrectorLabel,verticalCorectorLabel)
                 .forEach(l -> setGridConstraints(l,false,false,HPos.CENTER,VPos.CENTER,Priority.NEVER,Priority.NEVER));
         Arrays.asList(horizontalBPMTable,verticalBPMTable,horizontalCorrectorTable,verticalCorrectorTable)
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.ALWAYS));
-        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,horizontalFactorCutOffPane,verticalFactorCutOffPane)
+        Arrays.asList(horizontalPane,verticalPane,horizontalFactorPane,verticalFactorPane,correctionPeriodPane,
+                algorithmPane)
                 .forEach(l -> setGridConstraints(l,true,true,HPos.LEFT,VPos.TOP,Priority.ALWAYS,Priority.NEVER));
-        Arrays.asList(horizontalCutOffPane,verticalCutOffPane,horizontalFactorCutOffPane,verticalFactorCutOffPane)
-                .forEach(l -> GridPane.setMargin(l,new Insets(10,0,0,0)));
+        Arrays.asList(horizontalPane,verticalPane,horizontalFactorPane,verticalFactorPane,correctionPeriodPane,
+                algorithmPane).forEach(l -> GridPane.setMargin(l,new Insets(10,0,0,0)));
         return pane;
     }
 

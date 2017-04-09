@@ -95,10 +95,10 @@
  	red: #ff0000;
  	green: #009900;
  	orange: #cc9900;
- 	lightblue: #7092be;
- 	lightpurple: #c76799;
- 	lightgreen: #64ffb1;
- 	lightorange: #e2dd81;
+ 	lightblue: #a0a0ff;
+ 	lightred: #ff7f7f;
+ 	lightestblue: #9bdaff;
+ 	lightestred: #c76799;
  	grey: #696969;
  	purple: #a349a4;
 }
@@ -144,27 +144,27 @@
 }
 
 .orbit-chart .default-color5.chart-series-line { 
-	-fx-stroke: lightpurple;
+	-fx-stroke: lightred;
 }
 
 .orbit-chart .default-color5.chart-line-symbol {
-	-fx-background-color: lightpurple;
+	-fx-background-color: lightred;
 }
 
 .orbit-chart .default-color6.chart-series-line { 
-	-fx-stroke: lightgreen;
+	-fx-stroke: lightestblue;
 }
 
 .orbit-chart .default-color6.chart-line-symbol {
-	-fx-background-color: lightgreen;
+	-fx-background-color: lightestblue;
 }
 
 .orbit-chart .default-color7.chart-series-line { 
-	-fx-stroke: lightorange;
+	-fx-stroke: lightestred;
 }
 
 .orbit-chart .default-color7.chart-line-symbol {
-	-fx-background-color: lightorange;
+	-fx-background-color: lightestred;
 }
 
 .corrections-chart .chart-line-symbol {
@@ -339,57 +339,57 @@
 }
 
 .reference-vertical-check-box {
-	-fx-text-fill: lightpurple;
+	-fx-text-fill: lightred;
 	-fx-font-weight: bold;	
 }
 
 .reference-vertical-check-box .box {
-	-fx-outer-border: lightpurple;
+	-fx-outer-border: lightred;
 	-fx-body-color: transparent;
 }
 
 .reference-vertical-check-box:selected .mark {
-    -fx-background-color: lightpurple;
+    -fx-background-color: lightred;
 }
 
 .reference-vertical-check-box:focused .box {
-	-fx-background-color: lightpurple, lightpurple, -fx-inner-border, -fx-body-color;
+	-fx-background-color: lightred, lightred, -fx-inner-border, -fx-body-color;
 }
 
 .difference-horizontal-check-box {
-	-fx-text-fill: lightgreen;
+	-fx-text-fill: lightestblue;
 	-fx-font-weight: bold;	
 }
 
 .difference-horizontal-check-box .box {
-	-fx-outer-border: lightgreen;
+	-fx-outer-border: lightestblue;
 	-fx-body-color: transparent;
 }
 
 .difference-horizontal-check-box:selected .mark {
-    -fx-background-color: lightgreen;
+    -fx-background-color: lightestblue;
 }
 
 .difference-horizontal-check-box:focused .box {
-	-fx-background-color: lightgreen, lightgreen, -fx-inner-border, -fx-body-color;
+	-fx-background-color: lightestblue, lightestblue, -fx-inner-border, -fx-body-color;
 }
 
 .difference-vertical-check-box {
-	-fx-text-fill: lightorange;
+	-fx-text-fill: lightestred;
 	-fx-font-weight: bold;	
 }
 
 .difference-vertical-check-box .box {
-	-fx-outer-border: lightorange;
+	-fx-outer-border: lightestred;
 	-fx-body-color: transparent;
 }
 
 .difference-vertical-check-box:selected .mark {
-    -fx-background-color: lightorange;
+    -fx-background-color: lightestred;
 }
 
 .difference-vertical-check-box:focused .box {
-	-fx-background-color: lightorange, lightorange, -fx-inner-border, -fx-body-color;
+	-fx-background-color: lightestred, lightestred, -fx-inner-border, -fx-body-color;
 }
 
 .bpm-check-box {
