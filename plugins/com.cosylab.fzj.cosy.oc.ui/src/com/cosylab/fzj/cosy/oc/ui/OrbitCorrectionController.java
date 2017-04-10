@@ -732,12 +732,8 @@ public class OrbitCorrectionController {
      * Calls command which uses the last horizontal and vertical orbit, calculate the corrections and apply them once
      */
     public void correctOrbitOnce() {
-        //TODO
-        //switch the algorithm to coupled
-        //executed correct orbit once, wait for the status to become idle
-        //switch the algorithm back to normal
         CorrectionAlgorithm algorithm = correctionAlgorithmProperty().get();
-        if (algorithm == CorrectionAlgorithm.SPLIT) {
+        if (algorithm == CorrectionAlgorithm.COUPLED) {
             executeCommand(Preferences.PV_CORRECT_ORBIT_ONCE,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
                     MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
         } else {
