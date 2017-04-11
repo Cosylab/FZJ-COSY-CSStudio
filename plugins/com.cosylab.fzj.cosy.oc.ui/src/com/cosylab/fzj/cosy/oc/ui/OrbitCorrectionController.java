@@ -741,7 +741,7 @@ public class OrbitCorrectionController {
             //first switch the algorithm. If successful, execute the orbit correction once.
             //after that wait for the status to become IDLE and then switch the algorithm back.
             ofNullable(pvs.get(Preferences.PV_CORRECTION_ALGORITHM)).ifPresent(algorithmPV -> {
-                writeData(algorithmPV,CorrectionAlgorithm.COUPLED,20,event -> {
+                writeData(algorithmPV,CorrectionAlgorithm.COUPLED.ordinal(),20,event -> {
                     if (event.isWriteSucceeded()) {
                         ChangeListener<String> statusListener = new ChangeListener<String>() {
                             private boolean hasFlipped = false;
@@ -760,7 +760,8 @@ public class OrbitCorrectionController {
                         //add listener to status property to find out when it changed back to idle to IDLE
                         statusProperty().addListener(statusListener);
                         ofNullable(pvs.get(Preferences.PV_CORRECT_ORBIT_ONCE)).ifPresent(
-                                correctPV -> writeData(correctPV,null,null,null,22));
+                                correctPV -> writeData(correctPV,null,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
+                                        MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE,22));
                     } else if (event.isWriteFailed()) {
                         writeFailure(event,MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
                     }
