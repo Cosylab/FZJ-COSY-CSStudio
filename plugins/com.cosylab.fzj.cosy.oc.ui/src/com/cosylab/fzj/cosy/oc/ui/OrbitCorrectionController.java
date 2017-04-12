@@ -58,6 +58,7 @@ import org.diirt.datasource.PVWriterEvent;
 import org.diirt.datasource.PVWriterListener;
 import org.diirt.util.array.ArrayDouble;
 import org.diirt.util.array.ArrayInt;
+import org.diirt.util.array.ArrayShort;
 import org.diirt.util.array.IteratorNumber;
 import org.diirt.util.array.ListNumber;
 import org.diirt.vtype.VEnum;
@@ -140,6 +141,8 @@ public class OrbitCorrectionController {
     private static final String MSG_UPLOAD_GOLDEN_ORBIT_FAILURE = "Error occured while uploading %s golden orbit.";
     private static final String MSG_UPDATE_ONOFF_SUCCESS = "Successfully enabled/disabled %s.";
     private static final String MSG_UPDATE_ONOFF_FAILURE = "Error enabling/disabling %s.";
+    private static final String MSG_UPDATE_CUTOFF_SUCCESS = "Successfully set the %s correctors cut off values.";
+    private static final String MSG_UPDATE_CUTOFF_FAILURE = "Error setting the %s correctors cut off values.";
     private static final String MSG_CUTOFF_SUCCESS = "%s cutoff factor %f successfully written.";
     private static final String MSG_CUTOFF_FAILURE = "Failed to write %s cutoff factor.";
     private static final String MSG_PERIOD_SUCCESS = "Correction period %f successfully written.";
@@ -536,8 +539,8 @@ public class OrbitCorrectionController {
     public BooleanProperty splitAlgorithmProperty() {
         if (splitAlgorithmProperty == null) {
             splitAlgorithmProperty = new SimpleBooleanProperty(this,"splitAlgorithm",true);
-            splitAlgorithmProperty.addListener((a,o,n) ->
-                correctionAlgorithmProperty().set(n ? CorrectionAlgorithm.SPLIT : CorrectionAlgorithm.COUPLED));
+            splitAlgorithmProperty.addListener((a, o, n) -> correctionAlgorithmProperty()
+                    .set(n ? CorrectionAlgorithm.SPLIT : CorrectionAlgorithm.COUPLED));
             splitAlgorithmProperty.set(correctionAlgorithmProperty().get() == CorrectionAlgorithm.SPLIT);
         }
         return splitAlgorithmProperty;
@@ -551,8 +554,8 @@ public class OrbitCorrectionController {
     public BooleanProperty coupledAlgorithmProperty() {
         if (coupledAlgorithmProperty == null) {
             coupledAlgorithmProperty = new SimpleBooleanProperty(this,"coupledAlgorithm",false);
-            coupledAlgorithmProperty.addListener((a,o,n) ->
-                correctionAlgorithmProperty().set(n ? CorrectionAlgorithm.COUPLED : CorrectionAlgorithm.SPLIT));
+            coupledAlgorithmProperty.addListener((a, o, n) -> correctionAlgorithmProperty()
+                    .set(n ? CorrectionAlgorithm.COUPLED : CorrectionAlgorithm.SPLIT));
             coupledAlgorithmProperty.set(correctionAlgorithmProperty().get() == CorrectionAlgorithm.COUPLED);
         }
         return coupledAlgorithmProperty;
@@ -666,8 +669,8 @@ public class OrbitCorrectionController {
                         writeData(pv,1. / val,21,event -> {
                             if (event.isWriteSucceeded()) {
                                 ofNullable(pvs.get(Preferences.PV_CORRECTION_FREQUENCY_PROC))
-                                        .ifPresent(procPv -> writeData(procPv,1,
-                                                String.format(MSG_PERIOD_SUCCESS,val),MSG_PERIOD_FAILURE,22));
+                                        .ifPresent(procPv -> writeData(procPv,1,String.format(MSG_PERIOD_SUCCESS,val),
+                                                MSG_PERIOD_FAILURE,22));
                             } else if (event.isWriteFailed()) {
                                 writeFailure(event,MSG_PERIOD_FAILURE);
                             }
@@ -744,9 +747,12 @@ public class OrbitCorrectionController {
                 writeData(algorithmPV,CorrectionAlgorithm.COUPLED.ordinal(),20,event -> {
                     if (event.isWriteSucceeded()) {
                         ChangeListener<String> statusListener = new ChangeListener<String>() {
+
                             private boolean hasFlipped = false;
+
                             @Override
-                            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                            public void changed(ObservableValue<? extends String> observable, String oldValue,
+                                    String newValue) {
                                 if (newValue.equalsIgnoreCase(IDLE)) {
                                     if (hasFlipped) {
                                         statusProperty().removeListener(this);
@@ -759,8 +765,8 @@ public class OrbitCorrectionController {
                         };
                         //add listener to status property to find out when it changed back to idle to IDLE
                         statusProperty().addListener(statusListener);
-                        ofNullable(pvs.get(Preferences.PV_CORRECT_ORBIT_ONCE)).ifPresent(
-                                correctPV -> writeData(correctPV,null,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
+                        ofNullable(pvs.get(Preferences.PV_CORRECT_ORBIT_ONCE))
+                                .ifPresent(correctPV -> writeData(correctPV,null,MSG_CORRECT_ORBIT_ONCE_CMD_SUCCESS,
                                         MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE,22));
                     } else if (event.isWriteFailed()) {
                         writeFailure(event,MSG_CORRECT_ORBIT_ONCE_CMD_FAILURE);
@@ -1049,12 +1055,26 @@ public class OrbitCorrectionController {
         }
     }
 
+    /**
+     * Write the lattice settings to the PVs. The settings specify which elements are enabled and which not and also the
+     * steerer cut off values.
+     */
     public void writeLatticeStatesToPV() {
+        List<Corrector> horizontalCorr = getHorizontalCorrectors();
+        List<Corrector> verticalCorr = getVerticalCorrectors();
         ToIntFunction<LatticeElement> toInt = e -> e.enabledWishProperty().get() ? 1 : 0;
-        final int[] horizontalCorrectors = getHorizontalCorrectors().stream().mapToInt(toInt).toArray();
-        final int[] verticalCorrectors = getVerticalCorrectors().stream().mapToInt(toInt).toArray();
+        final int[] horizontalCorrectors = horizontalCorr.stream().mapToInt(toInt).toArray();
+        final int[] verticalCorrectors = verticalCorr.stream().mapToInt(toInt).toArray();
         final int[] horizontalBPMs = getHorizontalBPMs().stream().mapToInt(toInt).toArray();
         final int[] verticalBPMs = getVerticalBPMs().stream().mapToInt(toInt).toArray();
+        final short[] horizontalCutoff = new short[horizontalCorrectors.length];
+        final short[] verticalCutoff = new short[verticalCorrectors.length];
+        for (int i = 0; i < horizontalCutoff.length; i++) {
+            horizontalCutoff[i] = (short)horizontalCorr.get(i).cutoffWishProperty().get();
+        }
+        for (int i = 0; i < verticalCutoff.length; i++) {
+            verticalCutoff[i] = (short)verticalCorr.get(i).cutoffWishProperty().get();
+        }
         ofNullable(pvs.get(Preferences.PV_HORIZONTAL_BPM_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(horizontalBPMs),String.format(MSG_UPDATE_ONOFF_SUCCESS,"horizontal BPMs"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"horizontal BPMs"),5);
@@ -1071,6 +1091,14 @@ public class OrbitCorrectionController {
         ofNullable(pvs.get(Preferences.PV_VERTICAL_CORRECTOR_ENABLED)).ifPresent(pv -> {
             writeData(pv,new ArrayInt(verticalCorrectors),String.format(MSG_UPDATE_ONOFF_SUCCESS,"vertical correctors"),
                     String.format(MSG_UPDATE_ONOFF_FAILURE,"vertical correctors"),8);
+        });
+        ofNullable(pvs.get(Preferences.PV_HORIZONTAL_STEERER_CUTOFF)).ifPresent(pv -> {
+            writeData(pv,new ArrayShort(horizontalCutoff),String.format(MSG_UPDATE_CUTOFF_SUCCESS,"horizontal"),
+                    String.format(MSG_UPDATE_CUTOFF_FAILURE,"horizontal"),28);
+        });
+        ofNullable(pvs.get(Preferences.PV_VERTICAL_STEERER_CUTOFF)).ifPresent(pv -> {
+            writeData(pv,new ArrayShort(verticalCutoff),String.format(MSG_UPDATE_CUTOFF_SUCCESS,"vertical"),
+                    String.format(MSG_UPDATE_CUTOFF_FAILURE,"vertical"),29);
         });
     }
 
@@ -1330,15 +1358,19 @@ public class OrbitCorrectionController {
                 pv -> updateOrbit(pv.value,SeriesType.DIFFERENCE_VERTICAL_ORBIT));
         if (mradProperty.get()) {
             handlePV.accept(Preferences.PV_HORIZONTAL_CORRECTOR_MRAD,
-                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR,false));
             handlePV.accept(Preferences.PV_VERTICAL_CORRECTOR_MRAD,
-                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
+                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR,false));
         } else {
             handlePV.accept(Preferences.PV_HORIZONTAL_CORRECTOR_MA,
-                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR));
+                    pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR,false));
             handlePV.accept(Preferences.PV_VERTICAL_CORRECTOR_MA,
-                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR));
+                    pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR,false));
         }
+        handlePV.accept(Preferences.PV_HORIZONTAL_STEERER_CUTOFF,
+                pv -> updateCorrectors(pv.value,LatticeElementType.HORIZONTAL_CORRECTOR,true));
+        handlePV.accept(Preferences.PV_HORIZONTAL_STEERER_CUTOFF,
+                pv -> updateCorrectors(pv.value,LatticeElementType.VERTICAL_CORRECTOR,true));
         getPV.apply(Preferences.PV_OPERATION_STATUS).filter(pv -> pv.value instanceof VEnum)
                 .ifPresent(pv -> statusProperty.set(((VEnum)pv.value).getValue()));
         handlePV.accept(Preferences.PV_HORIZONTAL_ORBIT_STATISTICS,
@@ -1483,8 +1515,9 @@ public class OrbitCorrectionController {
      *
      * @param value new correctors values (VNumberArray expected)
      * @param type element type identifies whether the data belongs to horizontal or vertical correctors
+     * @param cutoff true if the update is for the cutoff property or false if for the kick
      */
-    private void updateCorrectors(final VType value, final LatticeElementType type) {
+    private void updateCorrectors(final VType value, final LatticeElementType type, final boolean cutoff) {
         if (!(value instanceof VNumberArray)) return;
         final ListNumber va = ((VNumberArray)value).getData();
         if (va.size() == 0) return;
@@ -1501,19 +1534,39 @@ public class OrbitCorrectionController {
             final IteratorNumber it = va.iterator();
             //no parallelism, we are on the ui thread
             if (enabledCount == va.size()) {
-                correctors.stream().filter(c -> c.enabledProperty().get())
-                        .forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
+                if (cutoff) {
+                    correctors.stream().filter(c -> c.enabledProperty().get())
+                            .forEach(c -> c.cutoffProperty().set(it.nextInt()));
+                } else {
+                    correctors.stream().filter(c -> c.enabledProperty().get())
+                            .forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
+                }
             } else if (correctors.size() == va.size()) {
-                correctors.forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
+                if (cutoff) {
+                    correctors.forEach(c -> c.cutoffProperty().set(it.nextInt()));
+                } else {
+                    correctors.forEach(c -> c.correctionProperty().set(it.nextDouble() / 1000.));
+                }
             } else if (correctors.size() > va.size()) {
-                writeToLog(
-                        String.format(
-                                "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
-                                type.getElementTypeName(),va.size(),enabledCount,correctors.size()),
-                        Level.WARNING,empty());
                 int i = 0;
-                while (it.hasNext()) {
-                    correctors.get(i++).correctionProperty().set(it.nextDouble() / 1000.);
+                if (cutoff) {
+                    writeToLog(
+                            String.format(
+                                    "The number of %s cutoff values (%d) does not match the number of enabled correctors (%d/%d).",
+                                    type.getElementTypeName(),va.size(),enabledCount,correctors.size()),
+                            Level.WARNING,empty());
+                    while (it.hasNext()) {
+                        correctors.get(i++).cutoffProperty().set(it.nextInt());
+                    }
+                } else {
+                    writeToLog(
+                            String.format(
+                                    "The number of %s kick values (%d) does not match the number of enabled correctors (%d/%d).",
+                                    type.getElementTypeName(),va.size(),enabledCount,correctors.size()),
+                            Level.WARNING,empty());
+                    while (it.hasNext()) {
+                        correctors.get(i++).correctionProperty().set(it.nextDouble() / 1000.);
+                    }
                 }
             } else {
                 writeToLog(
@@ -1599,13 +1652,13 @@ public class OrbitCorrectionController {
      */
     private void writeData(PV pv, Object data, int id, final Consumer<PVWriterEvent<PV>> pvListener) {
         final PVWriterListener<PV> wrapperListener = new PVWriterListener<PV>() {
+
             @Override
             public void pvChanged(PVWriterEvent<PV> w) {
                 pvListener.accept(w);
                 w.getPvWriter().removePVWriterListener(this);
             }
         };
-
         Runnable r = () -> {
             synchronized (pv) {
                 pv.writer.addPVWriterListener(wrapperListener);

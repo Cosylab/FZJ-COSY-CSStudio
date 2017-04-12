@@ -52,13 +52,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.paint.Color;
+import javafx.util.StringConverter;
 
 /**
  * <code>AdvancedDialog</code> can be called from the main view by clicking on the Advanced button. It offers certain
@@ -134,6 +133,41 @@ public class AdvancedDialog extends Dialog {
         }
     }
 
+    private static class CorrectorCell<T extends LatticeElement> extends TextFieldTableCell<T,Integer> {
+
+        CorrectorCell() {
+            super(new StringConverter<Integer>() {
+
+                @Override
+                public Integer fromString(String string) {
+                    try {
+                        return Integer.parseInt(string);
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
+                }
+
+                @Override
+                public String toString(Integer object) {
+                    return object == null ? "NaN" : object.toString();
+                }
+            });
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void updateItem(Integer item, boolean empty) {
+            super.updateItem(item,empty);
+            TableRow<Corrector> currentRow = getTableRow();
+            if (currentRow.getItem() != null && (currentRow.getItem().cutoffDifferentProperty().get()
+                    || currentRow.getItem().enableDifferentProperty().get())) {
+                currentRow.setStyle("-fx-background-color: #ff000033");
+            } else {
+                currentRow.setStyle(null);
+            }
+        }
+    }
+
     private static class Table<T extends LatticeElement> extends TableView<T> {
 
         private boolean valueIsAdjusting = false;
@@ -170,16 +204,18 @@ public class AdvancedDialog extends Dialog {
         }
 
         private UnfocusableCheckBox selectAllCheckBox;
+        private final boolean steerers;
 
-        Table() {
+        Table(boolean steerers) {
+            this.steerers = steerers;
             setMaxWidth(Double.MAX_VALUE);
             setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             createTable();
             setFixedCellSize(23);
             setEditable(true);
-            setSelectionModel(null);
         }
 
+        @SuppressWarnings({"unchecked","rawtypes"})
         private void createTable() {
             TableColumn<T,String> nameColumn = new TableColumn<>("Device");
             nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -188,7 +224,15 @@ public class AdvancedDialog extends Dialog {
             TableColumn<T,Double> locationColumn = new TableColumn<>("Location [m]");
             locationColumn.setCellValueFactory(new PropertyValueFactory<>("location"));
             locationColumn.setEditable(false);
-            getColumns().addAll(Arrays.asList(nameColumn,locationColumn,enabledColumn));
+            if (steerers) {
+                TableColumn<T,Integer> cutoffColumn = new TableColumn<>("Cut Off");
+                cutoffColumn.setCellValueFactory(new PropertyValueFactory<>("cutoffWish"));
+                cutoffColumn.setEditable(true);
+                cutoffColumn.setCellFactory(l -> new CorrectorCell());
+                getColumns().addAll(Arrays.asList(nameColumn,locationColumn,cutoffColumn,enabledColumn));
+            } else {
+                getColumns().addAll(Arrays.asList(nameColumn,locationColumn,enabledColumn));
+            }
         }
 
         private ChangeListener<Boolean> listener = (a, o, n) -> {
@@ -213,23 +257,15 @@ public class AdvancedDialog extends Dialog {
 
     private static class Cell<T extends LatticeElement> extends CheckBoxTableCell<T,Boolean> {
 
-        private static final Background BACKGROUND = new Background(new BackgroundFill(new Color(1,0,0,0.2),null,null));
-        private Background defaultBackground = null;
-
         @SuppressWarnings("unchecked")
         @Override
         public void updateItem(Boolean item, boolean empty) {
             super.updateItem(item,empty);
             TableRow<T> currentRow = getTableRow();
             if (currentRow.getItem() != null && currentRow.getItem().enableDifferentProperty().get()) {
-                if (defaultBackground == null) {
-                    defaultBackground = currentRow.getBackground();
-                }
-                currentRow.setBackground(BACKGROUND);
+                currentRow.setStyle("-fx-background-color: #ff000033");
             } else {
-                if (defaultBackground != null) {
-                    currentRow.setBackground(defaultBackground);
-                }
+                currentRow.setStyle(null);
             }
         }
     }
@@ -381,10 +417,10 @@ public class AdvancedDialog extends Dialog {
         pane.setStyle(background.get());
         pane.setHgap(20);
         pane.setVgap(10);
-        horizontalBPMTable = new Table<>();
-        verticalBPMTable = new Table<>();
-        horizontalCorrectorTable = new Table<>();
-        verticalCorrectorTable = new Table<>();
+        horizontalBPMTable = new Table<>(false);
+        verticalBPMTable = new Table<>(false);
+        horizontalCorrectorTable = new Table<>(true);
+        verticalCorrectorTable = new Table<>(true);
         Label horizontalBPMLabel = new Label("Horizontal BPMs");
         Label verticalBPMLabel = new Label("Vertical BPMs");
         Label horizontalCorrectorLabel = new Label("Horizontal Correctors");

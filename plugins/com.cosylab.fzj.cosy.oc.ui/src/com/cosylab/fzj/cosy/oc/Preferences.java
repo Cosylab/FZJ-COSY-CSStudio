@@ -156,6 +156,10 @@ public final class Preferences {
     public static final String PV_HORIZONTAL_CORRECTION_FRACTION = "horizontal_correction_factor";
     /** Factor to multiply the values with when applying vertical correction */
     public static final String PV_VERTICAL_CORRECTION_FRACTION = "vertical_correction_factor";
+    /** Cutoff values at which to disable the horizontal steerers */
+    public static final String PV_HORIZONTAL_STEERER_CUTOFF = "horizontal_steerer_cutoff";
+    /** Cutoff values at which to disable vertical steerers */
+    public static final String PV_VERTICAL_STEERER_CUTOFF= "vertical_steerer_cutoff";
     private Properties properties;
     private static Preferences instance;
 
@@ -401,7 +405,7 @@ public final class Preferences {
                 PV_VERTICAL_CUTOFF,PV_HORIZONTAL_CORRECTION_FRACTION,PV_VERTICAL_CORRECTION_FRACTION,
                 PV_HORIZONTAL_BPM_ENABLED,PV_VERTICAL_BPM_ENABLED,PV_HORIZONTAL_CORRECTOR_ENABLED,
                 PV_VERTICAL_CORRECTOR_ENABLED,PV_CORRECTION_ALGORITHM,PV_CORRECTION_FREQUENCY,
-                PV_CORRECTION_FREQUENCY_PROC)
+                PV_CORRECTION_FREQUENCY_PROC,PV_HORIZONTAL_STEERER_CUTOFF,PV_VERTICAL_STEERER_CUTOFF)
                 .forEach(n -> Optional.ofNullable(getPVName(n)).ifPresent(c -> pvs.put(n,c)));
         return pvs;
     }
