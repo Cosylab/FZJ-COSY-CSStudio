@@ -139,7 +139,7 @@ public class OrbitCorrectionControls extends FXViewPart {
         buttonControls.setHgap(10);
         buttonControls.setVgap(10);
         buttonControls.setPadding(new Insets(0,0,0,0));
-        buttonControls.getColumnConstraints().setAll(new PercentColumnConstraints(55),new PercentColumnConstraints(25),
+        buttonControls.getColumnConstraints().setAll(new PercentColumnConstraints(60),new PercentColumnConstraints(20),
                 new PercentColumnConstraints(20));
         buttonControls.getRowConstraints().setAll(PercentRowConstraints.createEqualsConstraints(2));
         Node orbitCorrectionControl = createOrbitCorrectionControls();
